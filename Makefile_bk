@@ -1,0 +1,94 @@
+
+#-----------------------------------------------
+package = sim
+
+
+#-----------------------------------------------
+# define system dependent variables
+#include system.def
+#Mapping_HOME=/tmv_soft/geometry/Mapping/v5
+#TMVDBRun_HOME=/tmv_soft/cond_db/TMVDBRun/v1
+#GeoUtil_HOME=/tmv_soft/geometry/GeoUtil/v0
+sim_HOME=.
+
+
+#-----------------------------------------------
+# define compilation options
+C++    = g++
+C++OPT = -fopenmp -O2 -DVXILINUX -Wall -MMD -fPIC -c -m64 #-msse4.2 -mavx -mtune=native -march=native -ftree-vectorize
+LNKC++ = g++ -O 
+LKOPT  = -rdynamic 
+
+
+#-----------------------------------------------
+# define target directories and libraries
+SDIR  = src/
+IDIR  = include/
+
+INCDIR = $(GARFIELD_HOME)/Include
+HEEDDIR = $(GARFIELD_HOME)/Heed
+LIBDIR = $(GARFIELD_HOME)/Library
+
+IROOT = $(shell root-config --cflags)
+ROOTLIB = $(shell root-config --glibs) -lEG -lGeom -L$(LIBDIR) -lm -lGarfield -lMathCore -lGraf3d -lgfortran
+
+#IMAP = $(Mapping_HOME)/include
+#MAPLIB = $(Mapping_HOME)/lib/libMapping.so
+
+#GeoUtil = $(GeoUtil_HOME)/include
+#GeoUtilLIB = $(GeoUtil_HOME)/lib/libGeoUtil.so
+
+#TMVDBRun = $(TMVDBRun_HOME)/include
+#TMVDBRunLIB = $(TMVDBRun_HOME)/lib/libTMVDBRun.so
+
+sim = $(sim_HOME)/include
+simLIB = $(sim_HOME)/lib/libsim.so
+
+LDIR = lib/
+BIN  = ./
+
+
+#----------------------------------------------
+# define the compiler and the compilation options
+COMP = $(C++) $(C++OPT) -I$(IDIR)  -I$(IROOT) -I$(INCDIR) -I$(HEEDDIR) #-I$(sim) #-I$(IMAP) #-I$(GeoUtil) -I$(TMVDBRun) 
+COMPLIBS =  $(ROOTLIB) -lMinuit #$(simLIB) #$(MAPLIB) $(GeoUtilLIB) $(TMVDBRunLIB) 
+
+
+OFLAG =  -o $@ 
+EXE = 
+
+#----------------------------------------------
+# define OBJS 
+# OBJS =  $(LDIR)RootHelper.o
+
+#----------------------------------------------
+all:    createdir \
+	$(BIN)$(package) \
+#        clean                           
+#-----------------------------------------------  
+
+
+#-----------------------------------------------
+#dependencies
+#$(LDIR)RootHelper.o: $(SDIR)RootHelper.cc
+#	$(COMP) $(SDIR)RootHelper.cc $(OFLAG)
+	
+#-----------------------------------------------
+# main module
+$(LDIR)$(package).o: $(SDIR)$(package).cc
+	$(COMP) $(SDIR)$(package).cc $(OFLAG)
+	
+
+#-----------------------------------------------
+# link program
+$(BIN)$(package)$(EXE): $(LDIR)$(package).o $(OBJS);
+	$(LNKC++) -fopenmp $(LDIR)$(package).o $(COMPLIBS) $(LKOPT) $(OFLAG)
+
+# -----------------------------------------------
+# define some rules
+#-----------------------------------------------
+createdir :
+	@test -d "${LDIR}" || (echo "Creating ${LDIR}"; mkdir ${LDIR})
+
+clean :
+	rm -rf *.d ${LDIR}

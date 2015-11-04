@@ -1,0 +1,39 @@
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <algorithm>
+#include <cmath>
+#include <vector>
+
+#include <TRandom3.h>
+
+using namespace std;
+
+double n_moy(double const& x);
+
+int electron_multiplication2(double const& x, double const& s);
+
+int avalanche2(double const& x0, const int& n0, string filename, bool OMP);
+
+int multiplication();
+
+double multiplication(double n);
+
+void propagateToAnode(vector<double> &NElectrons, double* detectorGrid, int timeStep);
+
+bool avalanche(vector<double> & NElectrons, double detectorGrid[]);
+
+void computeLongitudinalDiffusion(double detectorGrid[]);
+//===============================================================================================================================================================
+
+double F1(int const& n, double const& x);
+
+double P(int const& n, double const& x);
+
+double cluster_dist(double const& s);
+
+vector<double> make_cumulative_tabulation(double const& x);
+
+int electron_multiplication(double const& x);
+
+double CLT(double const& x, double const& n);
