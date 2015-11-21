@@ -17,11 +17,18 @@ std::string GetHexRepresentation(const unsigned char * Bytes, size_t Length)
     return os.str();
 }
 
-double* vecToArray(double* array, std::vector<double> vector){
-	array = new double[vector.size()];
+double* vecToArray(std::vector<double> vector){
+	double* array = new double[vector.size()];
 	for(uint i=0; i<vector.size(); i++)
 		array[i] = vector[i];
 	return array;
+}
+
+std::vector<double> arrayToVec(double* array, size_t size){
+	std::vector<double> vec(size);
+	for(uint i=0; i<size; i++)
+		vec[i] = array[i];
+	return vec;
 }
 
 double gauss(double x, double mean, double sigma){

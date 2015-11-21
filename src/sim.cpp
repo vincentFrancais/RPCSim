@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <typeinfo>
 #include <fcntl.h>
+#include <cassert>
 
 #include "MediumMagboltz.hh"
 #include "SolidBox.hh"
@@ -16,7 +17,7 @@
 #include "TrackHeed.hh"
 #include "Plotting.hh"
 
-#include <boost/numeric/ublas/matrix.hpp>
+//#include <boost/numeric/ublas/matrix.hpp>
 
 //#include <TCanvas.h>
 //#include <TGraph.h>

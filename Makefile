@@ -60,17 +60,17 @@
 INCDIRGAR = $(GARFIELD_HOME)/Include
 HEEDDIR = $(GARFIELD_HOME)/Heed
 GSLDIR = $(GSL_HOME)
+LIBDIR = $(GARFIELD_HOME)/Library
 MY_CFLAGS =  `root-config --cflags` -I$(INCDIRGAR) -I$(HEEDDIR) -I$(GSLDIR)/include
 
 # The linker options.
-MY_LIBS   = -lGeom -lm -lGarfield -lMathCore -lGraf3d -lgfortran -lgsl -lgslcblas
+MY_LIBS   = -lGarfield `root-config --glibs` -L$(LIBDIR) -L$(GSLDIR)/lib -lpython2.7 -lGeom -lm -lMathCore -lGraf3d -lgfortran -lgsl -lgslcblas -lssl -lcrypto
 
 # The pre-processor options used by the cpp (man cpp for more).
-CPPFLAGS  = -fopenmp -W -Wall -Wextra -fstack-protector-all
+CPPFLAGS  = -fopenmp -W -Wall -Wextra
 
 # The options used in linking as well as in any direct use of ld.
-LIBDIR = $(GARFIELD_HOME)/Library
-LDFLAGS   = `root-config --glibs` -L$(LIBDIR) -L$(GSLDIR)/lib -lpython2.7
+LDFLAGS   =
 
 # The directories in which source files reside.
 # If not specified, only the current directory will be serached.

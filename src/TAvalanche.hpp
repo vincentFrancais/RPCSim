@@ -41,6 +41,7 @@ class TAvalanche{
 	void initialiseSingleCluster(const double& x0, const double& n0=1);
 	void computeInducedCharges();
 	void computeInducedSignal();
+	void computeInducedSignal2();
 	void computeChargeSpectra(const double& x0, const double& angle, const int& nEvents);
 	void computeClusterDensity(TDetector* det, const string& particleName, const double& Pmin, const double& Pmax, const int& steps);
 	void checkDetectorGrid();
@@ -63,6 +64,8 @@ class TAvalanche{
 	void computeSCEffect();
 	double interpolateEbar(const double& z, const double& zp, const double& l);
 	
+	void CacheRandomNumbers();
+	
 	void makeSnapshot();
 	
 	void testInterpolation();
@@ -76,12 +79,11 @@ class TAvalanche{
 	double fDx;
 	
 	int iEbarTableSize;
-	//double fEbarTable[iEbarTableSize*iEbarTableSize*iEbarTableSize];
-	double* fEbarTable;
+	vector<double> fEbarTable;
 	string fEbarTableHexName;
-	double* fEbarZarray;
-	double* fEbarZparray;
-	double* fEbarLarray;
+	vector<double> fEbarZarray;
+	vector<double> fEbarZparray;
+	vector<double> fEbarLarray;
 	
 	int iCurrentDetectorStep;
 	int iTimeStep;
@@ -115,6 +117,7 @@ class TAvalanche{
 	double fClusterDensity;
 	
 	vector<double> fClPosX, fClPosY, fClPosZ;
+	vector<double> fRandNumSCECache;
 	
 	double fLongiDiffSigma;
 	
@@ -127,7 +130,7 @@ class TAvalanche{
 	RngStream* fRandRng;
 	RngStream* fRandRngCLT;
 	RngStream* fRandRngLongiDiff;
-	//RngStream* fRandRngTransDiff;
+	RngStream* fRandRngSCE;
 	
 	gsl_rng* fGSLRng;
 	

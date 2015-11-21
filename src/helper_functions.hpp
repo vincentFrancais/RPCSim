@@ -26,7 +26,9 @@ std::string GetHexRepresentation(const unsigned char * Bytes, size_t Length);
 
 bool file_exist (const std::string& name);
 
-double* vecToArray(double* array, std::vector<double> vector);
+double* vecToArray(std::vector<double> vector);
+
+std::vector<double> arrayToVec(double* array, size_t size);
 
 double gauss(double x, double mean, double sigma);
 

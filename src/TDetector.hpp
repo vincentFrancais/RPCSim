@@ -67,12 +67,18 @@ class TDetector{
 	double getK(void) const	{return k;}
 	int getEbarTableSize(void) const {return iEbarTableSize;}
 	string getEbarTableHexName(void) const {return fEbarTableHexName;}
-	double* getEbarTable(void) const {return fEbarTable2;}
+
+	vector<double> getEbarVecTable(void) const {return fEbarVecTable;}
 	int getNstep(void) const	{return iNstep;}
 	double* getElectricField(void) {return fElectricField;}
 	double* getTransportParameters(double Ex, double Ey, double Ez);
 	Garfield::Sensor* getSensor(void) const	{return mSensor;}
+
+	vector<double> getEbarZarray(void) {return fEbarZarray;}
+	vector<double> getEbarZparray(void) {return fEbarZparray;}
+	vector<double> getEbarLarray(void) {return fEbarLarray;}
 	
+	void plotSC();
 	
 	private:
 	int iNstep;
@@ -82,9 +88,9 @@ class TDetector{
 	double fDt;
 	double fDx;
 	
-	static const int iEbarTableSize = 50;
-	double fEbarTable[iEbarTableSize*iEbarTableSize*iEbarTableSize];
-	double* fEbarTable2;//[iEbarTableSize*iEbarTableSize*iEbarTableSize];
+	int iEbarTableSize;
+	vector<double> fEbarVecTable;
+	vector<double> fEbarZarray, fEbarZparray, fEbarLarray;
 	
 	bool bEbarComputed;
 	string fEbarTableHexName;

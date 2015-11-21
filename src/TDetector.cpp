@@ -25,6 +25,8 @@ TDetector::TDetector(const DetectorGeometry& geometry, const int& nStep){
 	iNstep = nStep;
 	//fGapWidth = gasGap;
 	fGeometry = geometry;
+	
+	bEbarComputed = false;
 }
 
 TDetector::~TDetector(){
@@ -239,7 +241,6 @@ double TDetector::SCPotential(const double& r, const double& phi, const double& 
 
 double TDetector::RadialChargeDistribution(const double& r, const double& l){
 	//cout << fDiffT << " " << l << " " << r << endl;
-	double cm = 0.01;
 	return ( 1./(fDiffT*fDiffT * l) ) * exp( -(r*r)/(2*fDiffT*fDiffT * l) ) ;
 }
 
@@ -255,20 +256,18 @@ double TDetector::computeEbar(const double& z, const double& l, const double& zp
 	if( tgsl != this )
 		tgsl = this;
 	
-	double cm = 0.01;
-	
 	double sigma2 = fDiffT*fDiffT * l;
 	
-	gsl_integration_workspace * w = gsl_integration_workspace_alloc (15000);
+	gsl_integration_workspace * w = gsl_integration_workspace_alloc (3000);
     double result, error;
     double funParams[3] = {z,l,zp};
     gsl_function F;
 	F.function = &Ebar;
 	F.params = &funParams;
 
-	gsl_integration_qag (&F, 0., 3*fGeometry.gapWidth, 1e-10, 1e-7, 5000, 3, w, &result, &error);
+	gsl_integration_qag (&F, 0., 3*sqrt(sigma2), 1e-10, 1e-7, 3000, 3, w, &result, &error);
 	
-	//gsl_integration_qagiu (&F, 0., 0., 1e-5, 15000, w, &result, &error);
+	//gsl_integration_qagiu (&F, 0., 1.e-2, 1e-3, 15000, w, &result, &error);
 	gsl_integration_workspace_free (w);
 	
 	return result;
@@ -277,28 +276,50 @@ double TDetector::computeEbar(const double& z, const double& l, const double& zp
 void TDetector::makeEbarTable(){
 	if(bEbarComputed)	return;
 	
-	int n = iEbarTableSize;
+	iEbarTableSize = 100;
+	int n = iEbarTableSize+1;
+	int size = (n)*(n)*(n);
 	
 	string fileName = to_string(fDiffT)+to_string(fGeometry.gapWidth)+to_string(fGeometry.relativePermittivity[0])
-	+to_string(fGeometry.relativePermittivity[1])+to_string(iNstep)+to_string(n)+to_string(fDx)+to_string(n);	//gap, diff, epsilons
+	+to_string(fGeometry.relativePermittivity[1])+to_string(iNstep)+to_string(n)+to_string(fDx);	//gap, diff, epsilons
 	
 	unsigned char* uc = new unsigned char[fileName.size()+1];
 	memcpy(uc, fileName.c_str(), fileName.size());
 	uc[fileName.size()]=0;
 	string hexFileName = GetHexRepresentation(uc, fileName.size());
 	delete uc;
+
+	//double table[size];
 	
-	fEbarTable2 = new double[n*n*n];
+	double cm = 0.01;
 	
+	double zStep = fGeometry.gapWidth * cm / (n-1), zpStep = fGeometry.gapWidth * cm / (n-1), lStep = iNstep*fDx / (n);
+	fEbarLarray = vector<double>(n,0.);
+	fEbarZarray = vector<double>(n,0.);
+	fEbarZparray = vector<double>(n,0.);
+	
+	for(int i=0; i<n; i++){
+		fEbarZarray[i] = (i)*zStep;
+		fEbarZparray[i] = (i)*zpStep;
+		fEbarLarray[i] = (i+1)*lStep;
+	}
+	
+	fEbarVecTable = vector<double> (size);
+
 	if (file_exist("EbarTables/"+hexFileName)){
-		double table[n*n*n];
-		ifstream inf(("EbarTables/"+hexFileName).c_str(),ios::binary);
-		inf.read((char*)&table,sizeof(table));
-		
-		memcpy(fEbarTable2, table, sizeof(table));
-		
-		//cout << "here: " << fEbarTable2[0] << endl;
-		
+		//ifstream inf(("EbarTables/"+hexFileName).c_str(),ios::binary);
+		ifstream inf(("EbarTables/"+hexFileName).c_str());
+		double z,zp,l,Ebar;
+		int i=0;
+		while (inf >> z >> zp >> l >> Ebar){
+			fEbarVecTable[i] = Ebar;
+			i++;
+		}
+		//inf.read((char*)&table,sizeof(table));
+		//inf.read(reinterpret_cast<char*>(&fEbarVecTable[0]), fEbarVecTable.size() * sizeof(fEbarVecTable[0]));
+
+		//fEbarVecTable = arrayToVec(table, size);
+
 		fEbarTableHexName = hexFileName;
 		
 		bEbarComputed = true;
@@ -306,44 +327,58 @@ void TDetector::makeEbarTable(){
 	}
 	
 	cout << "Computing Ebar Table" << endl;
-	
-	double cm = 0.01;
-	double mm = 0.001;
-	
-	double zStep = fGeometry.gapWidth * cm / (n), zpStep = fGeometry.gapWidth * cm / (n), lStep = iNstep*fDx / n;
-	double Ebar;
+
 	ofstream data("out/Ebar.dat", ios::out | ios::trunc);
-
-
-	double table[n*n*n];
 	
 	int i,j,k;
 	#pragma omp parallel for private(j,k) collapse(3)
 	for(i=0; i<n; i++){	//z
 		for(j=0; j<n; j++){	//zp
 			for(k=0; k<n; k++){	//l
-				//cout << (i)*zStep << " " << (k+1)*lStep << " " << (j)*zpStep << endl;
-				double Ebar = computeEbar((i+1)*zStep,(k+1)*lStep,(j+1)*zpStep); 
-				table[ (long)i*(long)n*(long)n + (long)j*(long)n + (long)k ] = Ebar;
+				//double Ebar = computeEbar((i)*zStep,(k+1)*lStep,(j)*zpStep);
+				double Ebar = computeEbar( fEbarZarray[i], fEbarLarray[k], fEbarZparray[j] );
+				fEbarVecTable[ (long)i*(long)n*(long)n + (long)j*(long)n + (long)k ] = Ebar;
 			}
 		}
 	}
 	
-	ofstream o(("EbarTables/"+hexFileName).c_str(),ios::binary);
-	o.write((char*)&table,sizeof(table));
-    o.close();
+	//ofstream o(("EbarTables/"+hexFileName).c_str(),ios::binary);
+	ofstream o(("EbarTables/"+hexFileName).c_str(), ios::out | ios::trunc);
+	//const char* pointer = reinterpret_cast<const char*>(&fEbarVecTable[0]);
+	//o.write((char*)&fEbarVecTable[0], fEbarVecTable.size() * sizeof(fEbarVecTable[0]));
+	//o.write((char*)&table,sizeof(table));
+	//o.write((const char*)&fEbarVecTable, sizeof(fEbarVecTable));
+	
+	//fEbarVecTable = arrayToVec(table, size);
+	//delete table;
 	
 	fEbarTableHexName = hexFileName;
-	memcpy(fEbarTable2, table, sizeof(table));
  	
 	for(int i=0; i<n; i++){	
 		for(int j=0; j<n; j++){
 			for(int k=0; k<n; k++){
-				data << (i+1)*zStep << "\t" << (j+1)*zpStep << "\t" << (k+1)*lStep << "\t" << table[ (long)i*(long)n*(long)n + (long)j*(long)n + (long)k ] << endl;
+				data << (i)*zStep << "\t" << (j)*zpStep << "\t" << (k+1)*lStep << "\t" << fEbarVecTable[ (long)i*(long)n*(long)n + (long)j*(long)n + (long)k ] << endl;
+				o << fEbarZarray[i] << "\t" << fEbarZparray[j] << "\t" << fEbarLarray[k] << "\t" << fEbarVecTable[ (long)i*(long)n*(long)n + (long)j*(long)n + (long)k ] << endl;
 			}
 		}
 	}
-				
+	
+	o.close();
 	data.close();
 	bEbarComputed = true;
+}
+
+void TDetector::plotSC(){
+	cout << "plot" << endl;
+	double cm = 0.01;
+
+	double min = -1, max = 1;
+	vector<double> val(1,min);
+	while(val.back() <= max)	val.push_back( val.back()+0.02 );
+	ofstream data("out/plotSC.dat", ios::out | ios::trunc);
+	
+	for(uint i=0; i<val.size(); i++){
+		data << val[i] << "\t" << SCFieldSimplified(0,0,0.05*cm,val[i]*cm,0,0.05*cm) << endl;
+	}
+	data.close();
 }
