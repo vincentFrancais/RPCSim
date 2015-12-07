@@ -10,6 +10,7 @@
 #include <iterator>
 #include <algorithm>
 #include <sys/stat.h>
+#include <numeric>
 
 #include "RngStream.h"
 
@@ -50,6 +51,11 @@ std::size_t getLowerIndex(Iterator first, Iterator last, const T & val){
 	Iterator lower = std::lower_bound(first,last,val);
 	if (lower != first)	lower--;
 	return std::distance(first, lower);
+}
+
+template<typename T>
+T sumVec(std::vector<T> vec){
+	return std::accumulate(vec.begin(), vec.end(), 0.0);
 }
 
 #endif

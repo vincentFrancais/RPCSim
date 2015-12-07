@@ -92,9 +92,9 @@ class TAvalanche{
 	TDetector* fDet;
 	
 	int iNElectronsSize;
-	double* fElecDetectorGrid;
-	double* fPosIonDetectorGrid;
-	double*	fNegIonDetectorGrid; 
+	vector<double> fElecDetectorGrid;
+	vector<double> fPosIonDetectorGrid;
+	vector<double> fNegIonDetectorGrid; 
 	
 	double* fLongiDiffFrac;
 	//vector<double> fNElectrons;

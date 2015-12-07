@@ -200,7 +200,8 @@ double TDetector::SCFieldSimplified(const double& r, const double& phi, const do
 
 double TDetector::SCField(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp){
 	double mm = 0.001;
-	double h = 0.001 * mm;
+	double cm = 0.01;
+	double h = 0.001 * cm;
 	
 	double m1 = ( SCPotential(r,phi,z+h,rp,phip,zp) - SCPotential(r,phi,z-h,rp,phip,zp) ) / (2*h);
 	double m2 = ( SCPotential(r,phi,z+2*h,rp,phip,zp) - SCPotential(r,phi,z-2*h,rp,phip,zp) ) / (4*h);
@@ -248,7 +249,7 @@ double Ebar(double x, void * params){
 	//x == rp
 	double cm = 0.01;
 	double* param = reinterpret_cast<double*> (params); //[z,l,zp]
-	double res =  tgsl->RadialChargeDistribution(x,param[1]) * tgsl->SCFieldSimplified(0.,0.,param[0],x*cm,0.,param[2])*0.01 * x;  //RadialDistrib en cm-2, rp*drp en cm2, SCField en V/cm. rp doit etre en m dans les params de SCField
+	double res =  tgsl->RadialChargeDistribution(x,param[1]) * tgsl->SCField(0.,0.,param[0],x*cm,0.,param[2])*0.01 * x;  //RadialDistrib en cm-2, rp*drp en cm2, SCField en V/cm. rp doit etre en m dans les params de SCField
 	return res;
 }
 
@@ -281,7 +282,7 @@ void TDetector::makeEbarTable(){
 	int size = (n)*(n)*(n);
 	
 	string fileName = to_string(fDiffT)+to_string(fGeometry.gapWidth)+to_string(fGeometry.relativePermittivity[0])
-	+to_string(fGeometry.relativePermittivity[1])+to_string(iNstep)+to_string(n)+to_string(fDx);	//gap, diff, epsilons
+	+to_string(fGeometry.relativePermittivity[1])+to_string(iNstep)+to_string(n)+to_string(fDx)+to_string(iEbarTableSize);
 	
 	unsigned char* uc = new unsigned char[fileName.size()+1];
 	memcpy(uc, fileName.c_str(), fileName.size());

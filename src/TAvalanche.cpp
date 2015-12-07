@@ -68,9 +68,9 @@ TAvalanche::TAvalanche(TDetector* det){
 	fLongiDiffComputeLimit = 100;
 	
 	iNElectronsSize = 5*iNstep;
-	fElecDetectorGrid = new double[iNstep];
-	fPosIonDetectorGrid = new double[iNstep];
-	fNegIonDetectorGrid = new double[iNstep];
+	fElecDetectorGrid = vector<double> (iNstep);
+	fPosIonDetectorGrid = vector<double> (iNstep);
+	fNegIonDetectorGrid = vector<double> (iNstep);
 	
 	fLongiDiffSigma = fDiffL*sqrt(fDx);
 	fLongiDiffFrac = new double[7];
@@ -286,15 +286,6 @@ void TAvalanche::computeInducedSignal2(){
 	else
 		fCharges.push_back(fCharges.back() + charges);
 	
-	//fCharges.push_back( weightingField * e0 * fVx[z]*1e9 * fNElectrons[iTimeStep] );
-	
-	//if(fCharges.size() == 0)	fCharges = vector<double>(1,fSignal[0]*fDt*1.e-9);
-	//else{
-		//for(uint i=1; i<fSignal.size(); i++)
-			//fCharges.push_back(fCharges.back() + fSignal[i] * fDt*1.e-9);
-	//}
-	//data.close();
-	
 }
 
 void TAvalanche::computeInducedCharges(){
@@ -459,8 +450,8 @@ double TAvalanche::CLT(const double& x, const double& n){
 void TAvalanche::computeLongitudinalDiffusion(){
 	bool computed = true;
 	
-	double newDetectorGrid[iNstep];
-	for(int i=0; i<iNstep; i++) 	newDetectorGrid[i] = 0;
+	vector<double> newDetectorGrid (iNstep,0);
+	//for(int i=0; i<iNstep; i++) 	newDetectorGrid[i] = 0;
 	
 	//double nIni = sumArray(fElecDetectorGrid, iNstep);
 	
@@ -516,11 +507,13 @@ void TAvalanche::computeLongitudinalDiffusion(){
 		//cout << nIni << " " << nFin << " " << computed << " " << iDebug << " " << fNElectrons[iDebug] << endl;
 		iDebug++;
 		double intPart;
-		if(modf(sumArray(newDetectorGrid, iNstep), &intPart) > 0.)	cin.ignore();
+		//if(modf(sumArray(newDetectorGrid, iNstep), &intPart) > 0.)	cin.ignore();
+		if(modf(sumVec(newDetectorGrid), &intPart) > 0.)	cin.ignore();
 		//if(computed)	
 	}
 	
-	memcpy(fElecDetectorGrid, newDetectorGrid, sizeof(double)*iNstep); //fElecDetectorGrid = newDetectorGrid;
+	//memcpy(fElecDetectorGrid, newDetectorGrid, sizeof(double)*iNstep); 
+	fElecDetectorGrid = newDetectorGrid;
 }
 
 bool TAvalanche::avalanche(){
@@ -541,8 +534,8 @@ bool TAvalanche::avalanche(){
 			cout << "\033[2J\033[1;1H";
 		}
 		
-		double copy[iNstep];
-		memcpy(copy, fElecDetectorGrid, sizeof(double)*iNstep);
+		vector<double> copy (fElecDetectorGrid);
+		//memcpy(copy, fElecDetectorGrid, sizeof(double)*iNstep);
 		
 		for(iCurrentDetectorStep=0; iCurrentDetectorStep<iNstep-1; iCurrentDetectorStep++){
 			double n = copy[iCurrentDetectorStep];
@@ -574,7 +567,7 @@ bool TAvalanche::avalanche(){
 		
 		//cout << endl;
 		cout << "time step: " << iTimeStep << "\t Nelec: " << fNElectrons[iTimeStep] << "\t" << "NelecLastBin: " << fElecDetectorGrid[iNstep-1] << " ";
-		cout << " " << -sumArray(fPosIonDetectorGrid, iNstep)+sumArray(fElecDetectorGrid, iNstep)+sumArray(fNegIonDetectorGrid, iNstep) << endl;
+		cout << " " << -sumVec(fPosIonDetectorGrid)+sumVec(fElecDetectorGrid)+sumVec(fNegIonDetectorGrid) << endl;
 		
 		if( iTimeStep > iNElectronsSize )	return false;
 	}

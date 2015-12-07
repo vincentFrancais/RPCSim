@@ -132,6 +132,21 @@ int main(int argc, char** argv) {
     pthread_t writingThread;
     void * ret;
     
+    /*	tests	*/
+    /*
+    RngStream rand1;
+    RngStream rand2;
+    for(int i=0; i<15; i++){
+		cout << rand1.RandU01() << " ";
+	}
+	cout << endl;
+	for(int i=0; i<15; i++){
+		cout << rand2.RandU01() << " ";
+	}
+	cout << endl;
+	exit(0);
+    */
+    
     /* Initialize our pipe lock */
     pthread_mutex_init(&gPipeLock, 0);
     pthread_mutex_init(&gTrackLock, 0);
