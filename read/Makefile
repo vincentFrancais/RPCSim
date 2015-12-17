@@ -8,7 +8,7 @@
 #          2007/03/24 (version 0.2)
 #          2007/04/09 (version 0.3)
 #          2007/06/26 (version 0.4)
-#          2008/04/05 (version 0.5)
+#          2008/04/05 (version 0.5
 #
 # Description:
 # ------------
@@ -59,17 +59,18 @@
 # The pre-processor and compiler options.
 INCDIRGAR = $(GARFIELD_HOME)/Include
 HEEDDIR = $(GARFIELD_HOME)/Heed
-MY_CFLAGS =  `root-config --cflags` -I$(INCDIRGAR) -I$(HEEDDIR) -I../src
+GSLDIR = $(GSL_HOME)
+LIBDIR = $(GARFIELD_HOME)/Library
+MY_CFLAGS = 
 
 # The linker options.
-MY_LIBS   = -lGeom -lm -lGarfield -lMathCore -lGraf3d -lgfortran
+MY_LIBS   = -lGeom -lm -lMathCore -lGraf3d
 
 # The pre-processor options used by the cpp (man cpp for more).
-CPPFLAGS  = -fopenmp -Wall -g
+CPPFLAGS  = -W -Wall -Wextra
 
 # The options used in linking as well as in any direct use of ld.
-LIBDIR = $(GARFIELD_HOME)/Library
-LDFLAGS   = `root-config --glibs` -L$(LIBDIR) 
+LDFLAGS   =
 
 # The directories in which source files reside.
 # If not specified, only the current directory will be serached.

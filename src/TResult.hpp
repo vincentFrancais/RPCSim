@@ -5,21 +5,22 @@ using namespace std;
 
 struct TResult
 {
-	double fInducedCharge;
-	double* fInducedSignal; //vector<double> fInducedSignal;
-	double* fClPosX,fClPosY,fClPosZ;//vector<double> fClPosX,fClPosY,fClPosZ;
-	double* fNElectrons;
-	double fVx;
-	double fDiffCoeff[2];
-	double alpha;
-	double eta;
+	//double* fInducedCharge;
+	//vector<double> fInducedSignal;
+	//double* fClPosX,fClPosY,fClPosZ;//vector<double> fClPosX,fClPosY,fClPosZ;
+	//double* fNElectrons;
+	//double fVx;
+	//double fDiffCoeff[2];
+	//double alpha;
+	//double eta;
 	double Dx;
 	double Dt;
 	int iNstep;
-	double fGapWidth;
+	int thrCrossTimeStep;
+	//double fGapWidth;
 	//string sMixture;
-	double fThrCLT;
-	double fSpaceChargeLimitThr;
+	//double fThrCLT;
+	//double fSpaceChargeLimitThr;
     //unsigned char fId[SHA384_DIGEST_LENGTH];
     //double fPosition[kMax];
     //double fImpulsion[kMax];

@@ -284,10 +284,13 @@ void TDetector::makeEbarTable(){
 	string fileName = to_string(fDiffT)+to_string(fGeometry.gapWidth)+to_string(fGeometry.relativePermittivity[0])
 	+to_string(fGeometry.relativePermittivity[1])+to_string(iNstep)+to_string(n)+to_string(fDx)+to_string(iEbarTableSize);
 	
+	cout << "FileName: " << fileName << endl;
+	
 	unsigned char* uc = new unsigned char[fileName.size()+1];
 	memcpy(uc, fileName.c_str(), fileName.size());
 	uc[fileName.size()]=0;
 	string hexFileName = GetHexRepresentation(uc, fileName.size());
+	cout << "Hex representation: " << hexFileName << endl;
 	delete uc;
 
 	//double table[size];

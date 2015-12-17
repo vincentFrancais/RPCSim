@@ -19,7 +19,7 @@ template<typename T>
 std::string to_string(const T & value)
 {
 	std::ostringstream oss;
-	oss << value;
+	oss << std::setprecision (1) << std::fixed << value;
 	return oss.str();
 }
 

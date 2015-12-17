@@ -1,12 +1,10 @@
 #include <iostream>
-#include <sstream>
-#include <fstream>
-#include <cmath>
-#include <vector>
-#include <utility>
-#include <sys/stat.h>
-#include <typeinfo>
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
 #include <fcntl.h>
+#include <unistd.h>
+#include <vector>
 
 #include "TResult.hpp"
 
@@ -24,10 +22,13 @@ int main(){
     }
     
     while (read(inFD, &result, sizeof(result)) > 0){
-		//cout << "Induced charge: " << result.fInducedSignal[0] << endl;
-		cout << "Induced charge: " << result.fDiffCoeff[1] << endl;
-		cout << "Induced signal: " << result.fNElectrons[1] << endl;
+		cout << "Dt: " << result.Dt << endl;
+		cout << "Dx: " << result.Dx << endl;
+		cout << "nSteps: " << result.iNstep << endl;
+		cout << "test: " << result.thrCrossTimeStep << endl;
+		cout << "========================" << endl;
     }
     close(inFD);
-	return 0;
+    
+    return 0;
 }

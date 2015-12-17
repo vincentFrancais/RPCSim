@@ -5,7 +5,6 @@
 #include <vector>
 #include <assert.h> 
 #include <utility>
-#include <ncurses.h>
 #include <limits>
 #include <iterator>
 
@@ -26,15 +25,9 @@ using namespace std;
 TAvalanche::TAvalanche(TDetector* det){
 	iNstep = det->getNstep();
 	
-	//const int iEbarTableSize = 50;
-	//fEbarTable = new double[iEbarTableSize][iEbarTableSize][iEbarTableSize];
-	
 	fRandRng = new RngStream();
 	fRandRngCLT = new RngStream();
 	fRandRngLongiDiff = new RngStream();
-	//fRandRngSCE = new RngStream();
-	
-	fGSLRng = gsl_rng_alloc (gsl_rng_taus);
 	
 	fGapWidth = det->getGapWidth();
 	fResistiveLayersWidth = det->getResistiveLayersWidth();
@@ -45,11 +38,9 @@ TAvalanche::TAvalanche(TDetector* det){
 	
 	fDiffL = det->getDiffL();
 	fDiffT = det->getDiffT();
-	//fVx = det->getVx();
 	fVx = new double[iNstep];
 	fVy = det->getVy();
 	fVz = det->getVz();
-	//fAlpha = det->getAlpha();
 	fAlpha = new double[iNstep];
 	fEta = new double[iNstep];
 	fE = new double[iNstep];
@@ -60,17 +51,17 @@ TAvalanche::TAvalanche(TDetector* det){
 		fE[i] = det->getElectricField()[0];
 	}
 	fEini = fE[0];
-	//fEta = det->getEta();
-	//k = det->getK();
 	
 	fThrCLT = 1.e4;
-	fSpaceChargeLimit = 1.e19;//5.e7;
-	fLongiDiffComputeLimit = 100;
+	//fSpaceChargeLimit = 1.e19;//5.e7;
+	//fLongiDiffComputeLimit = 100;
 	
 	iNElectronsSize = 5*iNstep;
-	fElecDetectorGrid = vector<double> (iNstep);
-	fPosIonDetectorGrid = vector<double> (iNstep);
-	fNegIonDetectorGrid = vector<double> (iNstep);
+	
+	fElecDetectorGrid = vector<double> (iNstep,0);
+	fPosIonDetectorGrid = vector<double> (iNstep,0);
+	fNegIonDetectorGrid = vector<double> (iNstep,0);
+	fNelecAnode = 0;
 	
 	fLongiDiffSigma = fDiffL*sqrt(fDx);
 	fLongiDiffFrac = new double[7];
@@ -84,7 +75,6 @@ TAvalanche::TAvalanche(TDetector* det){
 	
 	bPrintDetectorGrid = false;
 	bFullLongiDiff = true;
-	//bEbarComputed = false;
 	
 	fDet = det;
 	
@@ -104,20 +94,11 @@ TAvalanche::TAvalanche(TDetector* det){
 	
 	fSignal.clear();
 	fCharges.clear();
-	//testInterpolation();
-	//CacheRandomNumbers();
-	//exit(0);
 }
 
 TAvalanche::~TAvalanche(){
 	delete fNElectrons;
 	delete fLongiDiffFrac;
-}
-
-void TAvalanche::CacheRandomNumbers(){
-	for(int i=0; i<1e8; i++){
-		fRandNumSCECache.push_back(fRandRngSCE->RandU01());
-	}
 }
 
 void TAvalanche::computeClusterDensity(TDetector* det, const string& particleName, const double& Pmin, const double& Pmax, const int& steps){
@@ -147,7 +128,7 @@ void TAvalanche::initialiseTrackHeed(TDetector* det, const string& particleName,
 	track->SetMomentum(momentum);
 	
 	double t0 = 0.;
-	double y0 = 0, z0 = 0; 
+	double y0 = 0, z0 = 0;
 	double dx0 = cos(theta * PI / 180.0), dy0 = sin(theta * PI / 180.0), dz0 = 0.;
 	
 	track->NewTrack(x0, y0, z0, t0, dx0, dy0, dz0);
@@ -158,11 +139,6 @@ void TAvalanche::initialiseTrackHeed(TDetector* det, const string& particleName,
 	double dummy = 0.; 							// Dummy variable (not used at present)
 	fNElectrons = new double[iNElectronsSize];
 	for(int i=0; i<iNElectronsSize; i++)	fNElectrons[i] = 0;
-	for(int i=0; i<iNstep; i++){
-		//fElecDetectorGrid[i] = 0;
-		fPosIonDetectorGrid[i] = 0;
-		fNegIonDetectorGrid[i] = 0;
-	}
 	
 	while (track->GetCluster(xc, yc, zc, tc, nc, ec, dummy)){
 		fClPosX.push_back(xc);
@@ -179,10 +155,9 @@ void TAvalanche::initialiseTrackHeed(TDetector* det, const string& particleName,
 
 void TAvalanche::initialiseSingleCluster(const double& x0, const double& n0){
 	
-	//Clusters clusters = Clusters();
 	fNElectrons = new double[iNElectronsSize];
 	for(int i=0; i<iNElectronsSize; i++)	fNElectrons[i] = 0;
-	for(int i=0; i<iNstep; i++)	fElecDetectorGrid[i] = 0;
+	//for(int i=0; i<iNstep; i++)	fElecDetectorGrid[i] = 0;
 	
 	fNElectrons[0] = n0;
 	fElecDetectorGrid[int(trunc(x0/fDx))] = n0;
@@ -192,46 +167,31 @@ void TAvalanche::initialiseSingleCluster(const double& x0, const double& n0){
 void TAvalanche::makeResultFile(){
 	fResult.Dt = fDt;
 	fResult.Dx = fDx;
-	//fResult.alpha = fAlpha;
-	//fResult.eta = fEta;
-	fResult.fDiffCoeff[0] = fDiffL;
-	fResult.fDiffCoeff[1] = fDiffT;
-	fResult.fGapWidth = fGapWidth;
-	fResult.fInducedCharge = fCharges.back();
-	//fResult.fInducedSignal = vecToArray(fResult.fInducedSignal, fSignal);
-	fResult.fNElectrons = new double[iNElectronsSize];
-	memcpy(fResult.fNElectrons, fNElectrons, sizeof(double)*iNElectronsSize);
-	//fResult.fClPosX = fClPosX;
-	//fResult.fClPosY = fClPosY;
-	//fResult.fClPosZ = fClPosZ;
-	fResult.fSpaceChargeLimitThr = fSpaceChargeLimit;
-	fResult.fThrCLT = fThrCLT;
-	//fResult.fVx = fVx;
+	//double* charges = vecToArray(fCharges);
+	//memcpy(fResult.fInducedCharge, charges, sizeof(double)*fCharges.size());
+	//fResult.fInducedCharge = charges;
+	//fResult.fInducedSignal = fSignal;
 	fResult.iNstep = iNstep;
-	//fResult.sMixture = 
+	fResult.thrCrossTimeStep = iThrCrossTimeStep;
 }
 
 void TAvalanche::simulateEvent(){
 	
-	//makeEbarTable();
-	//PlotField();
-	//testInterpolation();
-	//exit(0);
-	
 	if( avalanche() ){
 		checkDetectorGrid();
-		//computeInducedSignal();
-		//computeInducedCharges();
 		ofstream data("out/electrons.dat", ios::out | ios::trunc);
 		ofstream sigData("out/signal.dat", ios::out | ios::trunc);
 		ofstream chargesData("out/charges.dat", ios::out | ios::trunc);
+		ofstream chargesTotData("out/chargesTot.dat", ios::out | ios::trunc);
 		for(int i=0; i<iNElectronsSize; i++) data << fNElectrons[i] << endl;
 		for(uint i=0; i<fSignal.size(); i++)	sigData << fSignal[i] << endl;
 		for(uint i=0; i<fCharges.size(); i++)	chargesData << fCharges[i] << endl;
-		//makeResultFile();
+		for(uint i=0; i<fTotalCharges.size(); i++)	chargesTotData << fTotalCharges[i] << endl;
+		makeResultFile();
 		data.close();
 		sigData.close();
 		chargesData.close();
+		chargesTotData.close();
 	}
 	else{
 		fSignal.clear();
@@ -270,22 +230,24 @@ void TAvalanche::computeInducedSignal2(){
 	double glassThickness = fResistiveLayersWidth[0];//0.2; //cm
 	double weightingField = eps/(2*glassThickness + fGapWidth*eps);
 
-	// Flushing signal vector
-	//fSignal.clear();
 	double sig = 0;
 	double charges = 0;
-	//ofstream data("out/induced_signal2.dat", ios::out | ios::trunc);
+
 	for(int z=0; z < iNstep; z++){
 		sig += weightingField * fVx[z]*1e9 * e0 * fElecDetectorGrid[z];
 		charges += weightingField * e0 * fElecDetectorGrid[z] * fDx;
-		//data << fSignal.back() << endl;
 	}
-	fSignal.push_back(sig);
-	if (fCharges.size() == 0)	
-		fCharges.push_back(charges);
-	else
-		fCharges.push_back(fCharges.back() + charges);
 	
+	fSignal.push_back(sig);
+	fCharges.push_back(charges);
+	
+	if (fTotalCharges.size() == 0)	
+		fTotalCharges.push_back(charges);
+	else
+		fTotalCharges.push_back(fTotalCharges.back() + charges);
+	
+	if (fTotalCharges.back() >= fChargeThres )
+		iThrCrossTimeStep = iTimeStep;
 }
 
 void TAvalanche::computeInducedCharges(){
@@ -304,14 +266,11 @@ double TAvalanche::n_moy(const double& x){
 }
 
 double TAvalanche::electron_multiplication2(const double& x, const double& s){
-	//double s = r.Rndm();
 	double nm = n_moy(x);
 	double alpha = fAlpha[iCurrentDetectorStep];
 	double eta = fEta[iCurrentDetectorStep];
 	double k = fEta[iCurrentDetectorStep]/fAlpha[iCurrentDetectorStep];
 	double thr;
-	
-	//cout << iCurrentDetectorStep << "\t";
 	
 	if (alpha > eta){
 		thr = k * (nm-1)/(nm-k);
@@ -382,8 +341,6 @@ double TAvalanche::CLT(const double& x, const double& n){
 	double eta = fEta[iCurrentDetectorStep];
 	double m = n*nm;
 	
-	//cout << iCurrentDetectorStep << "\t";
-	
 	double sigma;
 	if (alpha > eta)	sigma = sqrt(n) * sqrt( ((1+k)/(1-k)) * nm * (nm-1) );
 	else if(alpha == eta)	sigma = sqrt(n) * sqrt(2*alpha*x);
@@ -451,20 +408,20 @@ void TAvalanche::computeLongitudinalDiffusion(){
 	bool computed = true;
 	
 	vector<double> newDetectorGrid (iNstep,0);
-	//for(int i=0; i<iNstep; i++) 	newDetectorGrid[i] = 0;
-	
-	//double nIni = sumArray(fElecDetectorGrid, iNstep);
 	
 	if(bFullLongiDiff){
 		double pos, newPos;
-		for(int iz=0; iz<iNstep; iz++){
+		int newPosIndex;
+		for(int iz=0; iz<iNstep-1; iz++){
 			for(int n=0; n<fElecDetectorGrid[iz]; n++){
 				pos = (iz+1) * fDx;
-				//newPos = gsl_ran_gaussian(fGSLRng, fLongiDiffSigma) + pos;
 				newPos = Gaus(pos, fLongiDiffSigma, fRandRngLongiDiff);
-				newDetectorGrid[(int)trunc(newPos/fDx)]++;
-				//cout << pos << " " << newPos << " " << (int)trunc(newPos/fDx) << " " << iz << " " << fElecDetectorGrid[iz] << " " << newDetectorGrid[(int)trunc(newPos/fDx)] << endl;
-				//cin.ignore();
+				newPosIndex = (int)trunc(newPos/fDx);
+				if ( newPosIndex > iNstep){
+					 newPosIndex = iNstep; 
+				}
+				
+				newDetectorGrid[newPosIndex]++;
 			}
 		}
 	}
@@ -511,8 +468,7 @@ void TAvalanche::computeLongitudinalDiffusion(){
 		if(modf(sumVec(newDetectorGrid), &intPart) > 0.)	cin.ignore();
 		//if(computed)	
 	}
-	
-	//memcpy(fElecDetectorGrid, newDetectorGrid, sizeof(double)*iNstep); 
+
 	fElecDetectorGrid = newDetectorGrid;
 }
 
@@ -522,8 +478,8 @@ bool TAvalanche::avalanche(){
 	iTimeStep = 1;
 	iDebug = 1;
 	
-	double nAnode = 0;
-	ofstream test("out/testBin.dat", ios::out | ios::trunc);
+	pair<int,double> anodeLValues;
+
 	while(true){
 		iTimeStep++;
 		computeSCEffect();
@@ -535,7 +491,6 @@ bool TAvalanche::avalanche(){
 		}
 		
 		vector<double> copy (fElecDetectorGrid);
-		//memcpy(copy, fElecDetectorGrid, sizeof(double)*iNstep);
 		
 		for(iCurrentDetectorStep=0; iCurrentDetectorStep<iNstep-1; iCurrentDetectorStep++){
 			double n = copy[iCurrentDetectorStep];
@@ -551,28 +506,25 @@ bool TAvalanche::avalanche(){
 			else
 				fNegIonDetectorGrid[iCurrentDetectorStep+1] += copy[iCurrentDetectorStep] - nProduced;
 			
-			//if(iCurrentDetectorStep==0)	fElecDetectorGrid[iCurrentDetectorStep] = 0;
 			fNElectrons[iTimeStep] += nProduced;
 		}
 		
 		computeLongitudinalDiffusion();
 		computeInducedSignal2();
 		
-		//fElecDetectorGrid[iNstep] = 0; // Electrons in the last detector step will leave the gas gap
-		nAnode += fElecDetectorGrid[iNstep-1];
-		test << fElecDetectorGrid[iNstep-1] << endl;
+		fNelecAnode += fElecDetectorGrid[iNstep-1];
+		if(fElecDetectorGrid[iNstep-1] > 0)	fAnodeLValues.push_back( make_pair(fElecDetectorGrid[iNstep-1],iTimeStep*fDx) );
+		
 		if(fNElectrons[iTimeStep] == 0)	break;
 		
-		if(iTimeStep % 1 == 0)	makeSnapshot();
+		//if(iTimeStep % 1 == 0)	makeSnapshot();
 		
-		//cout << endl;
-		cout << "time step: " << iTimeStep << "\t Nelec: " << fNElectrons[iTimeStep] << "\t" << "NelecLastBin: " << fElecDetectorGrid[iNstep-1] << " ";
-		cout << " " << -sumVec(fPosIonDetectorGrid)+sumVec(fElecDetectorGrid)+sumVec(fNegIonDetectorGrid) << endl;
+		//cout << "time step: " << iTimeStep << "\t Nelec: " << fNElectrons[iTimeStep] << "\t" << "NelecLastBin: " << fNelecAnode;
+		//cout << " " << -sumVec(fPosIonDetectorGrid)+sumVec(fElecDetectorGrid)+sumVec(fNegIonDetectorGrid) << endl;
 		
 		if( iTimeStep > iNElectronsSize )	return false;
 	}
-	//cout << sumArray(fNElectrons,iNstep) << " " << nAnode << endl;
-	test.close();
+	
 	return true;
 }
 
@@ -580,22 +532,21 @@ void TAvalanche::computeSCEffect(){
 	
 	bool fullComputation = false;
 	double SCEField[iNstep];
+	double cm = 0.01;
 	
 	if (!fullComputation){
-		double cm = 0.01;
-		//double SCEField[iNstep];
 		for(int z=0; z<iNstep; z++){
 			double tmp=0;
 			for(int zp=0; zp<iNstep; zp++){
 				tmp += -(-fElecDetectorGrid[zp] -fNegIonDetectorGrid[zp] +fPosIonDetectorGrid[zp]) * interpolateEbar((z)*fDx*cm, (zp)*fDx*cm, iTimeStep*fDx);
 			}
+			for(uint i=0; i<fAnodeLValues.size(); i++)
+				tmp += (fAnodeLValues[i].first) * interpolateEbar((z)*fDx*cm, fGapWidth*cm, fAnodeLValues[i].second);
 			SCEField[z] = tmp;
 		}
 	}
 	
 	else{
-		double cm = 0.01;
-		//double SCEField[iNstep];
 		for(int z=0; z<iNstep; z++){
 			double tmp=0;
 			for(int zp=0; zp<iNstep; zp++){
@@ -659,10 +610,6 @@ size_t TAvalanche::getIndex3D(const size_t& i, const size_t& j, const size_t& k)
 
 double TAvalanche::interpolateEbar(const double& z, const double& zp, const double& l){  //x==z y==zp z==l
 	bool debug = false;
-	//cout << z << " " << zp << " " << l << endl;
-	//cout << fEbarZarray[iEbarTableSize-1] << " " << fEbarZparray[iEbarTableSize-1] << " " << fEbarLarray[iEbarTableSize-1] << endl;
-	//for (int i=0; i<iEbarTableSize; i++)	cout << fEbarZarray[i] << " ";
-	//cout << endl;
 
 	size_t iz0 = getLowerIndex(fEbarZarray.begin(),fEbarZarray.end(), z);
 	size_t izp0 = getLowerIndex(fEbarZparray.begin(),fEbarZparray.end(), zp);

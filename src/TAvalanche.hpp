@@ -17,15 +17,7 @@
 #include "TDetector.hpp"
 #include "TResult.hpp"
 
-#include <gsl/gsl_rng.h>
-
 using namespace std;
-//static void * globalFitter = 0;
-
-
-//double gslFunction(double x, void * params);
-//double integrand(double x, void * params);
-//double Ebar(double x, void * params);
 
 class TAvalanche{
 	
@@ -64,8 +56,6 @@ class TAvalanche{
 	void computeSCEffect();
 	double interpolateEbar(const double& z, const double& zp, const double& l);
 	
-	void CacheRandomNumbers();
-	
 	void makeSnapshot();
 	
 	void testInterpolation();
@@ -87,6 +77,9 @@ class TAvalanche{
 	
 	int iCurrentDetectorStep;
 	int iTimeStep;
+	int iThrCrossTimeStep;
+	
+	double fChargeThres;
 	
 	DetectorGeometry fGeometry;
 	TDetector* fDet;
@@ -94,13 +87,17 @@ class TAvalanche{
 	int iNElectronsSize;
 	vector<double> fElecDetectorGrid;
 	vector<double> fPosIonDetectorGrid;
-	vector<double> fNegIonDetectorGrid; 
+	vector<double> fNegIonDetectorGrid;
+	
+	double fNelecAnode;
+	vector< pair<double,double> > fAnodeLValues;
 	
 	double* fLongiDiffFrac;
 	//vector<double> fNElectrons;
 	double * fNElectrons;
 	vector<double> fSignal;
 	vector<double> fCharges;
+	vector<double> fTotalCharges;
 	
 	double fDiffL;
 	double fDiffT;
@@ -117,7 +114,6 @@ class TAvalanche{
 	double fClusterDensity;
 	
 	vector<double> fClPosX, fClPosY, fClPosZ;
-	vector<double> fRandNumSCECache;
 	
 	double fLongiDiffSigma;
 	
@@ -131,8 +127,6 @@ class TAvalanche{
 	RngStream* fRandRngCLT;
 	RngStream* fRandRngLongiDiff;
 	RngStream* fRandRngSCE;
-	
-	gsl_rng* fGSLRng;
 	
 	int iDebug;
 	

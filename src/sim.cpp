@@ -33,6 +33,7 @@
 #include "helper_functions.hpp"
 #include "TThreadsFactory.h"
 #include "TResult.hpp"
+#include "TConfig.hpp"
 
 #define PATH_MAX 0x1000
 #define PI 3.14159265358979323846
@@ -71,8 +72,8 @@ void * wrapperFunction(void * Arg){
 	sem_post(TThreadsFactory::GetInstance()->GetInitLock());
 	
 	pthread_mutex_lock(&gTrackLock);
-	//avalanche.initialiseTrackHeed(detector,"muon",5.e9,0.,0.);
-	avalanche.initialiseSingleCluster(0);
+	avalanche.initialiseTrackHeed(detector,"muon",5.e9,0.,0.);
+	//avalanche.initialiseSingleCluster(0);
 	pthread_mutex_unlock(&gTrackLock);
 	
 	avalanche.simulateEvent();
@@ -109,7 +110,7 @@ void * WriteResults(void * Arg)
 
         /* Write the event to the output file */
         write(outFD, &result, sizeof(TResult));
-        outFile << result.fInducedCharge << endl;
+        outFile << result.Dt << endl;
     }
 
     close(outFD);
@@ -118,10 +119,7 @@ void * WriteResults(void * Arg)
     return 0;
 }
 
-int main(int argc, char** argv) {
-	unsigned int nThreads = 1;
-    unsigned long nEvents = 1;
-    
+int main(int argc, char** argv) {    
     char outputFile[PATH_MAX];
     if(argc > 2)
 		strncpy(outputFile, argv[2], PATH_MAX - 1);
@@ -132,20 +130,11 @@ int main(int argc, char** argv) {
     pthread_t writingThread;
     void * ret;
     
-    /*	tests	*/
-    /*
-    RngStream rand1;
-    RngStream rand2;
-    for(int i=0; i<15; i++){
-		cout << rand1.RandU01() << " ";
-	}
-	cout << endl;
-	for(int i=0; i<15; i++){
-		cout << rand2.RandU01() << " ";
-	}
-	cout << endl;
-	exit(0);
-    */
+    Config config = readConfigFile("config/default.xml");
+    printConfig(config);
+    
+    unsigned int nThreads = config.nThreads;
+    unsigned long nEvents = config.nEvents;
     
     /* Initialize our pipe lock */
     pthread_mutex_init(&gPipeLock, 0);
@@ -159,11 +148,24 @@ int main(int argc, char** argv) {
     
     /* Init our detector */
 	MediumMagboltz* gas = new MediumMagboltz();
-	gas->SetComposition("c2h2f4",96.7,"ic4h10",3.,"sf6",0.3);
-	gas->SetTemperature(293.15);
-	gas->SetPressure(760.);
+	switch (config.nGases){
+		case (1): 
+			gas->SetComposition(config.gasNames[0], config.gasPercentage[0]);
+			break;
+		case (2):
+			gas->SetComposition(config.gasNames[0], config.gasPercentage[0], config.gasNames[1], config.gasPercentage[1]);
+			break;
+		case (3):
+			gas->SetComposition(config.gasNames[0], config.gasPercentage[0], config.gasNames[1], config.gasPercentage[1], config.gasNames[2], config.gasPercentage[2]);
+			break;	
+	}
+	//gas->SetComposition("c2h2f4",96.7,"ic4h10",3.,"sf6",0.3);
+	//gas->SetTemperature(293.15);
+	//gas->SetPressure(760.);
+	gas->SetTemperature(config.gasTemperature);
+	gas->SetPressure(config.gasPressure);
 	
-	double HV = 50000.;
+	double HV = config.ElectricField; //50000.;
 	if(argc > 1)	HV = atof(argv[1])*1000.;
 	
 	DetectorGeometry geom;
