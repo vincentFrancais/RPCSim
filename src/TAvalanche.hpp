@@ -135,6 +135,9 @@ class TAvalanche{
 	bool bPrintDetectorGrid;
 	bool bTestPot;
 	bool bEbarComputed;
+	
+	bool bVerbose;
+	bool bThrCrossTime;
 };
 
 #endif

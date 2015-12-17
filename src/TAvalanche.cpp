@@ -58,6 +58,9 @@ TAvalanche::TAvalanche(TDetector* det){
 	
 	iNElectronsSize = 5*iNstep;
 	
+	fChargeThres = 1.e-15;
+	iThrCrossTimeStep = -1;
+	
 	fElecDetectorGrid = vector<double> (iNstep,0);
 	fPosIonDetectorGrid = vector<double> (iNstep,0);
 	fNegIonDetectorGrid = vector<double> (iNstep,0);
@@ -75,6 +78,8 @@ TAvalanche::TAvalanche(TDetector* det){
 	
 	bPrintDetectorGrid = false;
 	bFullLongiDiff = true;
+	bVerbose = true;
+	bThrCrossTime = false;
 	
 	fDet = det;
 	
@@ -246,8 +251,10 @@ void TAvalanche::computeInducedSignal2(){
 	else
 		fTotalCharges.push_back(fTotalCharges.back() + charges);
 	
-	if (fTotalCharges.back() >= fChargeThres )
+	if (fTotalCharges.back() >= fChargeThres and !bThrCrossTime ){
 		iThrCrossTimeStep = iTimeStep;
+		bThrCrossTime = true;
+	}
 }
 
 void TAvalanche::computeInducedCharges(){
@@ -475,7 +482,7 @@ void TAvalanche::computeLongitudinalDiffusion(){
 bool TAvalanche::avalanche(){
 	bool noMultiplication = false;
 	
-	iTimeStep = 1;
+	iTimeStep = 0;
 	iDebug = 1;
 	
 	pair<int,double> anodeLValues;
@@ -519,8 +526,10 @@ bool TAvalanche::avalanche(){
 		
 		//if(iTimeStep % 1 == 0)	makeSnapshot();
 		
-		//cout << "time step: " << iTimeStep << "\t Nelec: " << fNElectrons[iTimeStep] << "\t" << "NelecLastBin: " << fNelecAnode;
-		//cout << " " << -sumVec(fPosIonDetectorGrid)+sumVec(fElecDetectorGrid)+sumVec(fNegIonDetectorGrid) << endl;
+		if(bVerbose){
+			cout << "time step: " << iTimeStep << "\t Nelec: " << fNElectrons[iTimeStep] << "\t" << "NelecLastBin: " << fNelecAnode;
+			cout << " " << -sumVec(fPosIonDetectorGrid)+sumVec(fElecDetectorGrid)+sumVec(fNegIonDetectorGrid) << endl;
+		}
 		
 		if( iTimeStep > iNElectronsSize )	return false;
 	}

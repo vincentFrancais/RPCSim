@@ -17,17 +17,6 @@
 #include "TrackHeed.hh"
 #include "Plotting.hh"
 
-//#include <boost/numeric/ublas/matrix.hpp>
-
-//#include <TCanvas.h>
-//#include <TGraph.h>
-//#include <TROOT.h>
-//#include <TApplication.h>
-//#include <TH1F.h>
-
-//#include "electron_avalanche.hpp"
-//#include "cluster.hpp"
-//#include "RPCSim.hpp"
 #include "TDetector.hpp"
 #include "TAvalanche.hpp"
 #include "helper_functions.hpp"
@@ -72,8 +61,8 @@ void * wrapperFunction(void * Arg){
 	sem_post(TThreadsFactory::GetInstance()->GetInitLock());
 	
 	pthread_mutex_lock(&gTrackLock);
-	avalanche.initialiseTrackHeed(detector,"muon",5.e9,0.,0.);
-	//avalanche.initialiseSingleCluster(0);
+	//avalanche.initialiseTrackHeed(detector,"muon",5.e9,0.,0.);
+	avalanche.initialiseSingleCluster(0);
 	pthread_mutex_unlock(&gTrackLock);
 	
 	avalanche.simulateEvent();
@@ -110,7 +99,7 @@ void * WriteResults(void * Arg)
 
         /* Write the event to the output file */
         write(outFD, &result, sizeof(TResult));
-        outFile << result.Dt << endl;
+        outFile << result.thrCrossTimeStep << endl;
     }
 
     close(outFD);

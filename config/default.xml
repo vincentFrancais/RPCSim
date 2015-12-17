@@ -38,6 +38,6 @@
 		<x0>0.</x0>
 		<theta>0.</theta>
 	</Particle>
-	<Events>100</Events>
-	<Threads>20</Threads>
+	<Events>1</Events>
+	<Threads>1</Threads>
 </Simulation>

@@ -107,4 +107,8 @@
  /usr/include/c++/4.9/bits/stl_uninitialized.h \
  /usr/include/c++/4.9/bits/stl_vector.h \
  /usr/include/c++/4.9/bits/stl_bvector.h \
- /usr/include/c++/4.9/bits/vector.tcc TResult.hpp
+ /usr/include/c++/4.9/bits/vector.tcc /usr/include/c++/4.9/fstream \
+ /usr/include/c++/4.9/bits/codecvt.h \
+ /usr/include/x86_64-linux-gnu/c++/4.9/bits/basic_file.h \
+ /usr/include/x86_64-linux-gnu/c++/4.9/bits/c++io.h \
+ /usr/include/c++/4.9/bits/fstream.tcc TResult.hpp

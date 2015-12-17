@@ -16,7 +16,7 @@ Config readConfigFile(string fileName){
 	XMLHandle docHandle( &doc );
 	
 	XMLElement* detectorElement = docHandle.FirstChildElement("Detector").ToElement();
-	if( detectorElement == nullptr){
+	if( detectorElement == NULL){
 		cerr << "TConfig -- Error reading config file" << endl;
 		cerr << XML_ERROR_PARSING_ELEMENT << endl;
 		exit(0);
@@ -52,7 +52,7 @@ Config readConfigFile(string fileName){
 	}
 	
 	XMLElement* simElement = docHandle.FirstChildElement("Simulation").ToElement();
-	if ( simElement == nullptr){
+	if ( simElement == NULL){
 		cerr << "TConfig -- Error reading config file" << endl;
 		cerr << XML_ERROR_PARSING_ELEMENT << endl;
 		exit(0);
