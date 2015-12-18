@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <fcntl.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include <vector>
 #include <fstream>
 
@@ -18,7 +18,7 @@ int main(){
 	
 	ofstream outFile("thrCross.dat", ios::out | ios::trunc);
 	
-	inFD = open("out.dat", O_RDONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	inFD = open("../out/out.dat", O_RDONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (inFD == -1){
         cerr << "Failed to open file" << endl;
         return 0;
@@ -29,6 +29,7 @@ int main(){
 		cout << "Dx: " << result.Dx << endl;
 		cout << "nSteps: " << result.iNstep << endl;
 		cout << "test: " << result.thrCrossTimeStep << endl;
+		cout << "status: " << result.avalStatus << endl;
 		cout << "========================" << endl;
 		
 		outFile << result.thrCrossTimeStep << endl;

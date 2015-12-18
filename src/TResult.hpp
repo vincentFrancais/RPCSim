@@ -17,6 +17,7 @@ struct TResult
 	double Dt;
 	int iNstep;
 	int thrCrossTimeStep;
+	int avalStatus;
 	//double fGapWidth;
 	//string sMixture;
 	//double fThrCLT;

@@ -3,7 +3,7 @@
 #include <fstream>
 #include <cmath>
 #include <vector>
-#include <assert.h> 
+//#include <assert.h> 
 #include <utility>
 #include <limits>
 #include <iterator>
@@ -58,7 +58,7 @@ TAvalanche::TAvalanche(TDetector* det){
 	
 	iNElectronsSize = 5*iNstep;
 	
-	fChargeThres = 1.e-15;
+	fChargeThres = 100.e-15; //Coulombs
 	iThrCrossTimeStep = -1;
 	
 	fElecDetectorGrid = vector<double> (iNstep,0);
@@ -80,6 +80,7 @@ TAvalanche::TAvalanche(TDetector* det){
 	bFullLongiDiff = true;
 	bVerbose = true;
 	bThrCrossTime = false;
+	bSnapshots = false;
 	
 	fDet = det;
 	
@@ -99,6 +100,8 @@ TAvalanche::TAvalanche(TDetector* det){
 	
 	fSignal.clear();
 	fCharges.clear();
+	
+	eAvalStatus = AVAL_NO_ERROR; //Avalanche status to NO_ERROR at begining
 }
 
 TAvalanche::~TAvalanche(){
@@ -178,6 +181,7 @@ void TAvalanche::makeResultFile(){
 	//fResult.fInducedSignal = fSignal;
 	fResult.iNstep = iNstep;
 	fResult.thrCrossTimeStep = iThrCrossTimeStep;
+	fResult.avalStatus = eAvalStatus;
 }
 
 void TAvalanche::simulateEvent(){
@@ -203,11 +207,16 @@ void TAvalanche::simulateEvent(){
 		fCharges.clear();
 		fSignal.push_back(-1);
 		fCharges.push_back(-1);
+		makeResultFile();
 	}
 }
 
 void TAvalanche::checkDetectorGrid(){
-	for(int i=0; i<iNstep; i++) assert(fElecDetectorGrid[i] == 0);
+	for(int i=0; i<iNstep; i++) {
+		DEBUGASSERT(fElecDetectorGrid[i] == 0);
+		if (fElecDetectorGrid[i] != 0)
+			eAvalStatus = AVAL_ERROR_GRID_NOT_EMPTY;
+	}
 }
 
 void TAvalanche::computeInducedSignal(){
@@ -297,7 +306,9 @@ double TAvalanche::electron_multiplication2(const double& x, const double& s){
 					cout << "s: " << s << endl;
 					cout << "val: " << val << endl;
 				}
-				assert(val>0);
+				DEBUGASSERT(val>0);
+				if (val < 0)
+					eAvalStatus = AVAL_MULT_FAIL;
 				return val;
 			}
 		}	
@@ -308,7 +319,9 @@ double TAvalanche::electron_multiplication2(const double& x, const double& s){
 		if (s<=thr)	return 0;
 		else{
 			double val = 1 + trunc( log( (1.-s)*(1.+alpha*x) ) / log(thr)  );
-			assert(val>0);
+			DEBUGASSERT(val>0);
+				if (val < 0)
+					eAvalStatus = AVAL_MULT_FAIL;
 			return val;
 		}
 	}
@@ -402,11 +415,15 @@ double TAvalanche::CLT(const double& x, const double& n){
 	}
 	
 	if (abs(c>1)){
-		assert(trunc(c)>0);
+		DEBUGASSERT(trunc(c)>0);
+		if( !(trunc(c)>0) )
+			eAvalStatus = AVAL_CLT_FAIL;
 		return trunc(c);
 	}
 	else{
-		assert(round(c) >= 0);
+		DEBUGASSERT(round(c) >= 0);
+		if ( !(round(c) >= 0) ) 
+			eAvalStatus = AVAL_CLT_FAIL;
 		return round(c);
 	}
 }
@@ -491,7 +508,7 @@ bool TAvalanche::avalanche(){
 		iTimeStep++;
 		computeSCEffect();
 		
-		if(bPrintDetectorGrid) {
+		if (bPrintDetectorGrid) {
 			printDetectorGrid();
 			cin.ignore();
 			cout << "\033[2J\033[1;1H";
@@ -503,8 +520,11 @@ bool TAvalanche::avalanche(){
 			double n = copy[iCurrentDetectorStep];
 			double nProduced;
 
-			if(!noMultiplication)	nProduced = multiplication(n);
+			if (!noMultiplication)	nProduced = multiplication(n);
 			else nProduced = n;
+			
+			if (eAvalStatus != AVAL_NO_ERROR)
+				return false;
 			
 			fElecDetectorGrid[iCurrentDetectorStep+1] = nProduced;
 			
@@ -520,20 +540,26 @@ bool TAvalanche::avalanche(){
 		computeInducedSignal2();
 		
 		fNelecAnode += fElecDetectorGrid[iNstep-1];
-		if(fElecDetectorGrid[iNstep-1] > 0)	fAnodeLValues.push_back( make_pair(fElecDetectorGrid[iNstep-1],iTimeStep*fDx) );
+		if (fElecDetectorGrid[iNstep-1] > 0)
+			fAnodeLValues.push_back( make_pair(fElecDetectorGrid[iNstep-1],iTimeStep*fDx) );
 		
-		if(fNElectrons[iTimeStep] == 0)	break;
+		if (fNElectrons[iTimeStep] == 0)
+			break;
 		
-		//if(iTimeStep % 1 == 0)	makeSnapshot();
+		if (iTimeStep % 1 == 0 and bSnapshots)
+			makeSnapshot();
 		
-		if(bVerbose){
+		if (bVerbose){
 			cout << "time step: " << iTimeStep << "\t Nelec: " << fNElectrons[iTimeStep] << "\t" << "NelecLastBin: " << fNelecAnode;
 			cout << " " << -sumVec(fPosIonDetectorGrid)+sumVec(fElecDetectorGrid)+sumVec(fNegIonDetectorGrid) << endl;
 		}
 		
-		if( iTimeStep > iNElectronsSize )	return false;
+		if ( iTimeStep > iNElectronsSize ) {
+				eAvalStatus = AVAL_ERROR_TIMESTEP_EXCEEDING_LIMIT;
+				return false;
+		}
 	}
-	
+	eAvalStatus = AVAL_SUCCESS;
 	return true;
 }
 
@@ -591,9 +617,9 @@ void TAvalanche::printDetectorGrid() const{
 void TAvalanche::makeSnapshot(){
 	cout << "Snapshot at: " << iTimeStep*fDt << endl;
 	string fileName;
-	if(iTimeStep<10)
+	if (iTimeStep<10)
 		fileName = "out/snaps/snap-00"+to_string(iTimeStep)+".dat";
-	else if(iTimeStep<100 and iTimeStep>9) 
+	else if (iTimeStep<100 and iTimeStep>9) 
 		fileName = "out/snaps/snap-0"+to_string(iTimeStep)+".dat";
 	else
 		fileName = "out/snaps/snap-"+to_string(iTimeStep)+".dat";

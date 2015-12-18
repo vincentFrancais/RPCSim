@@ -17,7 +17,30 @@
 #include "TDetector.hpp"
 #include "TResult.hpp"
 
+#if defined( _DEBUG ) || defined( DEBUG ) || defined (__DEBUG__)
+#   ifndef DEBUG
+#       define DEBUG
+#   endif
+#endif
+
+#if defined(DEBUG)
+#	include <assert.h>
+#	define DEBUGASSERT                assert
+#else
+#   define DEBUGASSERT( x )               {}
+#endif
+
 using namespace std;
+
+enum EAvalancheStatus{
+	AVAL_SUCCESS,
+	AVAL_NO_ERROR,
+	
+	AVAL_CLT_FAIL,
+	AVAL_MULT_FAIL,
+	AVAL_ERROR_GRID_NOT_EMPTY,
+	AVAL_ERROR_TIMESTEP_EXCEEDING_LIMIT
+};
 
 class TAvalanche{
 	
@@ -62,6 +85,9 @@ class TAvalanche{
 	size_t getIndex3D(const size_t& i, const size_t& j, const size_t& k);
 	
 	private:
+	DetectorGeometry fGeometry;
+	TDetector* fDet;
+	
 	int iNstep;
 	double fGapWidth;
 	const double* fResistiveLayersWidth;
@@ -77,12 +103,9 @@ class TAvalanche{
 	
 	int iCurrentDetectorStep;
 	int iTimeStep;
+	
 	int iThrCrossTimeStep;
-	
 	double fChargeThres;
-	
-	DetectorGeometry fGeometry;
-	TDetector* fDet;
 	
 	int iNElectronsSize;
 	vector<double> fElecDetectorGrid;
@@ -109,10 +132,8 @@ class TAvalanche{
 	double* fEta;
 	double* fE;
 	double fEini;
-	//double k;
 	
 	double fClusterDensity;
-	
 	vector<double> fClPosX, fClPosY, fClPosZ;
 	
 	double fLongiDiffSigma;
@@ -129,15 +150,18 @@ class TAvalanche{
 	RngStream* fRandRngSCE;
 	
 	int iDebug;
+	bool bVerbose;
 	
 	bool bFullLongiDiff;
 	
 	bool bPrintDetectorGrid;
 	bool bTestPot;
 	bool bEbarComputed;
+	bool bSnapshots;
 	
-	bool bVerbose;
 	bool bThrCrossTime;
+	
+	EAvalancheStatus eAvalStatus;
 };
 
 #endif

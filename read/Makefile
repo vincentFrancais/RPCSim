@@ -61,10 +61,10 @@ INCDIRGAR = $(GARFIELD_HOME)/Include
 HEEDDIR = $(GARFIELD_HOME)/Heed
 GSLDIR = $(GSL_HOME)
 LIBDIR = $(GARFIELD_HOME)/Library
-MY_CFLAGS = 
+MY_CFLAGS = -I../src
 
 # The linker options.
-MY_LIBS   = -lGeom -lm -lMathCore -lGraf3d
+MY_LIBS   = -lm
 
 # The pre-processor options used by the cpp (man cpp for more).
 CPPFLAGS  = -W -Wall -Wextra
@@ -74,8 +74,8 @@ LDFLAGS   =
 
 # The directories in which source files reside.
 # If not specified, only the current directory will be serached.
-SRCDIRS   = ./
-INCDIR = include
+SRCDIRS   = 
+INCDIR = ../src
 
 # The executable file name.
 # If not specified, current directory name or `a.out' will be used.
