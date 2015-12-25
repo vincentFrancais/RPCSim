@@ -182,6 +182,15 @@ void TAvalanche::makeResultFile(){
 	fResult.iNstep = iNstep;
 	fResult.thrCrossTimeStep = iThrCrossTimeStep;
 	fResult.avalStatus = eAvalStatus;
+	fResult.charges_size = fCharges.size();
+	fResult.chargesTot_size = fTotalCharges.size();
+	fResult.signal_size = fSignal.size();
+	for (uint i=0; i<fCharges.size(); i++ )
+		fResult.charges[i] = fCharges[i];
+	for (uint i=0; i<fTotalCharges.size(); i++ )
+		fResult.chargesTot[i] = fTotalCharges[i];
+	for (uint i=0; i<fSignal.size(); i++ )
+		fResult.signal[i] = fSignal[i];
 }
 
 void TAvalanche::simulateEvent(){
@@ -201,6 +210,7 @@ void TAvalanche::simulateEvent(){
 		sigData.close();
 		chargesData.close();
 		chargesTotData.close();
+		cout << "Avalanche simulation terminated with success" << endl;
 	}
 	else{
 		fSignal.clear();
@@ -208,6 +218,7 @@ void TAvalanche::simulateEvent(){
 		fSignal.push_back(-1);
 		fCharges.push_back(-1);
 		makeResultFile();
+		cout << "Avalanche simulation terminated with error: " << eAvalStatus << endl;
 	}
 }
 
@@ -338,9 +349,16 @@ double TAvalanche::multiplication(const double& n){
 	
 	if(n > fThrCLT){
 		double c = CLT(fDx,n);
-		if(c < 0){
-			cout << c << " " << n << endl;
-			cin.ignore();
+		if( eAvalStatus  == AVAL_CLT_FAIL ){
+			/* CLT has failed to return an acceptable value. Try with classic multiplication */
+			for(int i=0; i<n; i++){
+				double s = fRandRng->RandU01();
+				if (s==1)	s = fRandRng->RandU01();
+				nProduced += electron_multiplication2(fDx,s);
+			}
+			if( eAvalStatus == AVAL_CLT_FAIL )
+				eAvalStatus = AVAL_NO_ERROR;
+			return nProduced;
 		}
 		return c;
 	}

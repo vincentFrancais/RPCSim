@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <fcntl.h>
-//#include <unistd.h>
+#include <unistd.h>
 #include <vector>
 #include <fstream>
 
@@ -30,6 +30,9 @@ int main(){
 		cout << "nSteps: " << result.iNstep << endl;
 		cout << "test: " << result.thrCrossTimeStep << endl;
 		cout << "status: " << result.avalStatus << endl;
+		cout << "charges_size: " << result.charges_size << endl;
+		cout << "chargesTot_size: " << result.chargesTot_size << endl;
+		cout << "signal_size: " << result.signal_size << endl;
 		cout << "========================" << endl;
 		
 		outFile << result.thrCrossTimeStep << endl;
