@@ -18,7 +18,7 @@ int main(){
 	
 	ofstream outFile("thrCross.dat", ios::out | ios::trunc);
 	
-	inFD = open("../out/out.dat", O_RDONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	inFD = open("out.dat", O_RDONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (inFD == -1){
         cerr << "Failed to open file" << endl;
         return 0;

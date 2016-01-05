@@ -1,6 +1,7 @@
 #ifndef DEF_HELPERS
 #define DEF_HELPERS
 
+#include <iostream>
 #include <vector>
 #include <sstream>
 #include <iomanip>
@@ -57,5 +58,6 @@ template<typename T>
 T sumVec(std::vector<T> vec){
 	return std::accumulate(vec.begin(), vec.end(), 0.0);
 }
+
 
 #endif

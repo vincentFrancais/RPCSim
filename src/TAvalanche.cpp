@@ -28,6 +28,7 @@ TAvalanche::TAvalanche(TDetector* det){
 	fRandRng = new RngStream();
 	fRandRngCLT = new RngStream();
 	fRandRngLongiDiff = new RngStream();
+	fRandRngSCE = new RngStream();
 	
 	fGapWidth = det->getGapWidth();
 	fResistiveLayersWidth = det->getResistiveLayersWidth();
@@ -52,7 +53,7 @@ TAvalanche::TAvalanche(TDetector* det){
 	}
 	fEini = fE[0];
 	
-	fThrCLT = 1.e4;
+	fThrCLT = 1.5e4;
 	//fSpaceChargeLimit = 1.e19;//5.e7;
 	//fLongiDiffComputeLimit = 100;
 	
@@ -67,20 +68,12 @@ TAvalanche::TAvalanche(TDetector* det){
 	fNelecAnode = 0;
 	
 	fLongiDiffSigma = fDiffL*sqrt(fDx);
-	fLongiDiffFrac = new double[7];
-	fLongiDiffFrac[0] = gaussIntegral(2000, -0.5*fDx, 0.5*fDx, 0, fLongiDiffSigma);
-	fLongiDiffFrac[1] = gaussIntegral(2000, 0.5*fDx, 1.5*fDx, 0, fLongiDiffSigma);
-	fLongiDiffFrac[2] = gaussIntegral(2000, -1.5*fDx, -0.5*fDx, 0, fLongiDiffSigma);
-	fLongiDiffFrac[3] = gaussIntegral(2000, 1.5*fDx, 2.5*fDx, 0, fLongiDiffSigma);
-	fLongiDiffFrac[4] = gaussIntegral(2000, -2.5*fDx, -1.5*fDx, 0, fLongiDiffSigma);
-	fLongiDiffFrac[5] = gaussIntegral(2000, 2.5*fDx, 3.5*fDx, 0, fLongiDiffSigma);
-	fLongiDiffFrac[6] = gaussIntegral(2000, -3.5*fDx, -2.5*fDx, 0, fLongiDiffSigma);
 	
 	bPrintDetectorGrid = false;
 	bFullLongiDiff = true;
 	bVerbose = true;
 	bThrCrossTime = false;
-	bSnapshots = false;
+	bSnapshots = true;
 	
 	fDet = det;
 	
@@ -299,7 +292,26 @@ double TAvalanche::electron_multiplication2(const double& x, const double& s){
 	double k = fEta[iCurrentDetectorStep]/fAlpha[iCurrentDetectorStep];
 	double thr;
 	
-	if (alpha > eta){
+	
+	if (alpha == eta){
+		thr = alpha*x / (1.+alpha*x);
+		if (s<=thr)	return 0;
+		else{
+			double val = 1 + trunc( log( (1.-s)*(1.+alpha*x) ) / log(thr)  );
+			DEBUGASSERT(val>0);
+				if (val < 0)
+					eAvalStatus = AVAL_MULT_FAIL;
+			return val;
+		}
+	}
+	
+	else if (alpha < 1.) { // alpha << 0
+		thr = exp(-eta*x);
+		if (s >= thr)	return 0;
+		else return 1;
+	}
+	
+	else { //alpha, eta > 0
 		thr = k * (nm-1)/(nm-k);
 		if (s<=thr)
 			return 0;
@@ -325,23 +337,6 @@ double TAvalanche::electron_multiplication2(const double& x, const double& s){
 		}	
 	}
 	
-	else if (alpha == eta){
-		thr = alpha*x / (1.+alpha*x);
-		if (s<=thr)	return 0;
-		else{
-			double val = 1 + trunc( log( (1.-s)*(1.+alpha*x) ) / log(thr)  );
-			DEBUGASSERT(val>0);
-				if (val < 0)
-					eAvalStatus = AVAL_MULT_FAIL;
-			return val;
-		}
-	}
-	
-	else { // alpha < eta
-		thr = exp(-eta*x);
-		if (s >= thr)	return 0;
-		else return 1;
-	}
 }
 
 double TAvalanche::multiplication(const double& n){
@@ -380,14 +375,13 @@ double TAvalanche::CLT(const double& x, const double& n){
 	double m = n*nm;
 	
 	double sigma;
-	if (alpha > eta)	sigma = sqrt(n) * sqrt( ((1+k)/(1-k)) * nm * (nm-1) );
-	else if(alpha == eta)	sigma = sqrt(n) * sqrt(2*alpha*x);
-	else	sigma = sqrt(n) * sqrt( exp(-2*eta*x)*(exp(eta*x)-1) ); // alpha < eta
+	if (alpha == eta)	sigma = sqrt(n) * sqrt(2*alpha*x);
+	else if (alpha < 1.)	sigma = sqrt(n) * sqrt( exp(-2*eta*x)*(exp(eta*x)-1) ); // alpha << 0
+	else	sigma = sqrt(n) * sqrt( ((1+k)/(1-k)) * nm * (nm-1) ); // alpha, eta > 0
 	
 	double c = Gaus(m, sigma, fRandRngCLT);
 	
 	if (c > 1e10){
-		ofstream dump("out/dump1.dat", ios::out | ios::trunc);
 		cout << "k: " << k << endl;
 		cout << "eta: " << fEta[iCurrentDetectorStep] << endl;
 		cout << "alpha: " << fAlpha[iCurrentDetectorStep] << endl;
@@ -396,14 +390,10 @@ double TAvalanche::CLT(const double& x, const double& n){
 		cout << "m: " << m << endl;
 		cout << "sigma: " << sigma << endl;
 		cout << "c: " << c << endl;
-		for(int i=0; i<iNstep; i++)
-			dump << fE[i] << "\t" << fAlpha[i] << endl;
-		dump.close();
 		cin.ignore();
 	}
 	
 	if(abs(c > 1) and !(trunc(c)>0)){
-		ofstream dump("out/dump2.dat", ios::out | ios::trunc);
 		cout << "k: " << k << endl;
 		cout << "eta: " << fEta[iCurrentDetectorStep] << endl;
 		cout << "alpha: " << fAlpha[iCurrentDetectorStep] << endl;
@@ -412,13 +402,9 @@ double TAvalanche::CLT(const double& x, const double& n){
 		cout << "m: " << m << endl;
 		cout << "sigma: " << sigma << endl;
 		cout << "c: " << c << endl;
-		for(int i=0; i<iNstep; i++)
-			dump << fE[i] << "\t" << fAlpha[i] << endl;
-		dump.close();
 	}
 	
 	if(abs(c < 1) and !(round(c)>=0)){
-		ofstream dump("out/dump3.dat", ios::out | ios::trunc);
 		cout << "k: " << k << endl;
 		cout << "eta: " << fEta[iCurrentDetectorStep] << endl;
 		cout << "alpha: " << fAlpha[iCurrentDetectorStep] << endl;
@@ -427,9 +413,6 @@ double TAvalanche::CLT(const double& x, const double& n){
 		cout << "m: " << m << endl;
 		cout << "sigma: " << sigma << endl;
 		cout << "c: " << c << endl;
-		for(int i=0; i<iNstep; i++)
-			dump << fE[i] << "\t" << fAlpha[i] << endl;
-		dump.close();
 	}
 	
 	if (abs(c>1)){
@@ -467,49 +450,6 @@ void TAvalanche::computeLongitudinalDiffusion(){
 			}
 		}
 	}
-	
-	else{	/*	FIXME: DOES NOT WORK	*/
-		for(int i=0; i<iNstep; i++)	newDetectorGrid[i] = 0;
-		for(int i=0; i<3; i++) newDetectorGrid[i] = fElecDetectorGrid[i];
-		for(int i=iNstep; i<iNstep-3; i--) newDetectorGrid[i] = fElecDetectorGrid[i];
-		
-		for(int iStep=0; iStep<iNstep; iStep++){
-		
-		if(iStep > 3 and iStep < iNstep-3){
-			if(!computed)	computed = true;
-				double n0 = fElecDetectorGrid[iStep];
-				double n[7];
-				double intPart;
-				for(int i=0; i<7; i++){
-					if ( modf(fLongiDiffFrac[i]*n0, &intPart) >= 0.5 ) n[i] = ceil(fLongiDiffFrac[i]*n0);
-					else 	n[i] = floor(fLongiDiffFrac[i]*n0);
-				}
-				newDetectorGrid[iStep] += n[0];
-				newDetectorGrid[iStep+1] += n[1];
-				newDetectorGrid[iStep-1] += n[2];
-				newDetectorGrid[iStep+2] += n[3];
-				newDetectorGrid[iStep-2] += n[4];
-				newDetectorGrid[iStep+3] += n[5];
-				newDetectorGrid[iStep-3] += n[6];
-			
-				// The electrons "lost" by computing the fractions are put in the center bin
-				newDetectorGrid[iStep] += n0 - sumArray(n,7);
-				if(modf(sumArray(n,7), &intPart) != 0){
-					for(int i=0; i<7; i++)	cout << n[i] << endl;
-					cin.ignore();
-				}
-			}
-		}
-	
-		//double nFin = sumArray(newDetectorGrid, iNstep);
-
-		//cout << nIni << " " << nFin << " " << computed << " " << iDebug << " " << fNElectrons[iDebug] << endl;
-		iDebug++;
-		double intPart;
-		//if(modf(sumArray(newDetectorGrid, iNstep), &intPart) > 0.)	cin.ignore();
-		if(modf(sumVec(newDetectorGrid), &intPart) > 0.)	cin.ignore();
-		//if(computed)	
-	}
 
 	fElecDetectorGrid = newDetectorGrid;
 }
@@ -519,8 +459,6 @@ bool TAvalanche::avalanche(){
 	
 	iTimeStep = 0;
 	iDebug = 1;
-	
-	pair<int,double> anodeLValues;
 
 	while(true){
 		iTimeStep++;
@@ -583,7 +521,7 @@ bool TAvalanche::avalanche(){
 
 void TAvalanche::computeSCEffect(){
 	
-	bool fullComputation = false;
+	bool fullComputation = true;
 	double SCEField[iNstep];
 	double cm = 0.01;
 	
@@ -603,15 +541,16 @@ void TAvalanche::computeSCEffect(){
 		for(int z=0; z<iNstep; z++){
 			double tmp=0;
 			for(int zp=0; zp<iNstep; zp++){
-				//tmp += fElecDetectorGrid[zp] * fDet->computeEbar((z+1)*fDx*cm,iTimeStep*fDx,(zp+1)*fDx*cm);
+				tmp += -(-fElecDetectorGrid[zp] -fNegIonDetectorGrid[zp] +fPosIonDetectorGrid[zp]) * fDet->computeEbar((z)*fDx*cm,iTimeStep*fDx,(zp)*fDx*cm);
 				
-				for(int i=0; i<fElecDetectorGrid[zp]; i++){
-					double rp = Gaus(0., fDiffT*sqrt(iTimeStep*fDx), fRandRngSCE);
-					tmp += fDet->SCFieldSimplified(0,0,(z)*fDx*cm,(rp)*cm,0,(zp)*fDx*cm);
+				//for(int i=0; i<fElecDetectorGrid[zp]; i++){
+					//double rp = Gaus(0., fDiffT*sqrt(iTimeStep*fDx), fRandRngSCE);
+					//tmp += fDet->SCFieldSimplified(0,0,(z)*fDx*cm,(rp)*cm,0,(zp)*fDx*cm);
 					//tmp += fDet->computeEbar((z+1)*fDx*cm,iTimeStep*fDx,(zp+1)*fDx*cm);
-				}
+				//}
 			}
-			
+			for(uint i=0; i<fAnodeLValues.size(); i++)
+				tmp += (fAnodeLValues[i].first) * fDet->computeEbar((z)*fDx*cm,fAnodeLValues[i].second,fGapWidth*cm);
 			SCEField[z] = tmp;
 		}
 	}

@@ -10,6 +10,8 @@
 
 #include "TDetector.hpp"
 #include "helper_functions.hpp"
+#include "integration.hpp"
+
 #include "gsl/gsl_const_mksa.h"
 #include "gsl/gsl_sf_bessel.h"
 #include <gsl/gsl_integration.h>
@@ -127,6 +129,8 @@ void TDetector::initialiseDetector(){
 	cout << "\tDt: " << fDt << endl;
 	
 	makeEbarTable();
+	test();
+	exit(0);
 }
 
 double* TDetector::getTransportParameters(double Ex, double Ey, double Ez){
@@ -212,6 +216,71 @@ double TDetector::SCField(const double& r, const double& phi, const double& z, c
 	return -1. * deriv;
 }
 
+double TDetector::SCField2(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp){
+	double mm = 0.001;
+	double cm = 0.01;
+	double h = 0.0001 * cm;
+	
+	
+	return -1. * ( SCPotential(r,phi,z+h,rp,phip,zp) - SCPotential(r,phi,z,rp,phip,zp) ) / h;
+}
+
+double test_int(double x, void * params){
+	//x == k
+		
+	
+	return exp(x);
+}
+
+double TDetector::test(){
+	if( tgsl != this )
+		tgsl = this;
+	double cm = 0.01, mm=0.001;
+	//double r = 0.5;
+	/*//double rp = 0;
+	double phi = 0.;
+	double phip = 0.;
+	//double P = sqrt(r*r - 2*r*rp*cos(phi-phip) + rp*rp);
+	* */
+	void* params = nullptr;
+	//double z = 0.0003, zp= 0.00184, l=0.184158*cm;
+	double zp = 1.*mm, r = 0., rp = 0.;
+	//double sigma2 = fDiffT*fDiffT * l;
+    
+    
+	//double res = integrate(integrand, funParams, 0.001, 3., 8, simpson());
+	//cout << res;
+	
+	ofstream data1("out/integral1.dat", ios::out | ios::trunc);
+	ofstream data2("out/integral2.dat", ios::out | ios::trunc);
+	ofstream data3("out/integral3.dat", ios::out | ios::trunc);
+	for(int i =0; i<5000; i++){
+		double z = i * fGeometry.gapWidth*cm/100;
+		double funParams[3] = {0.,z,0.1*mm};
+		double res = integrate(integrand, funParams, 0.001, 10., 8, simpson());
+		data1 << z << "\t" << res  << endl;
+	}
+	data1.close();
+	
+	for(int i =0; i<5000; i++){
+		double z = i * fGeometry.gapWidth*cm/100;
+		double funParams[3] = {0.,z,0.5*mm};
+		double res = integrate(integrand, funParams, 0.001, 10., 8, simpson());
+		data2 << z << "\t" << res  << endl;
+	}
+	data2.close();
+	
+	for(int i =0; i<5000; i++){
+		double z = i * fGeometry.gapWidth*cm/100;
+		double funParams[3] = {0.,z,1.*mm};
+		double res = integrate(integrand, funParams, 0.001, 10., 8, simpson());
+		data3 << z << "\t" << res  << endl;
+	}
+	data3.close();
+	
+	return 0.;
+}
+
 double TDetector::SCPotential(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp){
 	if( tgsl != this )
 		tgsl = this;
@@ -225,7 +294,7 @@ double TDetector::SCPotential(const double& r, const double& phi, const double& 
     gsl_function F;
 	F.function = &integrand;
 	F.params = &funParams;
-	gsl_integration_qagiu (&F, 0., 1e-4, 1e-7, 4000, w, &result, &error);
+	gsl_integration_qagiu (&F, 0., 0.1, 0.1, 4000, w, &result, &error);
 	gsl_integration_workspace_free (w);
     
     double Q = GSL_CONST_MKSA_ELECTRON_CHARGE;
@@ -249,7 +318,7 @@ double Ebar(double x, void * params){
 	//x == rp
 	double cm = 0.01;
 	double* param = reinterpret_cast<double*> (params); //[z,l,zp]
-	double res =  tgsl->RadialChargeDistribution(x,param[1]) * tgsl->SCField(0.,0.,param[0],x*cm,0.,param[2])*0.01 * x;  //RadialDistrib en cm-2, rp*drp en cm2, SCField en V/cm. rp doit etre en m dans les params de SCField
+	double res =  tgsl->RadialChargeDistribution(x,param[1]) * tgsl->SCFieldSimplified(0.,0.,param[0],x*cm,0.,param[2])*0.01 * x;  //RadialDistrib en cm-2, rp*drp en cm2, SCField en V/cm. rp doit etre en m dans les params de SCField
 	return res;
 }
 
@@ -266,9 +335,9 @@ double TDetector::computeEbar(const double& z, const double& l, const double& zp
 	F.function = &Ebar;
 	F.params = &funParams;
 
-	gsl_integration_qag (&F, 0., 3*sqrt(sigma2), 1e-10, 1e-7, 3000, 3, w, &result, &error);
+	gsl_integration_qag (&F, 0., 5*sqrt(sigma2), 1e-10, 1e-7, 3000, 3, w, &result, &error);
 	
-	//gsl_integration_qagiu (&F, 0., 1.e-2, 1e-3, 15000, w, &result, &error);
+	//gsl_integration_qagiu (&F, 0., 1.e-1, 1e-3, 3000, w, &result, &error);
 	gsl_integration_workspace_free (w);
 	
 	return result;
@@ -375,14 +444,20 @@ void TDetector::makeEbarTable(){
 void TDetector::plotSC(){
 	cout << "plot" << endl;
 	double cm = 0.01;
+	double mm = 0.001;
 
 	double min = -1, max = 1;
-	vector<double> val(1,min);
-	while(val.back() <= max)	val.push_back( val.back()+0.02 );
+	double h = 0.05;
+	vector<double> r(1,min);
+	vector<double> z(1,0);
+	while(r.back() <= max)	r.push_back( r.back()+h );
+	while(z.back() <= fGeometry.gapWidth)	z.push_back( z.back() + h );
 	ofstream data("out/plotSC.dat", ios::out | ios::trunc);
 	
-	for(uint i=0; i<val.size(); i++){
-		data << val[i] << "\t" << SCFieldSimplified(0,0,0.05*cm,val[i]*cm,0,0.05*cm) << endl;
+	for(uint i=0; i<r.size(); i++){
+		for(uint j=0; j<z.size(); j++) {
+				data << r[i] << "\t" << z[j] << "\t" << SCField2(r[i]*mm,0,z[j],0,0,0.5*mm) << endl;
+		}
 	}
 	data.close();
 }
