@@ -149,7 +149,6 @@ class TAvalanche{
 	RngStream* fRandRngLongiDiff;
 	RngStream* fRandRngSCE;
 	
-	int iDebug;
 	bool bVerbose;
 	
 	bool bFullLongiDiff;

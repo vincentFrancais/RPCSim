@@ -53,6 +53,7 @@ class TDetector{
 	
 	double RadialChargeDistribution(const double& r, const double& l);
 	double computeEbar(const double& z, const double& l, const double& zp);
+	double computeEbar_Python(const double& z, const double& l, const double& zp);
 	void makeEbarTable();
 	
 	double getGapWidth(void) const	{return fGeometry.gapWidth;}

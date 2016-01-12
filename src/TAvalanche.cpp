@@ -4,6 +4,7 @@
 #include <cmath>
 #include <vector>
 //#include <assert.h> 
+#include <stdexcept>
 #include <utility>
 #include <limits>
 #include <iterator>
@@ -390,7 +391,7 @@ double TAvalanche::CLT(const double& x, const double& n){
 		cout << "m: " << m << endl;
 		cout << "sigma: " << sigma << endl;
 		cout << "c: " << c << endl;
-		cin.ignore();
+		//cin.ignore();
 	}
 	
 	if(abs(c > 1) and !(trunc(c)>0)){
@@ -437,16 +438,27 @@ void TAvalanche::computeLongitudinalDiffusion(){
 	if(bFullLongiDiff){
 		double pos, newPos;
 		int newPosIndex;
-		for(int iz=0; iz<iNstep-1; iz++){
-			for(int n=0; n<fElecDetectorGrid[iz]; n++){
-				pos = (iz+1) * fDx;
+		for(int iz=0; iz<iNstep; iz++){
+			for(int n=0; n<fElecDetectorGrid.at(iz); n++){
+				pos = (iz) * fDx;
 				newPos = Gaus(pos, fLongiDiffSigma, fRandRngLongiDiff);
 				newPosIndex = (int)trunc(newPos/fDx);
-				if ( newPosIndex > iNstep){
-					 newPosIndex = iNstep; 
+				if ( newPosIndex >= iNstep){
+					 newPosIndex = iNstep-1; 
+				}
+				else if (newPosIndex < 0){
+					newPosIndex = 0;
 				}
 				
-				newDetectorGrid[newPosIndex]++;
+				try{
+					newDetectorGrid.at(newPosIndex)++;
+				}
+				catch (const std::out_of_range& oor) {
+					std::cerr << "Out of Range error: " << oor.what() << '\n';
+					cerr << newPosIndex << " " << pos << " " << newPos << endl;
+					exit(0);
+				}
+				
 			}
 		}
 	}
@@ -458,11 +470,9 @@ bool TAvalanche::avalanche(){
 	bool noMultiplication = false;
 	
 	iTimeStep = 0;
-	iDebug = 1;
 
 	while(true){
 		iTimeStep++;
-		computeSCEffect();
 		
 		if (bPrintDetectorGrid) {
 			printDetectorGrid();
@@ -473,7 +483,7 @@ bool TAvalanche::avalanche(){
 		vector<double> copy (fElecDetectorGrid);
 		
 		for(iCurrentDetectorStep=0; iCurrentDetectorStep<iNstep-1; iCurrentDetectorStep++){
-			double n = copy[iCurrentDetectorStep];
+			double n = copy.at(iCurrentDetectorStep);
 			double nProduced;
 
 			if (!noMultiplication)	nProduced = multiplication(n);
@@ -482,22 +492,32 @@ bool TAvalanche::avalanche(){
 			if (eAvalStatus != AVAL_NO_ERROR)
 				return false;
 			
-			fElecDetectorGrid[iCurrentDetectorStep+1] = nProduced;
+			fElecDetectorGrid.at(iCurrentDetectorStep+1) = nProduced;
 			
-			if( (nProduced - copy[iCurrentDetectorStep]) > 0 )
-				fPosIonDetectorGrid[iCurrentDetectorStep+1] += nProduced - copy[iCurrentDetectorStep];
+			if( (nProduced - n) > 0 )
+				fPosIonDetectorGrid.at(iCurrentDetectorStep+1) += nProduced - n;
 			else
-				fNegIonDetectorGrid[iCurrentDetectorStep+1] += copy[iCurrentDetectorStep] - nProduced;
+				fNegIonDetectorGrid.at(iCurrentDetectorStep+1) += n - nProduced;
 			
 			fNElectrons[iTimeStep] += nProduced;
 		}
 		
-		computeLongitudinalDiffusion();
-		computeInducedSignal2();
+		// Empty the first bin after the first multplication procedure to avoid infinite elec creation
+		if (iTimeStep == 1)
+			fElecDetectorGrid.at(0) = 0;
 		
-		fNelecAnode += fElecDetectorGrid[iNstep-1];
-		if (fElecDetectorGrid[iNstep-1] > 0)
-			fAnodeLValues.push_back( make_pair(fElecDetectorGrid[iNstep-1],iTimeStep*fDx) );
+		if (iTimeStep > 5 and iTimeStep%2 > 0)
+			computeLongitudinalDiffusion();
+		computeInducedSignal2();
+		computeSCEffect();
+		
+		// Elecs in last bin will leave to the anode, so we empty it
+		fNelecAnode += fElecDetectorGrid.at(iNstep-1);
+		if (fElecDetectorGrid.at(iNstep-1) > 0){
+			fAnodeLValues.push_back( make_pair(fElecDetectorGrid.at(iNstep-1),iTimeStep*fDx) );
+			fElecDetectorGrid.at(iNstep-1) = 0;
+		}
+		
 		
 		if (fNElectrons[iTimeStep] == 0)
 			break;
@@ -521,7 +541,7 @@ bool TAvalanche::avalanche(){
 
 void TAvalanche::computeSCEffect(){
 	
-	bool fullComputation = true;
+	bool fullComputation = false;
 	double SCEField[iNstep];
 	double cm = 0.01;
 	
@@ -541,7 +561,8 @@ void TAvalanche::computeSCEffect(){
 		for(int z=0; z<iNstep; z++){
 			double tmp=0;
 			for(int zp=0; zp<iNstep; zp++){
-				tmp += -(-fElecDetectorGrid[zp] -fNegIonDetectorGrid[zp] +fPosIonDetectorGrid[zp]) * fDet->computeEbar((z)*fDx*cm,iTimeStep*fDx,(zp)*fDx*cm);
+				//cout << z << " " << zp << endl;
+				tmp += -(-fElecDetectorGrid[zp] -fNegIonDetectorGrid[zp] +fPosIonDetectorGrid[zp]) * fDet->computeEbar_Python((z+1)*fDx*cm,iTimeStep*fDx,(zp+1)*fDx*cm);
 				
 				//for(int i=0; i<fElecDetectorGrid[zp]; i++){
 					//double rp = Gaus(0., fDiffT*sqrt(iTimeStep*fDx), fRandRngSCE);
@@ -550,7 +571,7 @@ void TAvalanche::computeSCEffect(){
 				//}
 			}
 			for(uint i=0; i<fAnodeLValues.size(); i++)
-				tmp += (fAnodeLValues[i].first) * fDet->computeEbar((z)*fDx*cm,fAnodeLValues[i].second,fGapWidth*cm);
+				tmp += (fAnodeLValues[i].first) * fDet->computeEbar_Python((z)*fDx*cm,fAnodeLValues[i].second,fGapWidth*cm);
 			SCEField[z] = tmp;
 		}
 	}

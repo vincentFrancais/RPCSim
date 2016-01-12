@@ -2,9 +2,96 @@
 #include "TMath.h"
 #define PI 3.14159265
 
+using namespace std;
+
+int call_python_fun(std::string funName, std::vector<double> args, double& result){
+    //double result = 0.;
+    Py_Initialize();
+
+	// Set the path to include the current directory in case the module is located there.
+	PyObject *sys = PyImport_ImportModule("sys");
+	PyObject *path = PyObject_GetAttrString(sys, "path");
+	PyList_Append(path, PyString_FromString("./python/"));
+
+	PyObject *pName, *pModule, *pFunc, *pResult = NULL;
+	PyObject *pArgs, *pValue = NULL;
+
+    // Build the name object
+	pName = PyString_FromString((char*)"integration");
+
+	// Load the module object
+  	pModule = PyImport_Import(pName);
+    Py_DECREF(pName);
+
+    if(pModule != NULL){
+		// pDict is a borrowed reference
+  		//pDict = PyModule_GetDict(pModule);
+
+		// pFunc is also a borrowed reference
+		//pFunc = PyDict_GetItemString(pDict, (char*)"compute_pot_correction_term");
+        pFunc = PyObject_GetAttrString(pModule, funName.c_str());
+
+		if (PyCallable_Check(pFunc)){
+			pArgs = PyTuple_New( args.size() );
+			for(uint i=0; i<args.size(); i++){
+				// r	phi	z	rp	phip	zp	eps1	eps2	eps3	p	q	g
+				pValue = PyFloat_FromDouble(args[i]);
+				if (!pValue) {
+					Py_DECREF(pArgs);
+					Py_DECREF(pModule);
+                    Py_DECREF(pFunc);
+    				Py_DECREF(pModule);
+                    //Py_DECREF(pDict);
+					cerr << "Cannot convert value" << endl;
+                    //Py_Finalize();
+					return 1;
+				}
+				PyTuple_SetItem(pArgs, i, pValue);
+			}
+
+            // Call to the python function
+			pResult = PyObject_CallObject(pFunc, pArgs);
+            Py_DECREF(pArgs);
+
+            if (pResult != NULL) {
+                result = PyFloat_AsDouble( pResult );
+				Py_DECREF(pResult);
+			}
+            else {
+                Py_DECREF(pFunc);
+				Py_DECREF(pModule);
+                //Py_DECREF(pDict);
+				PyErr_Print();
+				cerr << "Call to pyhon function failed" << endl;
+                //Py_Finalize();
+                return 1;
+            }
+
+  		}
+		else {
+			if ( PyErr_Occurred() )
+				PyErr_Print();
+			cerr << "Cannot load function" << endl;
+		}
+
+        Py_XDECREF(pFunc);
+        //Py_XDECREF(pDict);
+		Py_DECREF(pModule);
+	}
+	else{
+		cerr << "error loading python module" << endl;
+		PyErr_Print();
+	}
+
+	//Py_Finalize();
+
+	return 0;
+}
+
+
 bool file_exist (const std::string& name) {
-  struct stat buffer;   
-  return (stat (name.c_str(), &buffer) == 0); 
+  struct stat buffer;
+  return (stat (name.c_str(), &buffer) == 0);
 }
 
 std::string GetHexRepresentation(const unsigned char * Bytes, size_t Length)
@@ -41,56 +128,56 @@ double gaussIntegral(int steps, double min, double max, double mean, double sigm
 	val[0] = min;
 	val[steps-1] = max;
 	for(int i=1; i<steps-1; i++)	val[i] = val[i-1] + (max-min)/steps;
-	
+
 	double integral = 0;
-	
+
 	for(int i=0; i<steps-1; i++){
 		double a = val[i];
 		double b = val[i+1];
-		integral += gauss(a,mean,sigma) * (b - a); 
+		integral += gauss(a,mean,sigma) * (b - a);
 	}
-	
+
 	return integral;
 }
 
 double generateGaussianNumber(double mu, double sigma, RngStream* stream){
 	// Simple Box-Muller gaussiam random number generator
-	
+
 	const double epsilon = std::numeric_limits<double>::min();
 	const double two_pi = 2.0*3.14159265358979323846;
- 
+
 	static double z0, z1;
 	static bool generate;
 	generate = !generate;
- 
+
 	if (!generate)	return z1 * sigma + mu;
- 
+
 	double u1, u2;
 	do{
 	   u1 = stream->RandU01();
 	   u2 = stream->RandU01();
 	}
 	while ( u1 <= epsilon );
- 
+
 	z0 = sqrt(-2.0 * log(u1)) * cos(two_pi * u2);
 	z1 = sqrt(-2.0 * log(u1)) * sin(two_pi * u2);
 	return z0 * sigma + mu;
 }
 
 double Gaus(double mean, double sigma, RngStream* stream){
-   // Samples a random number from the standard Normal (Gaussian) Distribution 
-   // with the given mean and sigma.                                                 
-   // Uses the Acceptance-complement ratio from W. Hoermann and G. Derflinger 
-   // This is one of the fastest existing method for generating normal random variables. 
-   // It is a factor 2/3 faster than the polar (Box-Muller) method used in the previous 
+   // Samples a random number from the standard Normal (Gaussian) Distribution
+   // with the given mean and sigma.
+   // Uses the Acceptance-complement ratio from W. Hoermann and G. Derflinger
+   // This is one of the fastest existing method for generating normal random variables.
+   // It is a factor 2/3 faster than the polar (Box-Muller) method used in the previous
    // version of TRandom::Gaus. The speed is comparable to the Ziggurat method (from Marsaglia)
-   // implemented for example in GSL and available in the MathMore library. 
-   //                                                                           
-   // REFERENCE:  - W. Hoermann and G. Derflinger (1990):                       
-   //              The ACR Method for generating normal random variables,       
-   //              OR Spektrum 12 (1990), 181-185.                             
-   //                                                                           
-   // Implementation taken from 
+   // implemented for example in GSL and available in the MathMore library.
+   //
+   // REFERENCE:  - W. Hoermann and G. Derflinger (1990):
+   //              The ACR Method for generating normal random variables,
+   //              OR Spektrum 12 (1990), 181-185.
+   //
+   // Implementation taken from
    // UNURAN (c) 2000  W. Hoermann & J. Leydold, Institut f. Statistik, WU Wien
    //
    // Implementation from ROOT TRandom, modified for using RNGStream
@@ -129,20 +216,20 @@ double Gaus(double mean, double sigma, RngStream* stream){
 
       if (y>kHm1) {
          result = kHp*y-kHp1; break; }
-  
-      else if (y<kZm) {  
+
+      else if (y<kZm) {
          rn = kZp*y-1;
          result = (rn>0) ? (1+rn) : (-1+rn);
          break;
-      } 
+      }
 
-      else if (y<kHm) {  
+      else if (y<kHm) {
          rn = stream->RandU01();
          rn = rn-1+rn;
          z = (rn>0) ? 2-rn : -2-rn;
          if ((kC1-y)*(kC3+TMath::Abs(z))<kC2) {
             result = z; break; }
-         else {  
+         else {
             x = rn*rn;
             if ((y+kD1)*(kD3+x)<kD2) {
                result = rn; break; }
@@ -157,7 +244,7 @@ double Gaus(double mean, double sigma, RngStream* stream){
          x = stream->RandU01();
          y = kYm * stream->RandU01();
          z = kX0 - kS*x - y;
-         if (z>0) 
+         if (z>0)
             rn = 2+y/x;
          else {
             x = 1-x;
@@ -171,6 +258,6 @@ double Gaus(double mean, double sigma, RngStream* stream){
                result = rn; break; }
       }
    } while(0);
-   
+
    return mean + sigma * result;
 }

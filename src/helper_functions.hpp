@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <sys/stat.h>
 #include <numeric>
+#include <Python.h>
 
 #include "RngStream.h"
 
@@ -23,6 +24,8 @@ std::string to_string(const T & value)
 	oss << value;
 	return oss.str();
 }
+
+int call_python_fun(std::string funName, std::vector<double> args, double& result);
 
 std::string GetHexRepresentation(const unsigned char * Bytes, size_t Length);
 
