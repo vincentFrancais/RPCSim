@@ -61,8 +61,8 @@ void * wrapperFunction(void * Arg){
 	sem_post(TThreadsFactory::GetInstance()->GetInitLock());
 	
 	pthread_mutex_lock(&gTrackLock);
-	//avalanche.initialiseTrackHeed(detector,"muon",5.e9,0.,0.);
-	avalanche.initialiseSingleCluster(0);
+	avalanche.initialiseTrackHeed(detector,"muon",5.e9,0.,0.);
+	//avalanche.initialiseSingleCluster(0);
 	pthread_mutex_unlock(&gTrackLock);
 	
 	avalanche.simulateEvent();

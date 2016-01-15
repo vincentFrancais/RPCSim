@@ -189,6 +189,9 @@ void TAvalanche::makeResultFile(){
 
 void TAvalanche::simulateEvent(){
 	
+	//testInterpolation();
+	//exit(0);
+	
 	if( avalanche() ){
 		checkDetectorGrid();
 		ofstream data("out/electrons.dat", ios::out | ios::trunc);
@@ -431,35 +434,32 @@ double TAvalanche::CLT(const double& x, const double& n){
 }
 
 void TAvalanche::computeLongitudinalDiffusion(){
-	bool computed = true;
-	
 	vector<double> newDetectorGrid (iNstep,0);
 	
-	if(bFullLongiDiff){
-		double pos, newPos;
-		int newPosIndex;
-		for(int iz=0; iz<iNstep; iz++){
-			for(int n=0; n<fElecDetectorGrid.at(iz); n++){
-				pos = (iz) * fDx;
-				newPos = Gaus(pos, fLongiDiffSigma, fRandRngLongiDiff);
-				newPosIndex = (int)trunc(newPos/fDx);
-				if ( newPosIndex >= iNstep){
-					 newPosIndex = iNstep-1; 
-				}
-				else if (newPosIndex < 0){
-					newPosIndex = 0;
-				}
-				
-				try{
-					newDetectorGrid.at(newPosIndex)++;
-				}
-				catch (const std::out_of_range& oor) {
-					std::cerr << "Out of Range error: " << oor.what() << '\n';
-					cerr << newPosIndex << " " << pos << " " << newPos << endl;
-					exit(0);
-				}
-				
+	double pos, newPos;
+	int newPosIndex;
+	for(int iz=0; iz<iNstep; iz++){
+		pos = (iz) * fDx;
+		
+		for(int n=0; n<fElecDetectorGrid.at(iz); n++){
+			newPos = Gaus(pos, fLongiDiffSigma, fRandRngLongiDiff);
+			newPosIndex = (int)trunc(newPos/fDx);
+			if ( newPosIndex >= iNstep){
+				 newPosIndex = iNstep-1; 
 			}
+			else if (newPosIndex < 0){
+				newPosIndex = 0;
+			}
+			
+			try{
+				newDetectorGrid.at(newPosIndex)++;
+			}
+			catch (const std::out_of_range& oor) {
+				std::cerr << "Out of Range error: " << oor.what() << '\n';
+				cerr << newPosIndex << " " << pos << " " << newPos << endl;
+				exit(0);
+			}
+			
 		}
 	}
 
@@ -506,8 +506,6 @@ bool TAvalanche::avalanche(){
 		if (iTimeStep == 1)
 			fElecDetectorGrid.at(0) = 0;
 		
-		if (iTimeStep > 5 and iTimeStep%2 > 0)
-			computeLongitudinalDiffusion();
 		computeInducedSignal2();
 		computeSCEffect();
 		
@@ -517,6 +515,10 @@ bool TAvalanche::avalanche(){
 			fAnodeLValues.push_back( make_pair(fElecDetectorGrid.at(iNstep-1),iTimeStep*fDx) );
 			fElecDetectorGrid.at(iNstep-1) = 0;
 		}
+		
+		
+		if (iTimeStep > 5)
+			computeLongitudinalDiffusion();
 		
 		
 		if (fNElectrons[iTimeStep] == 0)
@@ -610,9 +612,23 @@ void TAvalanche::makeSnapshot(){
 }
 
 void TAvalanche::testInterpolation(){
-	cout << interpolateEbar(0,0,0.00952381) << endl;
-	cout << endl;
-	cout << interpolateEbar(0.002,0.002,0.2) << endl;
+	ofstream data("out/interp.dat", ios::out | ios::trunc);
+	
+	double z = 0.001;
+	double zp = 0.001;
+	double l;
+	
+	
+	
+	for(int i=0; i<20; i++){
+		l = i * 0.2/20;
+		data << l << "\t" << interpolateEbar(z, zp, l) << endl;
+	}
+	
+	data.close();
+	//cout << interpolateEbar(0,0,0.00952381) << endl;
+	//cout << endl;
+	//cout << interpolateEbar(0.002,0.002,0.2) << endl;
 	//cout << interpolateEbar(4.e-5,4.e-5,0.006) << endl;
 }
 
