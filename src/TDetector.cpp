@@ -431,7 +431,7 @@ double TDetector::computeEbar_Python(const double& z, const double& l, const dou
 void TDetector::makeEbarTable(){
 	if(bEbarComputed)	return;
 
-	iEbarTableSize = 120;
+	iEbarTableSize = 200;
 	int n = iEbarTableSize+1;
 	int size = (n)*(n)*(n);
 
