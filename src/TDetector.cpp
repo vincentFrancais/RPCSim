@@ -49,10 +49,12 @@ void TDetector::setGasMixture(Garfield::MediumMagboltz* gas){
 		composition.push_back( make_pair(label,fraction) );
 	}
 
-	for(vector< pair<string,double> >::iterator it = composition.begin(); it != composition.end(); it++)	mGasTableName += it->first + "-" + to_string(it->second) + "_";
+	for(vector< pair<string,double> >::iterator it = composition.begin(); it != composition.end(); it++)	
+		mGasTableName += it->first + "-" + to_string(it->second) + "_";
 	mGasTableName += "temp-" + to_string(mGas->GetTemperature()) + "_pres-" + to_string(mGas->GetPressure()) + ".gas";
 
-	if(!file_exist("gastables/"+mGasTableName))	makeGasTable();
+	if(!file_exist("gastables/"+mGasTableName))	
+		makeGasTable();
 	mGas->LoadGasFile("gastables/"+mGasTableName);
 	//gas->EnableDebugging();
 
@@ -74,7 +76,7 @@ Garfield::MediumMagboltz* TDetector::getGas(){
 void TDetector::makeGasTable(){
 	cout << "Generating gas table -- could take some time" << endl;
 	Garfield::MediumMagboltz* gas = mGas;
-	gas->SetFieldGrid(100., 120000., 70, false, 0., 0., 1, 0., 0., 1);
+	gas->SetFieldGrid(100., 120000., 50, false, 0., 0., 1, 0., 0., 1);
 	gas->EnableDebugging();
 	gas->Initialise();
 	gas->DisableDebugging();
@@ -131,6 +133,7 @@ void TDetector::initialiseDetector(){
 	cout << "\tDt: " << fDt << endl;
 
 	makeEbarTable();
+	writeGasTransportParameters();
 	//test();
 	//Py_Finalize();
 	//exit(0);
@@ -147,12 +150,30 @@ double* TDetector::getTransportParameters(double Ex, double Ey, double Ez){
 
 }
 
+void TDetector::writeGasTransportParameters(){
+	ofstream data(("out/"+mGasTableName+".dat").c_str(), ios::out | ios::trunc);
+	data << "#eta	alpha	v	dl	dt	E" << endl;
+	double alpha, eta, vx, vy, vz, dl, dt;
+	double E = 100.;
+	for (int i=0; i<50; i++){
+		E += (120000. - 100.)/50.;
+		mGas->ElectronTownsend(E,0.,0.,0.,0.,0., alpha);
+		mGas->ElectronAttachment(E,0.,0.,0.,0.,0., eta);
+		mGas->ElectronVelocity(E,0,0,0.,0.,0., vx,vy,vz);
+		mGas->ElectronDiffusion(E,0.,0.,0.,0.,0.,dl,dt);
+		data << eta << "\t" << alpha << "\t" << vx << "\t" << dl << "\t" << dt << "\t" << E << endl;
+	}
+	
+	data.close();
+	
+}
+
 double TDetector::R(const double& k, const double& z, const double& zp){
 	double cm = 0.01;
 
-	double q = fGeometry.resistiveLayersWidth[0] * cm;
+	double q = fGeometry.resistiveLayersWidth[0] * cm; //cathode
 	double g = fGeometry.gapWidth * cm;
-	double p = (g + fGeometry.resistiveLayersWidth[1]) * cm;
+	double p = (g + fGeometry.resistiveLayersWidth[1]) * cm; //anode
 	double eps0 = GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
 	double eps1 = fGeometry.relativePermittivity[0] * eps0;
 	double eps3 = eps1;
@@ -431,13 +452,14 @@ double TDetector::computeEbar_Python(const double& z, const double& l, const dou
 void TDetector::makeEbarTable(){
 	if(bEbarComputed)	return;
 
-	iEbarTableSize = 200;
+	iEbarTableSize = 75;
 	int n = iEbarTableSize+1;
 	int size = (n)*(n)*(n);
 
-	string fileName = to_string(fDiffT)+to_string(fGeometry.gapWidth)+to_string(fGeometry.relativePermittivity[0])
-	+to_string(fGeometry.relativePermittivity[1])+to_string(iNstep)+to_string(n)+to_string(fDx)+to_string(iEbarTableSize);
-
+	//string fileName = to_string(fDiffT)+to_string(fGeometry.gapWidth)+to_string(fGeometry.relativePermittivity[0])
+	//+to_string(fGeometry.relativePermittivity[1])+to_string(iNstep)+to_string(n)+to_string(fDx)+to_string(iEbarTableSize);
+	string fileName = getUniqueTableName(n);
+	
 	cout << "FileName: " << fileName << endl;
 
 	unsigned char* uc = new unsigned char[fileName.size()+1];
@@ -545,4 +567,11 @@ void TDetector::plotSC(){
 		}
 	}
 	data.close();
+}
+
+string TDetector::getUniqueTableName(int const& n){
+	string name = to_string(fDiffT) + to_string(fGeometry.gapWidth) + to_string(fGeometry.relativePermittivity[0]) + to_string(fGeometry.resistiveLayersWidth[0]) + to_string(fGeometry.resistiveLayersWidth[1])
+	+to_string(fGeometry.relativePermittivity[1]) + to_string(iNstep)+ to_string(n)+ to_string(fDx) + to_string(iEbarTableSize);
+	
+	return name;
 }

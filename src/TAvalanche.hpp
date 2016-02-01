@@ -39,7 +39,8 @@ enum EAvalancheStatus{
 	AVAL_CLT_FAIL,
 	AVAL_MULT_FAIL,
 	AVAL_ERROR_GRID_NOT_EMPTY,
-	AVAL_ERROR_TIMESTEP_EXCEEDING_LIMIT
+	AVAL_ERROR_TIMESTEP_EXCEEDING_LIMIT,
+	AVAL_EXPLOSIVE_BEHAVIOR
 };
 
 class TAvalanche{
@@ -70,7 +71,7 @@ class TAvalanche{
 	void makeResultFile();
 	
 	double n_moy(const double& x);
-	double electron_multiplication2(const double& x, const double& s);
+	double electron_multiplication(const double& x, const double& s);
 	double multiplication(const double& n);
 	double CLT(const double& x, const double& n);
 	void computeLongitudinalDiffusion();

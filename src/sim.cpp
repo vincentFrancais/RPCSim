@@ -119,7 +119,7 @@ int main(int argc, char** argv) {
     pthread_t writingThread;
     void * ret;
     
-    Config config = readConfigFile("config/default.xml");
+    Config config = readConfigFile("config/calice.xml");
     printConfig(config);
     
     unsigned int nThreads = config.nThreads;
@@ -158,11 +158,11 @@ int main(int argc, char** argv) {
 	if(argc > 1)	HV = atof(argv[1])*1000.;
 	
 	DetectorGeometry geom;
-	geom.gapWidth = 0.2;
-	geom.resistiveLayersWidth[0] = 0.2;
-	geom.resistiveLayersWidth[1] = 0.2;
-	geom.relativePermittivity[0] = 10.;
-	geom.relativePermittivity[1] = 10.;
+	geom.gapWidth = 0.12;	//0.2; cm
+	geom.resistiveLayersWidth[0] = 0.11;	//0.2;
+	geom.resistiveLayersWidth[1] = 0.07;	//0.2;
+	geom.relativePermittivity[0] = 7.;	//10.;
+	geom.relativePermittivity[1] = 7.;	//10.;
 	TDetector* detector = new TDetector(geom,500);
 	detector->setGasMixture(gas);
 	detector->setElectricField(HV,0.,0.);

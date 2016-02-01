@@ -72,9 +72,9 @@ TAvalanche::TAvalanche(TDetector* det){
 	
 	bPrintDetectorGrid = false;
 	bFullLongiDiff = true;
-	bVerbose = true;
+	bVerbose = false;
 	bThrCrossTime = false;
-	bSnapshots = true;
+	bSnapshots = false;
 	
 	fDet = det;
 	
@@ -289,7 +289,7 @@ double TAvalanche::n_moy(const double& x){
 	return exp((fAlpha[iCurrentDetectorStep]-fEta[iCurrentDetectorStep])*x);
 }
 
-double TAvalanche::electron_multiplication2(const double& x, const double& s){
+double TAvalanche::electron_multiplication(const double& x, const double& s){
 	double nm = n_moy(x);
 	double alpha = fAlpha[iCurrentDetectorStep];
 	double eta = fEta[iCurrentDetectorStep];
@@ -309,7 +309,7 @@ double TAvalanche::electron_multiplication2(const double& x, const double& s){
 		}
 	}
 	
-	else if (alpha < 1.) { // alpha << 0
+	else if (alpha < 0.001) { // alpha << 0
 		thr = exp(-eta*x);
 		if (s >= thr)	return 0;
 		else return 1;
@@ -353,7 +353,7 @@ double TAvalanche::multiplication(const double& n){
 			for(int i=0; i<n; i++){
 				double s = fRandRng->RandU01();
 				if (s==1)	s = fRandRng->RandU01();
-				nProduced += electron_multiplication2(fDx,s);
+				nProduced += electron_multiplication(fDx,s);
 			}
 			if( eAvalStatus == AVAL_CLT_FAIL )
 				eAvalStatus = AVAL_NO_ERROR;
@@ -365,7 +365,7 @@ double TAvalanche::multiplication(const double& n){
 	for(int i=0; i<n; i++){
 		double s = fRandRng->RandU01();
 		if (s==1)	s = fRandRng->RandU01();
-		nProduced += electron_multiplication2(fDx,s);
+		nProduced += electron_multiplication(fDx,s);
 	}
 	return nProduced;
 }
@@ -386,18 +386,23 @@ double TAvalanche::CLT(const double& x, const double& n){
 	double c = Gaus(m, sigma, fRandRngCLT);
 	
 	if (c > 1e10){
-		cout << "k: " << k << endl;
-		cout << "eta: " << fEta[iCurrentDetectorStep] << endl;
-		cout << "alpha: " << fAlpha[iCurrentDetectorStep] << endl;
-		cout << "E: " << fE[iCurrentDetectorStep] << endl;
-		cout << "nm: " << nm << endl;
-		cout << "m: " << m << endl;
-		cout << "sigma: " << sigma << endl;
-		cout << "c: " << c << endl;
+		if ( bVerbose ){
+			cout << "k: " << k << endl;
+			cout << "eta: " << fEta[iCurrentDetectorStep] << endl;
+			cout << "alpha: " << fAlpha[iCurrentDetectorStep] << endl;
+			cout << "E: " << fE[iCurrentDetectorStep] << endl;
+			cout << "nm: " << nm << endl;
+			cout << "m: " << m << endl;
+			cout << "sigma: " << sigma << endl;
+			cout << "c: " << c << endl;
+		}
+		cerr << "Explosive behavior detected -- stopping avalanche" <<endl;
+		eAvalStatus = AVAL_EXPLOSIVE_BEHAVIOR;
+		return 0;
 		//cin.ignore();
 	}
 	
-	if(abs(c > 1) and !(trunc(c)>0)){
+	if( abs(c > 1) and !(trunc(c)>0) and bVerbose ){
 		cout << "k: " << k << endl;
 		cout << "eta: " << fEta[iCurrentDetectorStep] << endl;
 		cout << "alpha: " << fAlpha[iCurrentDetectorStep] << endl;
@@ -408,7 +413,7 @@ double TAvalanche::CLT(const double& x, const double& n){
 		cout << "c: " << c << endl;
 	}
 	
-	if(abs(c < 1) and !(round(c)>=0)){
+	if( abs(c < 1) and !(round(c)>=0) and bVerbose ){
 		cout << "k: " << k << endl;
 		cout << "eta: " << fEta[iCurrentDetectorStep] << endl;
 		cout << "alpha: " << fAlpha[iCurrentDetectorStep] << endl;
@@ -434,12 +439,16 @@ double TAvalanche::CLT(const double& x, const double& n){
 }
 
 void TAvalanche::computeLongitudinalDiffusion(){
-	vector<double> newDetectorGrid (iNstep,0);
+	if (iTimeStep < 10 or iTimeStep%1 != 0)
+		return;
 	
+	vector<double> newDetectorGrid (iNstep,0);
+	//fLongiDiffSigma = fDiffL * sqrt(2*fDx);
 	double pos, newPos;
 	int newPosIndex;
+	
 	for(int iz=0; iz<iNstep; iz++){
-		pos = (iz) * fDx;
+		pos = (iz+0.5) * fDx;
 		
 		for(int n=0; n<fElecDetectorGrid.at(iz); n++){
 			newPos = Gaus(pos, fLongiDiffSigma, fRandRngLongiDiff);
@@ -468,23 +477,19 @@ void TAvalanche::computeLongitudinalDiffusion(){
 
 bool TAvalanche::avalanche(){
 	bool noMultiplication = false;
+	double n, nProduced;
+	vector<double> copy;
 	
 	iTimeStep = 0;
 
 	while(true){
 		iTimeStep++;
+		computeSCEffect();
 		
-		if (bPrintDetectorGrid) {
-			printDetectorGrid();
-			cin.ignore();
-			cout << "\033[2J\033[1;1H";
-		}
-		
-		vector<double> copy (fElecDetectorGrid);
+		copy = fElecDetectorGrid;
 		
 		for(iCurrentDetectorStep=0; iCurrentDetectorStep<iNstep-1; iCurrentDetectorStep++){
-			double n = copy.at(iCurrentDetectorStep);
-			double nProduced;
+			n = copy.at(iCurrentDetectorStep);
 
 			if (!noMultiplication)	nProduced = multiplication(n);
 			else nProduced = n;
@@ -506,8 +511,9 @@ bool TAvalanche::avalanche(){
 		if (iTimeStep == 1)
 			fElecDetectorGrid.at(0) = 0;
 		
+		computeLongitudinalDiffusion();
+		
 		computeInducedSignal2();
-		computeSCEffect();
 		
 		// Elecs in last bin will leave to the anode, so we empty it
 		fNelecAnode += fElecDetectorGrid.at(iNstep-1);
@@ -515,11 +521,6 @@ bool TAvalanche::avalanche(){
 			fAnodeLValues.push_back( make_pair(fElecDetectorGrid.at(iNstep-1),iTimeStep*fDx) );
 			fElecDetectorGrid.at(iNstep-1) = 0;
 		}
-		
-		
-		if (iTimeStep > 5)
-			computeLongitudinalDiffusion();
-		
 		
 		if (fNElectrons[iTimeStep] == 0)
 			break;
@@ -546,10 +547,11 @@ void TAvalanche::computeSCEffect(){
 	bool fullComputation = false;
 	double SCEField[iNstep];
 	double cm = 0.01;
+	double tmp;
 	
 	if (!fullComputation){
 		for(int z=0; z<iNstep; z++){
-			double tmp=0;
+			tmp = 0;
 			for(int zp=0; zp<iNstep; zp++){
 				tmp += -(-fElecDetectorGrid[zp] -fNegIonDetectorGrid[zp] +fPosIonDetectorGrid[zp]) * interpolateEbar((z)*fDx*cm, (zp)*fDx*cm, iTimeStep*fDx);
 			}

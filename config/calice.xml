@@ -1,0 +1,43 @@
+<Detector>
+    <GapWidth>0.12</GapWidth>
+    <Steps>500</Steps>
+    <ResistiveLayers>
+		<layer>
+			<width>0.2</width>
+			<resistivity>10</resistivity>
+		</layer>
+		<layer>
+			<width>0.2</width>
+			<resistivity>10</resistivity>
+		</layer>
+    </ResistiveLayers>
+    <ElectricField>57500</ElectricField>
+</Detector>
+
+<Gas>
+	<gas>
+		<name>c2h2f4</name>
+		<percentage>93</percentage>
+	</gas>
+	<gas>
+		<name>sf6</name>
+		<percentage>2.0</percentage>
+	</gas>
+	<gas>
+		<name>co2</name>
+		<percentage>5.0</percentage>
+	</gas>
+	<temperature>293.15</temperature>
+	<pressure>760.</pressure>
+</Gas>
+
+<Simulation>
+	<Particle>
+		<name>muon</name>
+		<energy>5.e9</energy>
+		<x0>0.</x0>
+		<theta>30.</theta>
+	</Particle>
+	<Events>3000</Events>
+	<Threads>15</Threads>
+</Simulation>

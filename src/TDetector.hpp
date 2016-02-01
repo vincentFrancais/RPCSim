@@ -42,6 +42,7 @@ class TDetector{
 	void setElectricField(const double& Ex ,const double& Ey, const double& Ez);
 	Garfield::MediumMagboltz* getGas();
 	void initialiseDetector();
+	void writeGasTransportParameters();
 	
 	double R(const double& k, const double& z, const double& zp);
 	double D(const double& k);
@@ -83,6 +84,8 @@ class TDetector{
 	vector<double> getEbarLarray(void) {return fEbarLarray;}
 	
 	void plotSC();
+	
+	string getUniqueTableName(int const& n);
 	
 	private:
 	int iNstep;
