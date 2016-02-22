@@ -1,6 +1,7 @@
 #ifndef DEF_HELPERS
 #define DEF_HELPERS
 
+#include <Python.h>
 #include <iostream>
 #include <vector>
 #include <sstream>
@@ -12,7 +13,6 @@
 #include <algorithm>
 #include <sys/stat.h>
 #include <numeric>
-#include <Python.h>
 
 #include "RngStream.h"
 
@@ -24,6 +24,8 @@ std::string to_string(const T & value)
 	oss << value;
 	return oss.str();
 }
+
+uint64_t gettid();
 
 int call_python_fun(std::string funName, std::vector<double> args, double& result);
 

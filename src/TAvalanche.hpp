@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <utility>
+//#include <cstdint>
 
 #include <TRandom3.h>
 #include "RngStream.h"
@@ -16,6 +17,7 @@
 
 #include "TDetector.hpp"
 #include "TResult.hpp"
+#include "TRNQueue.hpp"
 
 #if defined( _DEBUG ) || defined( DEBUG ) || defined (__DEBUG__)
 #   ifndef DEBUG
@@ -59,7 +61,8 @@ class TAvalanche{
 	void computeInducedSignal();
 	void computeInducedSignal2();
 	void computeChargeSpectra(const double& x0, const double& angle, const int& nEvents);
-	void computeClusterDensity(TDetector* det, const string& particleName, const double& Pmin, const double& Pmax, const int& steps);
+	void computeClusterDensity(const string& particleName, const double& Pmin, const double& Pmax, const int& steps);
+	void computeElectronsProduction(const string& particleName, const double& P, const int& nTracks);
 	void checkDetectorGrid();
 	
 	vector<double> getInducedSignal() const {return fSignal;}
@@ -86,6 +89,8 @@ class TAvalanche{
 	size_t getIndex3D(const size_t& i, const size_t& j, const size_t& k);
 	
 	private:
+	uint tId;
+	
 	DetectorGeometry fGeometry;
 	TDetector* fDet;
 	
@@ -149,6 +154,8 @@ class TAvalanche{
 	RngStream* fRandRngCLT;
 	RngStream* fRandRngLongiDiff;
 	RngStream* fRandRngSCE;
+	
+	//RNQueue fRNQueue;
 	
 	bool bVerbose;
 	

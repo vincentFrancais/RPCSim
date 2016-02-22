@@ -31,7 +31,8 @@ struct Config {
 	
 	int nThreads;
 	int nEvents;
-	Config() : nResisLayers(0), nGases(0) { }
+	string outFile;
+	Config() : nResisLayers(0), nGases(0), outFile("out/") { }
 };
 
 Config readConfigFile(string fileName);

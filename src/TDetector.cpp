@@ -193,9 +193,9 @@ double TDetector::R(const double& k, const double& z, const double& zp){
 double TDetector::D(const double& k){
 	double cm = 0.01;
 
-	double q = fGeometry.resistiveLayersWidth[0] * cm;
+	double q = fGeometry.resistiveLayersWidth[0] * cm;	// cathode
 	double g = fGeometry.gapWidth * cm;
-	double p = (g + fGeometry.resistiveLayersWidth[1]) * cm;
+	double p = (g + fGeometry.resistiveLayersWidth[1]) * cm;	// anode
 
 	double eps0 = GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
 	double eps1 = fGeometry.relativePermittivity[0] * eps0;
@@ -242,131 +242,6 @@ double TDetector::SCField(const double& r, const double& phi, const double& z, c
 	double deriv = (1.5*m1 - (3./5.)*m2 + 0.1*m3);
 
 	return -1. * deriv;
-}
-
-double TDetector::SCField2(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp){
-	double mm = 0.001;
-	double cm = 0.01;
-	double h = 0.0001 * cm;
-
-
-	return -1. * ( SCPotential(r,phi,z+h,rp,phip,zp) - SCPotential(r,phi,z,rp,phip,zp) ) / h;
-}
-
-double test_int(double x, void * params){
-	//x == k
-
-
-	return exp(x);
-}
-
-double TDetector::test(){
-	if( tgsl != this )
-		tgsl = this;
-	double cm = 0.01, mm=0.001;
-
-	//double r = 0.5;
-	/*//double rp = 0;
-	double phi = 0.;
-	double phip = 0.;
-	//double P = sqrt(r*r - 2*r*rp*cos(phi-phip) + rp*rp);
-	* */
-	//void* params = NULL;
-	//double z = 0.0003, zp= 0.00184, l=0.184158*cm;
-	//double zp = 1.*mm, r = 0., rp = 0.;
-	//double sigma2 = fDiffT*fDiffT * l;
-
-
-	//double res = integrate(integrand, funParams, 0.001, 3., 8, simpson());
-	//cout << res;
-
-	ofstream data1("out/integral1.dat", ios::out | ios::trunc);
-	ofstream data2("out/integral2.dat", ios::out | ios::trunc);
-	ofstream data3("out/integral3.dat", ios::out | ios::trunc);
-
-	double eps0 = GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
-	double Q = GSL_CONST_MKSA_ELECTRON_CHARGE;
-	double eps1 = fGeometry.relativePermittivity[0] * eps0;
-	double eps3 = eps1;
-	double eps2 = eps0;
-	//double values[12] = {0.,0.,1.e-3,0.,0.,1.e-3, 10.*eps0,eps0,10.*eps0,4.*mm,2.*mm,2.*mm};
-	//double values[12] = {0.,0.,1.e-3,0.,0.,1.e-3, 10.*eps0,eps0,10.*eps0,4.*mm,2.*mm,2.*mm};
-	double res = 0;
-	
-	int EbarTableSize = 5;
-	int n = EbarTableSize+1;
-	int size = (n)*(n)*(n);
-	
-	double zStep = fGeometry.gapWidth * cm / (n-1), zpStep = fGeometry.gapWidth * cm / (n-1), lStep = iNstep*fDx / (n);
-	vector<double> EbarLarray (n,0.);
-	vector<double> EbarZarray (n,0.);
-	vector<double> EbarZparray (n,0.);
-	
-	for(int i=0; i<n; i++){
-		EbarZarray[i] = (i)*zStep;
-		EbarZparray[i] = (i)*zpStep;
-		EbarLarray[i] = (i+1)*lStep;
-	}
-	
-	ofstream dataEbar("out/EbarPy.dat", ios::out | ios::trunc);
-	int i,j,k;
-//	#pragma omp parallel for private(j,k) collapse(3)
-	for(i=0; i<n; i++){	//z
-		for(j=0; j<n; j++){	//zp
-			for(k=0; k<n; k++){	//l
-				//double Ebar = computeEbar((i)*zStep,(k+1)*lStep,(j)*zpStep);
-				double values[10] = {EbarZarray[i], EbarLarray[k], EbarZparray[j], fDiffT, 10.*eps0,eps0,10.*eps0,4.*mm,2.*mm,2.*mm};
-				vector<double> args (values, values + sizeof(values) / sizeof(values[0]) );
-				call_python_fun("compute_Ebar", args, res);
-				cout << EbarZarray[i] << " " << EbarZparray[j] << " " <<EbarLarray[k] << " " << res << endl;
-				dataEbar << EbarZarray[i] << " " << EbarZparray[j] << " " <<EbarLarray[k] << " " << res << endl;
-			}
-		}
-	}
-	dataEbar.close();
-	
-	/*
-	for (int i=1; i<10; i++){
-		double values[10] = {0.5e-3,i*fGeometry.gapWidth/100.,1.e-3, fDiffT, 10.*eps0,eps0,10.*eps0,4.*mm,2.*mm,2.*mm};
-		vector<double> args (values, values + sizeof(values) / sizeof(values[0]) );
-		call_python_fun("compute_Ebar", args, res);
-		cout << res << " " <<  endl;
-	}*/
-	//exit(0);
-	//call_python_fun("compute_pot_correction_term", args, res);
-	//cout << res << endl;
-	//call_python_fun("compute_pot_correction_term", args, res);
-	//cout << res << endl;
-
-	for(int i =0; i<100; i++){
-		double z = i * fGeometry.gapWidth*cm/100;
-		double values[12] = {0.,0.,z,0.,0.,0.1e-3, eps1,eps2,eps3,4.*mm,2.*mm,2.*mm};
-		vector<double> args (values, values + sizeof(values) / sizeof(values[0]) );
-		//double funParams[3] = {0.,z,0.1*mm};
-		//call_python_fun("compute_pot_correction_term", args, res);
-		data1 << z << "\t" << res * (1./((eps1+eps2)*(eps2+eps3))) *  ( Q/(4*M_PI*eps2) )  << endl;
-	}
-	data1.close();
-
-	for(int i =0; i<100; i++){
-		double z = i * fGeometry.gapWidth*cm/100;
-		double values[12] = {0.,0.,z,0.,0.,0.5e-3, eps1,eps2,eps3,4.*mm,2.*mm,2.*mm};
-		vector<double> args (values, values + sizeof(values) / sizeof(values[0]) );
-		//call_python_fun("compute_pot_correction_term", args, res);
-		data2 << z << "\t" << res * (1./((eps1+eps2)*(eps2+eps3))) *  ( Q/(4*M_PI*eps2) )  << endl;
-	}
-	data2.close();
-
-	for(int i =0; i<100; i++){
-		double z = i * fGeometry.gapWidth*cm/100;
-		double values[12] = {0.,0.,z,0.,0.,1.e-3, eps1,eps2,eps3,4.*mm,2.*mm,2.*mm};
-		vector<double> args (values, values + sizeof(values) / sizeof(values[0]) );
-		//call_python_fun("compute_pot_correction_term", args, res);
-		data3 << z << "\t" << res * (1./((eps1+eps2)*(eps2+eps3))) *  ( Q/(4*M_PI*eps2) )  << endl;
-	}
-	data3.close();
-
-	return 0.;
 }
 
 double TDetector::SCPotential(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp){
@@ -469,8 +344,6 @@ void TDetector::makeEbarTable(){
 	cout << "Hex representation: " << hexFileName << endl;
 	delete uc;
 
-	//double table[size];
-
 	double cm = 0.01;
 
 	double zStep = fGeometry.gapWidth * cm / (n-1), zpStep = fGeometry.gapWidth * cm / (n-1), lStep = iNstep*fDx / (n);
@@ -563,7 +436,7 @@ void TDetector::plotSC(){
 
 	for(uint i=0; i<r.size(); i++){
 		for(uint j=0; j<z.size(); j++) {
-				data << r[i] << "\t" << z[j] << "\t" << SCField2(r[i]*mm,0,z[j],0,0,0.5*mm) << endl;
+				data << r[i] << "\t" << z[j] << "\t" << SCField(r[i]*mm,0,z[j],0,0,0.5*mm) << endl;
 		}
 	}
 	data.close();

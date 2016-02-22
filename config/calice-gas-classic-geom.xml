@@ -11,7 +11,7 @@
 			<resistivity>10</resistivity>
 		</layer>
     </ResistiveLayers>
-    <ElectricField>59000</ElectricField>
+    <ElectricField>50000</ElectricField>
 </Detector>
 
 <Gas>
@@ -38,8 +38,8 @@
 		<x0>0.</x0>
 		<theta>30.</theta>
 	</Particle>
-	<Events>1</Events>
-	<Threads>1</Threads>
-	<outFile>test.dat</outFile>
+	<Events>5000</Events>
+	<Threads>15</Threads>
+	<outFile>thrCross-CALICEGAS-CLASSICGEOM.dat</outFile>
 	
 </Simulation>

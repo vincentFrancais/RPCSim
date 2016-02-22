@@ -65,6 +65,13 @@ Config readConfigFile(string fileName){
 	simElement->FirstChildElement( "Events" )->QueryIntText( &config.nEvents );
 	simElement->FirstChildElement( "Threads" )->QueryIntText( &config.nThreads );
 	
+	XMLElement* outFileChild = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "outFile" ).ToElement();
+	if ( outFileChild )
+		config.outFile += outFileChild->GetText();
+	else
+		config.outFile += "out.dat";
+	//config.outFile = simElement->FirstChildElement( "outFile" )->GetText();
+	
 	return config;
 }
 
@@ -92,4 +99,5 @@ void printConfig(Config config){
 	cout << "\t theta: " << config.theta << endl;
 	cout << "\t events to simulate: " << config.nEvents << endl;
 	cout << "\t threads to use: " << config.nThreads << endl;
+	cout << "\t outfile path: " << config.outFile << endl;
 }

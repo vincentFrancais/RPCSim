@@ -88,6 +88,13 @@ int call_python_fun(std::string funName, std::vector<double> args, double& resul
 	return 0;
 }
 
+uint64_t gettid() {
+    pthread_t ptid = pthread_self();
+    uint64_t threadId = 0;
+    memcpy(&threadId, &ptid, std::min(sizeof(threadId), sizeof(ptid)));
+    return threadId;
+}
+
 
 bool file_exist (const std::string& name) {
   struct stat buffer;

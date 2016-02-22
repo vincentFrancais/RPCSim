@@ -87,7 +87,14 @@ void * WriteResults(void * Arg)
 	ofstream outFile(outputFile, ios::out | ios::trunc);
 	
     /* Open the output file */
-    outFD = open("out/out.dat", O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    string outFileBinary (outputFile);
+    size_t found = outFileBinary.find(".dat");
+	if (found!=string::npos)
+		outFileBinary.erase(found,4);
+    outFileBinary += ".bin";
+    //string outFileBin = "out/outBinary-"+outputFile+".dat";
+    //outFD = open("out/outBinary.dat", O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    outFD = open(outFileBinary.c_str(), O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     assert(outFD != -1);
 
     /* Read the incoming event */
@@ -108,19 +115,22 @@ void * WriteResults(void * Arg)
     return 0;
 }
 
-int main(int argc, char** argv) {    
+int main(int argc, char** argv) {   
+	/* Read config file */
+	Config config = readConfigFile("config/calice.xml");
+    printConfig(config);
+     
     char outputFile[PATH_MAX];
     if(argc > 2)
 		strncpy(outputFile, argv[2], PATH_MAX - 1);
 	else
-		strncpy(outputFile, "out/out2.dat", PATH_MAX - 1);
+		strncpy(outputFile, config.outFile.c_str(), PATH_MAX - 1);
     outputFile[PATH_MAX - 1] = '\0';
     
     pthread_t writingThread;
     void * ret;
     
-    Config config = readConfigFile("config/calice.xml");
-    printConfig(config);
+    //exit(0);
     
     unsigned int nThreads = config.nThreads;
     unsigned long nEvents = config.nEvents;
@@ -146,32 +156,43 @@ int main(int argc, char** argv) {
 			break;
 		case (3):
 			gas->SetComposition(config.gasNames[0], config.gasPercentage[0], config.gasNames[1], config.gasPercentage[1], config.gasNames[2], config.gasPercentage[2]);
-			break;	
+			break;
+		case (4):
+			gas->SetComposition(config.gasNames[0], config.gasPercentage[0], config.gasNames[1], config.gasPercentage[1], config.gasNames[2], config.gasPercentage[2], config.gasNames[3], config.gasPercentage[3]);
+			break;
+		case (5):
+			gas->SetComposition(config.gasNames[0], config.gasPercentage[0], config.gasNames[1], config.gasPercentage[1], config.gasNames[2], config.gasPercentage[2], config.gasNames[3], config.gasPercentage[3], config.gasNames[4], config.gasPercentage[4]);
+			break;
+		case (6):
+			gas->SetComposition(config.gasNames[0], config.gasPercentage[0], config.gasNames[1], config.gasPercentage[1], config.gasNames[2], config.gasPercentage[2], config.gasNames[3], config.gasPercentage[3], config.gasNames[4], config.gasPercentage[4], config.gasNames[5], config.gasPercentage[5]);
+			break;
 	}
-	//gas->SetComposition("c2h2f4",96.7,"ic4h10",3.,"sf6",0.3);
-	//gas->SetTemperature(293.15);
-	//gas->SetPressure(760.);
+
 	gas->SetTemperature(config.gasTemperature);
 	gas->SetPressure(config.gasPressure);
 	
-	double HV = config.ElectricField; //50000.;
+	double HV = config.ElectricField;
 	if(argc > 1)	HV = atof(argv[1])*1000.;
 	
+	if ( argc > 1 )
+		cout << "Efficiency computation runs. HV=" << HV << " OutFile=" << outputFile << endl;
+	
 	DetectorGeometry geom;
-	geom.gapWidth = 0.12;	//0.2; cm
-	geom.resistiveLayersWidth[0] = 0.11;	//0.2;
-	geom.resistiveLayersWidth[1] = 0.07;	//0.2;
-	geom.relativePermittivity[0] = 7.;	//10.;
-	geom.relativePermittivity[1] = 7.;	//10.;
+	geom.gapWidth = 0.12;	//0.2; cm	//CALICE 0.12
+	geom.resistiveLayersWidth[0] = 0.11;	//0.2;	//CALICE 0.11
+	geom.resistiveLayersWidth[1] = 0.07;	//0.2;	//CALICE 0.07
+	geom.relativePermittivity[0] = 7.;	//10.;	//CALICE 7
+	geom.relativePermittivity[1] = 7.;	//10.;	//CALICE 7
 	TDetector* detector = new TDetector(geom,500);
 	detector->setGasMixture(gas);
 	detector->setElectricField(HV,0.,0.);
 	detector->initialiseDetector();
 	
 	//TAvalanche* avalanche = new TAvalanche(detector);
-	//avalanche->computeClusterDensity(detector, "pion", 6.e7, 15.e9, 600);
+	//avalanche->computeClusterDensity(detector, "muon", 6.e7, 15.e9, 600);
+	//avalanche->computeElectronsProduction(detector, "muon", 5.e9, 100000);
 	//delete avalanche;
-
+	//exit(0);
 	
     /* Open the communication pipe */
     if (pipe(gPipe) == -1){

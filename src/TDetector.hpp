@@ -17,7 +17,6 @@
 using namespace std;
 double integrand(double x, void * params);
 double Ebar(double x, void * params);
-double test_int(double x, void * params);
 
 struct DetectorGeometry{
 	//DetectorGeometry(double gap=0.2, double resLayer1Width=0.2, double resLayer2Width=0.2) {
@@ -49,8 +48,6 @@ class TDetector{
 	double SCPotential(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp);
 	double SCFieldSimplified(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp);
 	double SCField(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp);
-	double SCField2(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp);
-	double test();
 	
 	double RadialChargeDistribution(const double& r, const double& l);
 	double computeEbar(const double& z, const double& l, const double& zp);

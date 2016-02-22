@@ -12,6 +12,7 @@
 #include "TDetector.hpp"
 #include "TAvalanche.hpp"
 #include "helper_functions.hpp"
+
 #include "gsl/gsl_const_mksa.h"
 #include "gsl/gsl_sf_bessel.h"
 #include <gsl/gsl_integration.h>
@@ -24,12 +25,16 @@ using namespace std;
 //static  TAvalanche * tgsl = 0;
 
 TAvalanche::TAvalanche(TDetector* det){
+	tId = gettid();
+	
 	iNstep = det->getNstep();
 	
 	fRandRng = new RngStream();
 	fRandRngCLT = new RngStream();
 	fRandRngLongiDiff = new RngStream();
 	fRandRngSCE = new RngStream();
+	
+	//fRNQueue = RNQueue();
 	
 	fGapWidth = det->getGapWidth();
 	fResistiveLayersWidth = det->getResistiveLayersWidth();
@@ -72,9 +77,9 @@ TAvalanche::TAvalanche(TDetector* det){
 	
 	bPrintDetectorGrid = false;
 	bFullLongiDiff = true;
-	bVerbose = false;
+	bVerbose = true;
 	bThrCrossTime = false;
-	bSnapshots = false;
+	bSnapshots = true;
 	
 	fDet = det;
 	
@@ -103,14 +108,14 @@ TAvalanche::~TAvalanche(){
 	delete fLongiDiffFrac;
 }
 
-void TAvalanche::computeClusterDensity(TDetector* det, const string& particleName, const double& Pmin, const double& Pmax, const int& steps){
+void TAvalanche::computeClusterDensity(const string& particleName, const double& Pmin, const double& Pmax, const int& steps){
 	double P = Pmin;
 	
 	string outFileName = "out/cluster_density_"+particleName+".dat";
 	ofstream data(outFileName.c_str(), ios::out | ios::trunc);
 	
 	Garfield::TrackHeed* track = new Garfield::TrackHeed();
-	track->SetSensor(det->getSensor());
+	track->SetSensor(fDet->getSensor());
 	track->SetParticle(particleName);
 	
 	while(P <= Pmax){
@@ -119,6 +124,38 @@ void TAvalanche::computeClusterDensity(TDetector* det, const string& particleNam
 		data << P << "\t" << track->GetClusterDensity() << endl;
 		P += (Pmax-Pmin)/steps;
 	}
+	data.close();
+	delete track;
+}
+
+void TAvalanche::computeElectronsProduction(const string& particleName, const double& P, const int& nTracks){
+
+	string outFileName = "out/electron_density_"+particleName+"_"+to_string(P)+".dat";
+	string clSizeFileName = "out/cluster_size_"+particleName+"_"+to_string(P)+".dat";
+	ofstream data(outFileName.c_str(), ios::out | ios::trunc);
+	ofstream clSize(clSizeFileName.c_str(), ios::out | ios::trunc);
+	
+	Garfield::TrackHeed* track = new Garfield::TrackHeed();
+	track->SetSensor(fDet->getSensor());
+	track->SetParticle(particleName);
+	track->SetMomentum(P);
+	
+	for(int i=0; i<nTracks; i++){
+		track->NewTrack(0, 0, 0, 0, 1., 0, 0);
+		double xc = 0., yc = 0., zc = 0., tc = 0.;
+	    int nc = 0;
+	    double ec = 0.;
+	    double extra = 0.;
+	    double esum = 0.;
+	    int nsum = 0;
+	    while (track->GetCluster(xc, yc, zc, tc, nc, ec, extra)) {
+	      esum += ec;
+	      nsum += nc;
+	      clSize << nc << endl;
+	    }
+		data << esum << "\t" << nsum << endl;
+	}
+	
 	data.close();
 	delete track;
 }
@@ -207,7 +244,7 @@ void TAvalanche::simulateEvent(){
 		sigData.close();
 		chargesData.close();
 		chargesTotData.close();
-		cout << "Avalanche simulation terminated with success" << endl;
+		cout << "Avalanche id " << tId << " simulation terminated with success" << endl;
 	}
 	else{
 		fSignal.clear();
@@ -215,7 +252,7 @@ void TAvalanche::simulateEvent(){
 		fSignal.push_back(-1);
 		fCharges.push_back(-1);
 		makeResultFile();
-		cout << "Avalanche simulation terminated with error: " << eAvalStatus << endl;
+		cout << "Avalanche id " << tId << " simulation terminated with error: " << eAvalStatus << endl;
 	}
 }
 
@@ -249,8 +286,9 @@ void TAvalanche::computeInducedSignal2(){
 	// drift velocity in cm/ns
 	double e0 = GSL_CONST_MKSA_ELECTRON_CHARGE;//1.60217657e-19; //Coulombs
 	double eps = 10.;
-	double glassThickness = fResistiveLayersWidth[0];//0.2; //cm
-	double weightingField = eps/(2*glassThickness + fGapWidth*eps);
+	//double glassThickness = fResistiveLayersWidth[0];//0.2; //cm
+	//double weightingField = eps/(2*glassThickness + fGapWidth*eps);
+	double weightingField = eps/(fResistiveLayersWidth[0]+fResistiveLayersWidth[1] + fGapWidth*eps);
 
 	double sig = 0;
 	double charges = 0;
@@ -309,7 +347,7 @@ double TAvalanche::electron_multiplication(const double& x, const double& s){
 		}
 	}
 	
-	else if (alpha < 0.001) { // alpha << 0
+	else if (alpha == 0) { // alpha << 0
 		thr = exp(-eta*x);
 		if (s >= thr)	return 0;
 		else return 1;
@@ -372,7 +410,7 @@ double TAvalanche::multiplication(const double& n){
 
 double TAvalanche::CLT(const double& x, const double& n){
 	double nm = n_moy(x);
-	if(fAlpha[iCurrentDetectorStep] == 0) 	fAlpha[iCurrentDetectorStep] += numeric_limits<double>::epsilon();
+	//if(fAlpha[iCurrentDetectorStep] == 0) 	fAlpha[iCurrentDetectorStep] += numeric_limits<double>::epsilon();
 	double k = fEta[iCurrentDetectorStep]/fAlpha[iCurrentDetectorStep];
 	double alpha = fAlpha[iCurrentDetectorStep];
 	double eta = fEta[iCurrentDetectorStep];
@@ -380,7 +418,7 @@ double TAvalanche::CLT(const double& x, const double& n){
 	
 	double sigma;
 	if (alpha == eta)	sigma = sqrt(n) * sqrt(2*alpha*x);
-	else if (alpha < 1.)	sigma = sqrt(n) * sqrt( exp(-2*eta*x)*(exp(eta*x)-1) ); // alpha << 0
+	else if (alpha == 0)	sigma = sqrt(n) * sqrt( exp(-2*eta*x)*(exp(eta*x)-1) ); // alpha << 0
 	else	sigma = sqrt(n) * sqrt( ((1+k)/(1-k)) * nm * (nm-1) ); // alpha, eta > 0
 	
 	double c = Gaus(m, sigma, fRandRngCLT);
@@ -452,9 +490,10 @@ void TAvalanche::computeLongitudinalDiffusion(){
 		
 		for(int n=0; n<fElecDetectorGrid.at(iz); n++){
 			newPos = Gaus(pos, fLongiDiffSigma, fRandRngLongiDiff);
+			//newPos = fRNQueue.next() * fLongiDiffSigma + pos;
 			newPosIndex = (int)trunc(newPos/fDx);
 			if ( newPosIndex >= iNstep){
-				 newPosIndex = iNstep-1; 
+				 newPosIndex = iNstep-1;
 			}
 			else if (newPosIndex < 0){
 				newPosIndex = 0;
