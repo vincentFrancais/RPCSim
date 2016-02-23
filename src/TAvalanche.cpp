@@ -77,9 +77,9 @@ TAvalanche::TAvalanche(TDetector* det){
 	
 	bPrintDetectorGrid = false;
 	bFullLongiDiff = true;
-	bVerbose = true;
+	bVerbose = false;
 	bThrCrossTime = false;
-	bSnapshots = true;
+	bSnapshots = false;
 	
 	fDet = det;
 	
@@ -285,7 +285,7 @@ void TAvalanche::computeInducedSignal(){
 void TAvalanche::computeInducedSignal2(){
 	// drift velocity in cm/ns
 	double e0 = GSL_CONST_MKSA_ELECTRON_CHARGE;//1.60217657e-19; //Coulombs
-	double eps = 10.;
+	double eps = fGeometry.relativePermittivity[0]; 	//10.;
 	//double glassThickness = fResistiveLayersWidth[0];//0.2; //cm
 	//double weightingField = eps/(2*glassThickness + fGapWidth*eps);
 	double weightingField = eps/(fResistiveLayersWidth[0]+fResistiveLayersWidth[1] + fGapWidth*eps);
@@ -477,8 +477,8 @@ double TAvalanche::CLT(const double& x, const double& n){
 }
 
 void TAvalanche::computeLongitudinalDiffusion(){
-	if (iTimeStep < 10 or iTimeStep%1 != 0)
-		return;
+	//if (iTimeStep < 10 or iTimeStep%1 != 0)
+	//	return;
 	
 	vector<double> newDetectorGrid (iNstep,0);
 	//fLongiDiffSigma = fDiffL * sqrt(2*fDx);

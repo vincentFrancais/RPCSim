@@ -8,6 +8,7 @@
 #include <typeinfo>
 #include <fcntl.h>
 #include <cassert>
+#include <random>
 
 #include "MediumMagboltz.hh"
 #include "SolidBox.hh"
@@ -115,7 +116,7 @@ void * WriteResults(void * Arg)
     return 0;
 }
 
-int main(int argc, char** argv) {   
+int main(int argc, char** argv) { 
 	/* Read config file */
 	Config config = readConfigFile("config/calice.xml");
     printConfig(config);
