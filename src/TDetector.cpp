@@ -19,8 +19,6 @@
 
 #include <Python.h>
 
-#define PI 3.14159265358979323846
-
 
 using namespace std;
 static TDetector* tgsl = 0;
@@ -31,6 +29,8 @@ TDetector::TDetector(const DetectorGeometry& geometry, const int& nStep){
 	fGeometry = geometry;
 
 	bEbarComputed = false;
+	
+	bVerboseAvalanche = false;
 }
 
 TDetector::~TDetector(){
@@ -52,7 +52,9 @@ void TDetector::setGasMixture(Garfield::MediumMagboltz* gas){
 	for(vector< pair<string,double> >::iterator it = composition.begin(); it != composition.end(); it++)	
 		mGasTableName += it->first + "-" + to_string(it->second) + "_";
 	mGasTableName += "temp-" + to_string(mGas->GetTemperature()) + "_pres-" + to_string(mGas->GetPressure()) + ".gas";
-
+	
+	cout << "\tGas table file: " << mGasTableName << endl;
+	
 	if(!file_exist("gastables/"+mGasTableName))	
 		makeGasTable();
 	mGas->LoadGasFile("gastables/"+mGasTableName);
@@ -122,7 +124,8 @@ void TDetector::initialiseDetector(){
 	fDt = fDx/fVx; //ns
 
 	assert( (fAlpha>fEta) or (fAlpha>0) );
-
+	
+	cout << endl;
 	cout << "Transport parameters:" << endl;
 	cout << "\talpha: " << fAlpha << " cm-1" << endl;
 	cout << "\teta: " << fEta << " cm-1" << endl;
@@ -131,7 +134,8 @@ void TDetector::initialiseDetector(){
 	cout << "\tIon Drift velocity: (" << fiVx << "," << fiVy << "," << fiVz << ")" << endl;
 	cout << "\tDiffusion coefficient: (" << fDiffL << ", " << fDiffT << ")" << endl;
 	cout << "\tDt: " << fDt << endl;
-
+	cout << endl;
+	
 	makeEbarTable();
 	writeGasTransportParameters();
 	//test();
@@ -231,7 +235,6 @@ double TDetector::SCFieldSimplified(const double& r, const double& phi, const do
 }
 
 double TDetector::SCField(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp){
-	double mm = 0.001;
 	double cm = 0.01;
 	double h = 0.001 * cm;
 
@@ -290,8 +293,6 @@ double TDetector::computeEbar(const double& z, const double& l, const double& zp
 	if( tgsl != this )
 		tgsl = this;
 
-	double sigma2 = fDiffT*fDiffT * l;
-
 	gsl_integration_workspace * w = gsl_integration_workspace_alloc (3000);
     double result, error;
     double funParams[3] = {z,l,zp};
@@ -316,7 +317,7 @@ double TDetector::computeEbar_Python(const double& z, const double& l, const dou
 	double eps3 = eps1;
 	double eps2 = eps0;
 	
-	double values[10] = {z, l, zp, fDiffT, 10.*eps0,eps0,10.*eps0,4.*mm,2.*mm,2.*mm};
+	double values[10] = {z, l, zp, fDiffT, eps1,eps2,eps3,4.*mm,2.*mm,2.*mm};
 	vector<double> args (values, values + sizeof(values) / sizeof(values[0]) );
 	double Ebar;
 	call_python_fun("compute_Ebar", args, Ebar);
@@ -327,7 +328,7 @@ double TDetector::computeEbar_Python(const double& z, const double& l, const dou
 void TDetector::makeEbarTable(){
 	if(bEbarComputed)	return;
 
-	iEbarTableSize = 75;
+	iEbarTableSize = 10;
 	int n = iEbarTableSize+1;
 	int size = (n)*(n)*(n);
 
@@ -423,7 +424,6 @@ void TDetector::makeEbarTable(){
 
 void TDetector::plotSC(){
 	cout << "plot" << endl;
-	double cm = 0.01;
 	double mm = 0.001;
 
 	double min = -1, max = 1;

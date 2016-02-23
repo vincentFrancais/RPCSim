@@ -8,6 +8,7 @@
 #include <utility>
 #include <limits>
 #include <iterator>
+#include <random>
 
 #include "TDetector.hpp"
 #include "TAvalanche.hpp"
@@ -24,16 +25,46 @@
 using namespace std;
 //static  TAvalanche * tgsl = 0;
 
-TAvalanche::TAvalanche(TDetector* det){
+TAvalanche::TAvalanche(TDetector* det, bool const& randomSeed){
 	tId = gettid();
 	
 	iNstep = det->getNstep();
 	
 	fRandRng = new RngStream();
+	if ( randomSeed ){
+		random_device rd;
+		ulong seed[6];
+		cout << "TAvalanche :: Seeding to ";
+		for (int i=0; i<6; i++){
+			seed[i] = rd();
+			cout << seed[i] << " ";
+		}
+		cout << endl;
+		
+		fRandRng->SetSeed( seed );
+	}
+	
 	fRandRngCLT = new RngStream();
 	fRandRngLongiDiff = new RngStream();
 	fRandRngSCE = new RngStream();
-	
+	/*
+	if ( randomSeed ){
+		random_device rd;
+
+		ulong seed0[6] = {rd(), rd(), rd(), rd(), rd(), rd()};
+		fRandRng->SetSeed(seed0);
+
+		//ulong seed1[6] = {rd(), rd(), rd(), rd(), rd(), rd()};
+		//fRandRngCLT->SetSeed(seed1);
+
+		//ulong seed2[6] = {rd(), rd(), rd(), rd(), rd(), rd()};
+		//fRandRngLongiDiff->SetSeed(seed2);
+
+		//ulong seed3[6] = {rd(), rd(), rd(), rd(), rd(), rd()};
+		//fRandRngSCE->SetSeed(seed3);
+
+	}
+	*/
 	//fRNQueue = RNQueue();
 	
 	fGapWidth = det->getGapWidth();
@@ -77,7 +108,7 @@ TAvalanche::TAvalanche(TDetector* det){
 	
 	bPrintDetectorGrid = false;
 	bFullLongiDiff = true;
-	bVerbose = false;
+	bVerbose = true;
 	bThrCrossTime = false;
 	bSnapshots = false;
 	
@@ -160,9 +191,9 @@ void TAvalanche::computeElectronsProduction(const string& particleName, const do
 	delete track;
 }
 
-void TAvalanche::initialiseTrackHeed(TDetector* det, const string& particleName, const double& momentum, const double& x0, const double& theta){
+void TAvalanche::initialiseTrackHeed(const string& particleName, const double& momentum, const double& x0, const double& theta){
 	Garfield::TrackHeed* track = new Garfield::TrackHeed();
-	track->SetSensor(det->getSensor());
+	track->SetSensor(fDet->getSensor());
 	track->SetParticle(particleName);
 	track->SetMomentum(momentum);
 	

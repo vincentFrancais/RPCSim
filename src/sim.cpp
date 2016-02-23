@@ -8,7 +8,6 @@
 #include <typeinfo>
 #include <fcntl.h>
 #include <cassert>
-#include <random>
 
 #include "MediumMagboltz.hh"
 #include "SolidBox.hh"
@@ -32,6 +31,7 @@ using namespace std;
 using namespace Garfield;
 
 typedef unsigned int uint;
+typedef unsigned long ulong;
 
 pthread_mutex_t gPipeLock;
 pthread_mutex_t gTrackLock;
@@ -57,12 +57,12 @@ void * wrapperFunction(void * Arg){
 	
 	TResult result;
 	
-	TAvalanche avalanche(detector);
+	TAvalanche avalanche(detector, true);
 	
 	sem_post(TThreadsFactory::GetInstance()->GetInitLock());
 	
 	pthread_mutex_lock(&gTrackLock);
-	avalanche.initialiseTrackHeed(detector,"muon",5.e9,0.,0.);
+	avalanche.initialiseTrackHeed("muon",5.e9,0.,0.);
 	//avalanche.initialiseSingleCluster(0);
 	pthread_mutex_unlock(&gTrackLock);
 	
@@ -116,7 +116,7 @@ void * WriteResults(void * Arg)
     return 0;
 }
 
-int main(int argc, char** argv) { 
+int main(int argc, char** argv) {
 	/* Read config file */
 	Config config = readConfigFile("config/calice.xml");
     printConfig(config);
@@ -135,6 +135,7 @@ int main(int argc, char** argv) {
     
     unsigned int nThreads = config.nThreads;
     unsigned long nEvents = config.nEvents;
+		
     
     /* Initialize our pipe lock */
     pthread_mutex_init(&gPipeLock, 0);
@@ -188,6 +189,8 @@ int main(int argc, char** argv) {
 	detector->setGasMixture(gas);
 	detector->setElectricField(HV,0.,0.);
 	detector->initialiseDetector();
+	if ( nThreads>1 )
+		detector->setAvalancheVerbose(false);
 	
 	//TAvalanche* avalanche = new TAvalanche(detector);
 	//avalanche->computeClusterDensity(detector, "muon", 6.e7, 15.e9, 600);

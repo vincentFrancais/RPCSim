@@ -49,11 +49,11 @@ class TAvalanche{
 	
 	public:
 	TAvalanche(){};
-	TAvalanche(TDetector* det);
+	TAvalanche(TDetector* det, bool const& randomSeed=false);
 	
 	~TAvalanche();
 	
-	void initialiseTrackHeed(TDetector* det, const string& particleName, const double& momentum, const double& x0, const double& theta);
+	void initialiseTrackHeed(const string& particleName, const double& momentum, const double& x0, const double& theta);
 	
 	void simulateEvent();
 	void initialiseSingleCluster(const double& x0, const double& n0=1);
