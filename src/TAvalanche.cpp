@@ -47,25 +47,6 @@ TAvalanche::TAvalanche(TDetector* det, bool const& randomSeed){
 	fRandRngCLT = new RngStream();
 	fRandRngLongiDiff = new RngStream();
 	fRandRngSCE = new RngStream();
-	/*
-	if ( randomSeed ){
-		random_device rd;
-
-		ulong seed0[6] = {rd(), rd(), rd(), rd(), rd(), rd()};
-		fRandRng->SetSeed(seed0);
-
-		//ulong seed1[6] = {rd(), rd(), rd(), rd(), rd(), rd()};
-		//fRandRngCLT->SetSeed(seed1);
-
-		//ulong seed2[6] = {rd(), rd(), rd(), rd(), rd(), rd()};
-		//fRandRngLongiDiff->SetSeed(seed2);
-
-		//ulong seed3[6] = {rd(), rd(), rd(), rd(), rd(), rd()};
-		//fRandRngSCE->SetSeed(seed3);
-
-	}
-	*/
-	//fRNQueue = RNQueue();
 	
 	fGapWidth = det->getGapWidth();
 	fResistiveLayersWidth = det->getResistiveLayersWidth();
@@ -108,8 +89,9 @@ TAvalanche::TAvalanche(TDetector* det, bool const& randomSeed){
 	
 	bPrintDetectorGrid = false;
 	bFullLongiDiff = true;
-	bVerbose = true;
 	bThrCrossTime = false;
+	
+	bVerbose = false;
 	bSnapshots = false;
 	
 	fDet = det;

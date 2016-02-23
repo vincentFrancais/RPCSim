@@ -189,8 +189,6 @@ int main(int argc, char** argv) {
 	detector->setGasMixture(gas);
 	detector->setElectricField(HV,0.,0.);
 	detector->initialiseDetector();
-	if ( nThreads>1 )
-		detector->setAvalancheVerbose(false);
 	
 	//TAvalanche* avalanche = new TAvalanche(detector);
 	//avalanche->computeClusterDensity(detector, "muon", 6.e7, 15.e9, 600);

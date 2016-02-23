@@ -80,8 +80,6 @@ class TDetector{
 	vector<double> getEbarZparray(void) {return fEbarZparray;}
 	vector<double> getEbarLarray(void) {return fEbarLarray;}
 	
-	void setAvalancheVerbose(bool const& b) {bVerboseAvalanche=b;}
-	
 	void plotSC();
 	
 	string getUniqueTableName(int const& n);
@@ -100,8 +98,6 @@ class TDetector{
 	
 	bool bEbarComputed;
 	string fEbarTableHexName;
-	
-	bool bVerboseAvalanche;
 	
 	Garfield::MediumMagboltz* mGas;
 	string mGasTableName;

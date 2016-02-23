@@ -29,8 +29,6 @@ TDetector::TDetector(const DetectorGeometry& geometry, const int& nStep){
 	fGeometry = geometry;
 
 	bEbarComputed = false;
-	
-	bVerboseAvalanche = false;
 }
 
 TDetector::~TDetector(){
