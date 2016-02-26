@@ -24,7 +24,7 @@
 #include "TResult.hpp"
 #include "TConfig.hpp"
 
-#define PATH_MAX 0x1000
+//#define PATH_MAX 0x1000
 #define PI 3.14159265358979323846
 
 using namespace std;
