@@ -11,7 +11,7 @@
 			<resistivity>10</resistivity>
 		</layer>
     </ResistiveLayers>
-    <ElectricField>59000</ElectricField>
+    <ElectricField>60000</ElectricField>
 </Detector>
 
 <Gas>

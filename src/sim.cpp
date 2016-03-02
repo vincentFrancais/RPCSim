@@ -18,7 +18,8 @@
 #include "Plotting.hh"
 
 #include "TDetector.hpp"
-#include "TAvalanche.hpp"
+#include "TAvalanche1D.hpp"
+#include "TAvalanche1D.hpp"
 #include "helper_functions.hpp"
 #include "TThreadsFactory.h"
 #include "TResult.hpp"
@@ -32,6 +33,8 @@ using namespace Garfield;
 
 typedef unsigned int uint;
 typedef unsigned long ulong;
+
+double cm = 0.01;
 
 pthread_mutex_t gPipeLock;
 pthread_mutex_t gTrackLock;
@@ -57,15 +60,16 @@ void * wrapperFunction(void * Arg){
 	
 	TResult result;
 	
-	TAvalanche avalanche(detector, true);
+	TAvalanche1D avalanche(detector, false);
 	
 	sem_post(TThreadsFactory::GetInstance()->GetInitLock());
 	
 	pthread_mutex_lock(&gTrackLock);
-	avalanche.initialiseTrackHeed("muon",5.e9,0.,0.);
-	//avalanche.initialiseSingleCluster(0);
+	//avalanche.initialiseTrackHeed("muon",5.e9,0.,0.);
+	avalanche.initialiseSingleCluster(0);
 	pthread_mutex_unlock(&gTrackLock);
 	
+	//avalanche.disableSpaceChargeEffect();
 	avalanche.simulateEvent();
 	
 	//result.fInducedCharge = avalanche.getInducedCharges().back();
@@ -188,12 +192,14 @@ int main(int argc, char** argv) {
 	TDetector* detector = new TDetector(geom,500);
 	detector->setGasMixture(gas);
 	detector->setElectricField(HV,0.,0.);
+	detector->makeEbarTable();
 	detector->initialiseDetector();
 	
 	//TAvalanche* avalanche = new TAvalanche(detector);
 	//avalanche->computeClusterDensity(detector, "muon", 6.e7, 15.e9, 600);
 	//avalanche->computeElectronsProduction(detector, "muon", 5.e9, 100000);
 	//delete avalanche;
+	//TAvalanche::computeClusterDensity(detector, "muon", 6.e7, 15.e9, 600);
 	//exit(0);
 	
     /* Open the communication pipe */

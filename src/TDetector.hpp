@@ -19,11 +19,7 @@ double integrand(double x, void * params);
 double Ebar(double x, void * params);
 
 struct DetectorGeometry{
-	//DetectorGeometry(double gap=0.2, double resLayer1Width=0.2, double resLayer2Width=0.2) {
-		//gapWidth = gap;
-		//resistiveLayersWidth[0] = resLayer1Width;
-		//resistiveLayersWidth[1] = resLayer2Width;
-		//}
+	/* TODO: change array to anode and cathode variables -- more readable */
 	double gapWidth;
 	double resistiveLayersWidth[2];
 	double relativePermittivity[2];
@@ -69,6 +65,7 @@ class TDetector{
 	double getK(void) const	{return k;}
 	int getEbarTableSize(void) const {return iEbarTableSize;}
 	string getEbarTableHexName(void) const {return fEbarTableHexName;}
+	bool hasEBarTable(void) const {return bHasEbarTable;}
 
 	vector<double> getEbarVecTable(void) const {return fEbarVecTable;}
 	int getNstep(void) const	{return iNstep;}
@@ -96,7 +93,7 @@ class TDetector{
 	vector<double> fEbarVecTable;
 	vector<double> fEbarZarray, fEbarZparray, fEbarLarray;
 	
-	bool bEbarComputed;
+	bool bHasEbarTable;
 	string fEbarTableHexName;
 	
 	Garfield::MediumMagboltz* mGas;

@@ -23,12 +23,14 @@
 using namespace std;
 static TDetector* tgsl = 0;
 
+extern double cm;
+
 TDetector::TDetector(const DetectorGeometry& geometry, const int& nStep){
 	iNstep = nStep;
 	//fGapWidth = gasGap;
 	fGeometry = geometry;
 
-	bEbarComputed = false;
+	bHasEbarTable = false;
 }
 
 TDetector::~TDetector(){
@@ -134,8 +136,8 @@ void TDetector::initialiseDetector(){
 	cout << "\tDt: " << fDt << endl;
 	cout << endl;
 	
-	makeEbarTable();
-	writeGasTransportParameters();
+	//makeEbarTable();
+	//writeGasTransportParameters();
 	//test();
 	//Py_Finalize();
 	//exit(0);
@@ -171,8 +173,6 @@ void TDetector::writeGasTransportParameters(){
 }
 
 double TDetector::R(const double& k, const double& z, const double& zp){
-	double cm = 0.01;
-
 	double q = fGeometry.resistiveLayersWidth[0] * cm; //cathode
 	double g = fGeometry.gapWidth * cm;
 	double p = (g + fGeometry.resistiveLayersWidth[1]) * cm; //anode
@@ -193,8 +193,6 @@ double TDetector::R(const double& k, const double& z, const double& zp){
 }
 
 double TDetector::D(const double& k){
-	double cm = 0.01;
-
 	double q = fGeometry.resistiveLayersWidth[0] * cm;	// cathode
 	double g = fGeometry.gapWidth * cm;
 	double p = (g + fGeometry.resistiveLayersWidth[1]) * cm;	// anode
@@ -217,8 +215,6 @@ double integrand(double x, void * params){
 }
 
 double TDetector::SCFieldSimplified(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp){
-	double cm = 0.01;
-
 	double e0 = GSL_CONST_MKSA_ELECTRON_CHARGE;
 	double g = fGeometry.gapWidth * cm;
 	double eps0 = GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
@@ -233,7 +229,6 @@ double TDetector::SCFieldSimplified(const double& r, const double& phi, const do
 }
 
 double TDetector::SCField(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp){
-	double cm = 0.01;
 	double h = 0.001 * cm;
 
 	double m1 = ( SCPotential(r,phi,z+h,rp,phip,zp) - SCPotential(r,phi,z-h,rp,phip,zp) ) / (2*h);
@@ -249,7 +244,6 @@ double TDetector::SCPotential(const double& r, const double& phi, const double& 
 	if( tgsl != this )
 		tgsl = this;
 
-	double cm = 0.01;
     double P = sqrt(r*r - 2*r*rp*cos(phi-phip) + rp*rp);
 
     gsl_integration_workspace * w = gsl_integration_workspace_alloc (4000);
@@ -281,7 +275,7 @@ double TDetector::RadialChargeDistribution(const double& r, const double& l){
 
 double Ebar(double x, void * params){
 	//x == rp
-	double cm = 0.01;
+
 	double* param = reinterpret_cast<double*> (params); //[z,l,zp]
 	double res =  tgsl->RadialChargeDistribution(x,param[1]) * tgsl->SCField(0.,0.,param[0],x*cm,0.,param[2])*0.01 * x;  //RadialDistrib en cm-2, rp*drp en cm2, SCField en V/cm. rp doit etre en m dans les params de SCField
 	return res;
@@ -324,7 +318,7 @@ double TDetector::computeEbar_Python(const double& z, const double& l, const dou
 }
 
 void TDetector::makeEbarTable(){
-	if(bEbarComputed)	return;
+	if(bHasEbarTable)	return;
 
 	iEbarTableSize = 10;
 	int n = iEbarTableSize+1;
@@ -342,8 +336,6 @@ void TDetector::makeEbarTable(){
 	string hexFileName = GetHexRepresentation(uc, fileName.size());
 	cout << "Hex representation: " << hexFileName << endl;
 	delete uc;
-
-	double cm = 0.01;
 
 	double zStep = fGeometry.gapWidth * cm / (n-1), zpStep = fGeometry.gapWidth * cm / (n-1), lStep = iNstep*fDx / (n);
 	fEbarLarray = vector<double>(n,0.);
@@ -374,7 +366,7 @@ void TDetector::makeEbarTable(){
 
 		fEbarTableHexName = hexFileName;
 
-		bEbarComputed = true;
+		bHasEbarTable = true;
 		return;
 	}
 
@@ -417,7 +409,7 @@ void TDetector::makeEbarTable(){
 
 	o.close();
 	data.close();
-	bEbarComputed = true;
+	bHasEbarTable = true;
 }
 
 void TDetector::plotSC(){
