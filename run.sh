@@ -1,6 +1,6 @@
 #!/bin/bash
 
--rm out/*.dat
+rm out/*.dat
 time ./sim
 
 	
