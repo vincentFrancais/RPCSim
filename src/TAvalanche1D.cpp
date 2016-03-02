@@ -27,7 +27,7 @@ TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche(
 	tId = gettid();
 	
 	iNstep = det->getNstep();
-	
+	 
 	fGapWidth = det->getGapWidth();
 	fResistiveLayersWidth = det->getResistiveLayersWidth();
 	fDt = det->getTimeStep();
