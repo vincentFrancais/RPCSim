@@ -6,6 +6,7 @@
 
 //#include <TRandom3.h>
 #include "RngStream.h"
+#include "TConfig.hpp"
 
 #include "MediumMagboltz.hh"
 #include "SolidBox.hh"
@@ -13,6 +14,16 @@
 #include "ComponentConstant.hh"
 #include "Sensor.hh"
 #include "TrackHeed.hh"
+
+#if defined( _PYTHON ) || defined( PYTHON ) || defined (__PYTHON__)
+#   ifndef PYTHON
+#       define PYTHON
+#   endif
+#endif
+
+#if defined(PYTHON)
+#	include <Python.h>
+#endif
 
 using namespace std;
 double integrand(double x, void * params);
@@ -47,7 +58,9 @@ class TDetector{
 	
 	double RadialChargeDistribution(const double& r, const double& l);
 	double computeEbar(const double& z, const double& l, const double& zp);
-	double computeEbar_Python(const double& z, const double& l, const double& zp);
+	#if defined(PYTHON)
+		double computeEbar_Python(const double& z, const double& l, const double& zp);
+	#endif
 	void makeEbarTable();
 	
 	double getGapWidth(void) const	{return fGeometry.gapWidth;}
@@ -83,8 +96,7 @@ class TDetector{
 	
 	private:
 	int iNstep;
-	//double fGapWidth;
-	//double[2] fResistiveLayersWidth;
+
 	DetectorGeometry fGeometry;
 	double fDt;
 	double fDx;
@@ -94,6 +106,8 @@ class TDetector{
 	vector<double> fEbarZarray, fEbarZparray, fEbarLarray;
 	
 	bool bHasEbarTable;
+	bool bGasLoaded;
+	bool bDetectorInitialised;
 	string fEbarTableHexName;
 	
 	Garfield::MediumMagboltz* mGas;

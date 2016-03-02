@@ -147,6 +147,7 @@ class TAvalanche1D : public TAvalanche {
 	double fLongiDiffComputeLimit;
 	
 	bool bVerbose;
+	bool bAvalancheInitialised;
 	bool bEbarComputed;
 	bool bSnapshots;
 	bool bThrCrossTime;

@@ -3,9 +3,9 @@
 using namespace std;
 using namespace tinyxml2;
 
-Config readConfigFile(string fileName){
+TConfig readConfigFile(string fileName){
 	
-	Config config;
+	TConfig config;
 	
 	XMLDocument doc;
 	if ( doc.LoadFile( fileName.c_str() ) != XML_SUCCESS ){
@@ -59,7 +59,7 @@ Config readConfigFile(string fileName){
 	}
 	
 	config.particleName = simElement->FirstChildElement( "Particle" )->FirstChildElement( "name" )->GetText();
-	simElement->FirstChildElement( "Particle" )->FirstChildElement( "energy" )->QueryDoubleText( &config.particleEnergy );
+	simElement->FirstChildElement( "Particle" )->FirstChildElement( "momentum" )->QueryDoubleText( &config.particleMomentum );
 	simElement->FirstChildElement( "Particle" )->FirstChildElement( "x0" )->QueryDoubleText( &config.x0 );
 	simElement->FirstChildElement( "Particle" )->FirstChildElement( "theta" )->QueryDoubleText( &config.theta );
 	simElement->FirstChildElement( "Events" )->QueryIntText( &config.nEvents );
@@ -75,7 +75,7 @@ Config readConfigFile(string fileName){
 	return config;
 }
 
-void printConfig(Config config){
+void printConfig(TConfig config){
 	cout << "Configuration:" << endl;
 	cout << "   Detector:" << endl;
 	cout << "\t gap width: " << config.gapWidth << endl;
@@ -94,7 +94,7 @@ void printConfig(Config config){
 		
 	cout << "   Simulation parameters:" << endl;
 	cout << "\t particle: " << config.particleName << endl;
-	cout << "\t energy: " << config.particleEnergy << endl;
+	cout << "\t momentum: " << config.particleMomentum << endl;
 	cout << "\t x0: " << config.x0 << endl;
 	cout << "\t theta: " << config.theta << endl;
 	cout << "\t events to simulate: " << config.nEvents << endl;

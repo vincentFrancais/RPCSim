@@ -34,7 +34,7 @@
 <Simulation>
 	<Particle>
 		<name>muon</name>
-		<energy>5.e9</energy>
+		<momentum>5.e9</momentum>
 		<x0>0.</x0>
 		<theta>30.</theta>
 	</Particle>

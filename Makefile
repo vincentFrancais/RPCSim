@@ -61,16 +61,22 @@ INCDIRGAR = $(GARFIELD_HOME)/Include
 HEEDDIR = $(GARFIELD_HOME)/Heed
 GSLDIR = $(GSL_HOME)
 LIBDIR = $(GARFIELD_HOME)/Library
+PYTHON = yes
 PYCFLAGS = -I/usr/include/python2.7 -I/usr/include/x86_64-linux-gnu/python2.7  -fno-strict-aliasing -D_FORTIFY_SOURCE=2 -fstack-protector-strong -Wformat -Werror=format-security  -DNDEBUG -fwrapv
 PYLFLAGS = -L/usr/lib/python2.7/config-x86_64-linux-gnu -L/usr/lib -lpython2.7 -lpthread -ldl  -lutil -lm  -Xlinker -export-dynamic -Wl,-O1 -Wl,-Bsymbolic-functions
 
-MY_CFLAGS =  `root-config --cflags` `python2.7-config --cflags` -I$(INCDIRGAR) -I$(HEEDDIR) -I$(GSLDIR)/include
+MY_CFLAGS =  `root-config --cflags` -I$(INCDIRGAR) -I$(HEEDDIR) -I$(GSLDIR)/include
 
 # The linker options.
-MY_LIBS   = -lGarfield `python2.7-config --ldflags` `root-config --glibs` -L$(LIBDIR) -L$(GSLDIR)/lib -lGeom -lm -lMathCore -lGraf3d -lgfortran -lgsl -lgslcblas -lssl -lcrypto
+MY_LIBS   = -lGarfield  `root-config --glibs` -L$(LIBDIR) -L$(GSLDIR)/lib -lGeom -lm -lMathCore -lGraf3d -lgfortran -lgsl -lgslcblas -lssl -lcrypto
+
+ifeq ( $(PYTHON),yes )
+	MY_CFLAGS += $(PYCFLAGS)
+	MY_LIBS += $(PYLFLAGS)
+endif
 
 # The pre-processor options used by the cpp (man cpp for more).
-CPPFLAGS  = -fopenmp -W -Wall -Wextra
+CPPFLAGS  = -fopenmp -W -Wall -Wno-unused-result
 
 # The options used in linking as well as in any direct use of ld.
 LDFLAGS   = 

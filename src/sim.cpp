@@ -41,38 +41,33 @@ pthread_mutex_t gTrackLock;
 int gPipe[2];
 TResult gNullResult;
 
-//struct data{
-	//RPCSim sim;
-	////string partName;
-	////double partMomentum;
-	////double x0;
-	////double theta;
-//};
-
-
+struct ThreadData{
+	TDetector * detector;
+	TConfig config;
+	
+	ThreadData (TDetector * det, TConfig conf) : detector(det), config(conf){ };
+};
 
 void * wrapperFunction(void * Arg){
 	
 	assert(Arg != NULL);
 
-	//struct data * d = reinterpret_cast<struct data *>(Arg);
-	TDetector * detector = reinterpret_cast<TDetector *>(Arg);
+	//TDetector * detector = reinterpret_cast<TDetector *>(Arg);
+	ThreadData* data = reinterpret_cast< ThreadData* > (Arg);
 	
 	TResult result;
+	TAvalanche1D avalanche(data->detector, false);
 	
-	TAvalanche1D avalanche(detector, false);
 	
 	sem_post(TThreadsFactory::GetInstance()->GetInitLock());
 	
 	pthread_mutex_lock(&gTrackLock);
-	//avalanche.initialiseTrackHeed("muon",5.e9,0.,0.);
+	//avalanche.initialiseTrackHeed("muon",data->config.particleMomentum,data->config.x0,data->config.theta);
 	avalanche.initialiseSingleCluster(0);
 	pthread_mutex_unlock(&gTrackLock);
 	
 	//avalanche.disableSpaceChargeEffect();
 	avalanche.simulateEvent();
-	
-	//result.fInducedCharge = avalanche.getInducedCharges().back();
 	
 	result = avalanche.getResultFile();
 	
@@ -87,9 +82,8 @@ void * WriteResults(void * Arg)
 {
     TResult result;
     char * outputFile = reinterpret_cast<char *>(Arg);
-    //string outFileName = reinterpret_cast<string>(Arg);
+
     int outFD;
-	ofstream outFile(outputFile, ios::out | ios::trunc);
 	
     /* Open the output file */
     string outFileBinary (outputFile);
@@ -97,8 +91,7 @@ void * WriteResults(void * Arg)
 	if (found!=string::npos)
 		outFileBinary.erase(found,4);
     outFileBinary += ".bin";
-    //string outFileBin = "out/outBinary-"+outputFile+".dat";
-    //outFD = open("out/outBinary.dat", O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+
     outFD = open(outFileBinary.c_str(), O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     assert(outFD != -1);
 
@@ -111,18 +104,16 @@ void * WriteResults(void * Arg)
 
         /* Write the event to the output file */
         write(outFD, &result, sizeof(TResult));
-        outFile << result.thrCrossTimeStep << endl;
     }
 
     close(outFD);
-    outFile.close();
 
     return 0;
 }
 
 int main(int argc, char** argv) {
 	/* Read config file */
-	Config config = readConfigFile("config/calice.xml");
+	TConfig config = readConfigFile("config/calice.xml");
     printConfig(config);
      
     char outputFile[PATH_MAX];
@@ -192,14 +183,15 @@ int main(int argc, char** argv) {
 	TDetector* detector = new TDetector(geom,500);
 	detector->setGasMixture(gas);
 	detector->setElectricField(HV,0.,0.);
-	detector->makeEbarTable();
 	detector->initialiseDetector();
+	detector->makeEbarTable();
+	
+	ThreadData* data = new ThreadData(detector, config);
 	
 	//TAvalanche* avalanche = new TAvalanche(detector);
 	//avalanche->computeClusterDensity(detector, "muon", 6.e7, 15.e9, 600);
 	//avalanche->computeElectronsProduction(detector, "muon", 5.e9, 100000);
 	//delete avalanche;
-	//TAvalanche::computeClusterDensity(detector, "muon", 6.e7, 15.e9, 600);
 	//exit(0);
 	
     /* Open the communication pipe */
@@ -214,7 +206,7 @@ int main(int argc, char** argv) {
 
     /* Hot loop, the simulation happens here */
     for (unsigned long i = 0; i < nEvents; ++i){
-		TThreadsFactory::GetInstance()->CreateThread(wrapperFunction, detector);
+		TThreadsFactory::GetInstance()->CreateThread(wrapperFunction, data);
     }
 
     /* Wait for all the propagations to finish */

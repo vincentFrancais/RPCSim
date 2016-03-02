@@ -1,7 +1,6 @@
 #ifndef DEF_HELPERS
 #define DEF_HELPERS
 
-#include <Python.h>
 #include <iostream>
 #include <vector>
 #include <sstream>
@@ -17,6 +16,16 @@
 #include "RngStream.h"
 
 
+#if defined( _PYTHON ) || defined( PYTHON ) || defined (__PYTHON__)
+#   ifndef PYTHON
+#       define PYTHON
+#   endif
+#endif
+
+#if defined(PYTHON)
+#	include <Python.h>
+#endif
+
 template<typename T>
 std::string to_string(const T & value)
 {
@@ -27,7 +36,9 @@ std::string to_string(const T & value)
 
 uint64_t gettid();
 
-int call_python_fun(std::string funName, std::vector<double> args, double& result);
+#if defined(PYTHON)
+	int call_python_fun(std::string funName, std::vector<double> args, double& result);
+#endif
 
 std::string GetHexRepresentation(const unsigned char * Bytes, size_t Length);
 

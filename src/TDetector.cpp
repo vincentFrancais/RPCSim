@@ -17,8 +17,6 @@
 #include <gsl/gsl_integration.h>
 #include "gsl/gsl_math.h"
 
-#include <Python.h>
-
 
 using namespace std;
 static TDetector* tgsl = 0;
@@ -27,10 +25,11 @@ extern double cm;
 
 TDetector::TDetector(const DetectorGeometry& geometry, const int& nStep){
 	iNstep = nStep;
-	//fGapWidth = gasGap;
 	fGeometry = geometry;
 
 	bHasEbarTable = false;
+	bGasLoaded = false;
+	bDetectorInitialised = false;
 }
 
 TDetector::~TDetector(){
@@ -62,7 +61,8 @@ void TDetector::setGasMixture(Garfield::MediumMagboltz* gas){
 
 	fTemperature = mGas->GetTemperature();
 	fPressure = mGas->GetPressure();
-
+	
+	bGasLoaded = true;
 }
 
 void TDetector::setElectricField(const double& Ex, const double& Ey, const double& Ez){
@@ -141,6 +141,7 @@ void TDetector::initialiseDetector(){
 	//test();
 	//Py_Finalize();
 	//exit(0);
+	bDetectorInitialised = true;
 }
 
 double* TDetector::getTransportParameters(double Ex, double Ey, double Ez){
@@ -155,6 +156,11 @@ double* TDetector::getTransportParameters(double Ex, double Ey, double Ez){
 }
 
 void TDetector::writeGasTransportParameters(){
+	if (!bGasLoaded) {
+		cerr << "TDetector::writeGasTransportParameters -- No gas table found/loaded." << endl;
+		return;
+	}
+	
 	ofstream data(("out/"+mGasTableName+".dat").c_str(), ios::out | ios::trunc);
 	data << "#eta	alpha	v	dl	dt	E" << endl;
 	double alpha, eta, vx, vy, vz, dl, dt;
@@ -300,30 +306,38 @@ double TDetector::computeEbar(const double& z, const double& l, const double& zp
 	return result;
 }
 
-double TDetector::computeEbar_Python(const double& z, const double& l, const double& zp){
-	
-	double mm = 1.e-3;
-	
-	double eps0 = GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
-    double eps1 = fGeometry.relativePermittivity[0] * eps0;
-	double eps3 = eps1;
-	double eps2 = eps0;
-	
-	double values[10] = {z, l, zp, fDiffT, eps1,eps2,eps3,4.*mm,2.*mm,2.*mm};
-	vector<double> args (values, values + sizeof(values) / sizeof(values[0]) );
-	double Ebar;
-	call_python_fun("compute_Ebar", args, Ebar);
-	
-	return Ebar;
-}
+#if defined(PYTHON)
+	double TDetector::computeEbar_Python(const double& z, const double& l, const double& zp){
+		// Very slow !!!!
+		double mm = 1.e-3;
+		
+		double eps0 = GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
+	    double eps1 = fGeometry.relativePermittivity[0] * eps0;
+		double eps3 = eps1;
+		double eps2 = eps0;
+		
+		double values[10] = {z, l, zp, fDiffT, eps1,eps2,eps3,4.*mm,2.*mm,2.*mm};
+		vector<double> args (values, values + sizeof(values) / sizeof(values[0]) );
+		double Ebar;
+		call_python_fun("compute_Ebar", args, Ebar);
+		
+		return Ebar;
+	}
+#endif
 
 void TDetector::makeEbarTable(){
+	// TODO: option to write table in binary format to save HDD space and loading time
+	if( !bDetectorInitialised ){
+		cerr << "Error -- TDetector::makeEbarTable -- Detector needs to be initialised first." << endl;
+		exit(0);
+	}
+	
 	if(bHasEbarTable)	return;
 
 	iEbarTableSize = 10;
 	int n = iEbarTableSize+1;
 	int size = (n)*(n)*(n);
-
+	
 	//string fileName = to_string(fDiffT)+to_string(fGeometry.gapWidth)+to_string(fGeometry.relativePermittivity[0])
 	//+to_string(fGeometry.relativePermittivity[1])+to_string(iNstep)+to_string(n)+to_string(fDx)+to_string(iEbarTableSize);
 	string fileName = getUniqueTableName(n);

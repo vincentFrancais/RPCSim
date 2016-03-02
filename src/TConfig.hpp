@@ -9,7 +9,7 @@
 
 using namespace std;
 
-struct Config {
+struct TConfig {
 	double gapWidth;
 	int nSteps;
 	
@@ -25,15 +25,15 @@ struct Config {
 	double gasPressure;
 	
 	string particleName;
-	double particleEnergy;
+	double particleMomentum;
 	double x0;
 	double theta;
 	
 	int nThreads;
 	int nEvents;
 	string outFile;
-	Config() : nResisLayers(0), nGases(0), outFile("out/") { }
+	TConfig() : nResisLayers(0), nGases(0), outFile("out/") { }
 };
 
-Config readConfigFile(string fileName);
-void printConfig(Config config);
+TConfig readConfigFile(string fileName);
+void printConfig(TConfig config);

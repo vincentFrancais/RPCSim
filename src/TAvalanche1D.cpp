@@ -65,11 +65,13 @@ TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche(
 	fLongiDiffSigma = fDiffL*sqrt(fDx);
 
 	bThrCrossTime = false;
-	bComputeSpaceChargeEffet = true;
-	bVerbose = true;
-	bSnapshots = false;
 	bHasReachSpaceChargeLimit = false;
 	bEbarComputed = det->hasEBarTable();
+	bComputeSpaceChargeEffet = true;
+	bAvalancheInitialised = false;
+	
+	bVerbose = true;
+	bSnapshots = false;
 
 	// if n == -1 Ebar table has not been computed
 	if ( bEbarComputed ){
@@ -150,6 +152,13 @@ void TAvalanche1D::computeElectronsProduction(const string& particleName, const 
 }
 
 void TAvalanche1D::initialiseTrackHeed(const string& particleName, const double& momentum, const double& x0, const double& theta){
+	if( bAvalancheInitialised ) {
+		cerr << "TAvalanche1D::initialiseTrackHeed -- Avalanche already initialised." << endl;
+		return;
+	}
+	
+	cout << "Initialising avalanche with Heed track for " << particleName << " with momentum " << to_string(momentum) << " at position " << to_string(x0) << " with angle " << to_string(theta) << endl;
+	
 	Garfield::TrackHeed* track = new Garfield::TrackHeed();
 	track->SetSensor(fDet->getSensor());
 	track->SetParticle(particleName);
@@ -179,9 +188,17 @@ void TAvalanche1D::initialiseTrackHeed(const string& particleName, const double&
 	
 	fClusterDensity = track->GetClusterDensity();
 	delete track;
+	
+	bAvalancheInitialised = true;
 }
 
 void TAvalanche1D::initialiseSingleCluster(const double& x0, const double& n0){
+	if( bAvalancheInitialised ) {
+		cerr << "TAvalanche1D::initialiseSingleCluster -- Avalanche already initialised." << endl;
+		return;
+	}
+	
+	cout << "Initialising avalanche with " << to_string(n0) << " electron(s) at position " << to_string(x0) << endl;
 	
 	fNElectrons = new double[iNElectronsSize];
 	for(int i=0; i<iNElectronsSize; i++)
@@ -190,6 +207,7 @@ void TAvalanche1D::initialiseSingleCluster(const double& x0, const double& n0){
 	fNElectrons[0] = n0;
 	fElecDetectorGrid[ int(trunc(x0/fDx)) ] = n0;
 	
+	bAvalancheInitialised = true;
 }
 
 void TAvalanche1D::makeResultFile(){
@@ -210,9 +228,15 @@ void TAvalanche1D::makeResultFile(){
 }
 
 void TAvalanche1D::simulateEvent(){
+	// check if avalanche has been initialised
+	if ( !bAvalancheInitialised ){
+		cerr << "Error -- TAvalanche1D::simulateEvent -- Avalanche has not been initialised. Aborting" << endl;
+		exit(0);
+	}
+	
 	// check if Ebar table is computed if space charge effect is enable
 	if ( bComputeSpaceChargeEffet && !bEbarComputed ){
-		cerr << "TAvalanche1D :: No Ebar table found -- aborting simulation." << endl;
+		cerr << "Error -- TAvalanche1D::simulateEvent -- No Ebar table found. Aborting simulation." << endl;
 		exit(0); 
 	}
 		
@@ -476,7 +500,6 @@ void TAvalanche1D::computeLongitudinalDiffusion(){
 		
 		for(int n=0; n<fElecDetectorGrid.at(iz); n++){
 			newPos = Gaus(pos, fLongiDiffSigma, fRandRngLongiDiff);
-			//newPos = fRNQueue.next() * fLongiDiffSigma + pos;
 			newPosIndex = (int)trunc(newPos/fDx);
 			if ( newPosIndex >= iNstep){
 				 newPosIndex = iNstep-1;
