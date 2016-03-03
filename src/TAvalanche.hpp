@@ -8,6 +8,7 @@
 
 #include "TDetector.hpp"
 #include "TResult.hpp"
+#include "helper_functions.hpp"
 
 using namespace std;
 

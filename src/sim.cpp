@@ -62,8 +62,8 @@ void * wrapperFunction(void * Arg){
 	sem_post(TThreadsFactory::GetInstance()->GetInitLock());
 	
 	pthread_mutex_lock(&gTrackLock);
-	//avalanche.initialiseTrackHeed("muon",data->config.particleMomentum,data->config.x0,data->config.theta);
-	avalanche.initialiseSingleCluster(0);
+	avalanche.initialiseTrackHeed(data->config.particleName, data->config.particleMomentum, data->config.x0, data->config.theta);
+	//avalanche.initialiseSingleCluster(0);
 	pthread_mutex_unlock(&gTrackLock);
 	
 	//avalanche.disableSpaceChargeEffect();
@@ -126,8 +126,6 @@ int main(int argc, char** argv) {
     pthread_t writingThread;
     void * ret;
     
-    //exit(0);
-    
     unsigned int nThreads = config.nThreads;
     unsigned long nEvents = config.nEvents;
 		
@@ -185,6 +183,7 @@ int main(int argc, char** argv) {
 	detector->setElectricField(HV,0.,0.);
 	detector->initialiseDetector();
 	detector->makeEbarTable();
+	detector->setGarfieldSeed( 2844356529 );
 	
 	ThreadData* data = new ThreadData(detector, config);
 	

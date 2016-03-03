@@ -26,6 +26,7 @@ extern double cm;
 TDetector::TDetector(const DetectorGeometry& geometry, const int& nStep){
 	iNstep = nStep;
 	fGeometry = geometry;
+	iEbarTableSize = 75;
 
 	bHasEbarTable = false;
 	bGasLoaded = false;
@@ -176,6 +177,10 @@ void TDetector::writeGasTransportParameters(){
 	
 	data.close();
 	
+}
+
+void TDetector::setGarfieldSeed( const int& s ) {
+	Garfield::randomEngine.Seed(s);
 }
 
 double TDetector::R(const double& k, const double& z, const double& zp){
@@ -334,7 +339,6 @@ void TDetector::makeEbarTable(){
 	
 	if(bHasEbarTable)	return;
 
-	iEbarTableSize = 10;
 	int n = iEbarTableSize+1;
 	int size = (n)*(n)*(n);
 	

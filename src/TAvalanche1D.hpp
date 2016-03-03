@@ -55,9 +55,9 @@ class TAvalanche1D : public TAvalanche {
 	~TAvalanche1D();
 	
 	void initialiseTrackHeed(const string& particleName, const double& momentum, const double& x0, const double& theta);
-	
-	void simulateEvent();
 	void initialiseSingleCluster(const double& x0, const double& n0=1);
+		
+	void simulateEvent();
 	void computeInducedCharges();
 	void computeInducedSignal();
 	void computeInducedSignal2();
@@ -65,6 +65,18 @@ class TAvalanche1D : public TAvalanche {
 	void computeClusterDensity(const string& particleName, const double& Pmin, const double& Pmax, const int& steps);
 	void computeElectronsProduction(const string& particleName, const double& P, const int& nTracks);
 	void checkDetectorGrid();
+	bool propagate();
+	void computeLongitudinalDiffusion();
+	bool avalanche();
+	double n_moy(const double& x);
+	double electron_multiplication(const double& x, const double& s);
+	double multiplication(const double& n);
+	double CLT(const double& x, const double& n);
+	void makeResultFile();
+	void computeSCEffect();
+	double interpolateEbar(const double& z, const double& zp, const double& l);
+	
+	void makeSnapshot();
 	
 	void disableSpaceChargeEffect() {bComputeSpaceChargeEffet = false;}
 	void enableSpaceChargeEffect() {bComputeSpaceChargeEffet = true;}
@@ -75,23 +87,10 @@ class TAvalanche1D : public TAvalanche {
 	vector<double> getInducedCharges() const {return fCharges;}
 	TResult getResultFile() const {return fResult;}
 	
-	void makeResultFile();
-	
-	double n_moy(const double& x);
-	double electron_multiplication(const double& x, const double& s);
-	double multiplication(const double& n);
-	double CLT(const double& x, const double& n);
-	
-	void computeLongitudinalDiffusion();
-	bool avalanche();
-	
-	void computeSCEffect();
-	double interpolateEbar(const double& z, const double& zp, const double& l);
-	
-	void makeSnapshot();
-	
 	void testInterpolation();
 	size_t getIndex3D(const size_t& i, const size_t& j, const size_t& k);
+	
+	
 	
 	private:
 	uint tId;

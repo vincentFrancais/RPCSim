@@ -14,6 +14,7 @@
 #include "ComponentConstant.hh"
 #include "Sensor.hh"
 #include "TrackHeed.hh"
+#include "Random.hh"
 
 #if defined( _PYTHON ) || defined( PYTHON ) || defined (__PYTHON__)
 #   ifndef PYTHON
@@ -49,6 +50,8 @@ class TDetector{
 	Garfield::MediumMagboltz* getGas();
 	void initialiseDetector();
 	void writeGasTransportParameters();
+	
+	void setGarfieldSeed( const int& s );
 	
 	double R(const double& k, const double& z, const double& zp);
 	double D(const double& k);

@@ -71,7 +71,7 @@ TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche(
 	bAvalancheInitialised = false;
 	
 	bVerbose = true;
-	bSnapshots = false;
+	bSnapshots = true;
 
 	// if n == -1 Ebar table has not been computed
 	if ( bEbarComputed ){
@@ -189,6 +189,7 @@ void TAvalanche1D::initialiseTrackHeed(const string& particleName, const double&
 	fClusterDensity = track->GetClusterDensity();
 	delete track;
 	
+	cout << "TAvalanche1D::initialiseTrackHeed -- " << to_string( fNElectrons[0] ) << " electrons produced by heed track." << endl;
 	bAvalancheInitialised = true;
 }
 
@@ -344,7 +345,6 @@ double TAvalanche1D::electron_multiplication(const double& x, const double& s){
 	double nm = n_moy(x);
 	double alpha = fAlpha.at(iCurrentDetectorStep);
 	double eta = fEta.at(iCurrentDetectorStep);
-	//double k = fEta.at(iCurrentDetectorStep)/fAlpha.at(iCurrentDetectorStep);
 	double k = eta/alpha;
 	double thr;
 	
@@ -496,7 +496,7 @@ void TAvalanche1D::computeLongitudinalDiffusion(){
 	int newPosIndex;
 	
 	for(int iz=0; iz<iNstep; iz++){
-		pos = (iz+0.5) * fDx;
+		pos = (iz) * fDx;
 		
 		for(int n=0; n<fElecDetectorGrid.at(iz); n++){
 			newPos = Gaus(pos, fLongiDiffSigma, fRandRngLongiDiff);
@@ -523,39 +523,44 @@ void TAvalanche1D::computeLongitudinalDiffusion(){
 	fElecDetectorGrid = newDetectorGrid;
 }
 
-bool TAvalanche1D::avalanche(){
+bool TAvalanche1D::propagate() {
 	double n, nProduced;
-	vector<double> copy;
+	vector<double> copy (fElecDetectorGrid);
+	
+	for(iCurrentDetectorStep=0; iCurrentDetectorStep<iNstep-1; iCurrentDetectorStep++){
+		n = copy.at(iCurrentDetectorStep);
+		
+		//if (bHasReachSpaceChargeLimit and !bComputeSpaceChargeEffet)
+		//	nProduced = n;
+		//else 
+			nProduced = multiplication(n);
+			
+		if (eAvalStatus != AVAL_NO_ERROR)
+			return false;
+		
+		fElecDetectorGrid.at(iCurrentDetectorStep+1) = nProduced;
+		
+		if( (nProduced - n) > 0 )
+			fPosIonDetectorGrid.at(iCurrentDetectorStep+1) += nProduced - n;
+		else
+			fNegIonDetectorGrid.at(iCurrentDetectorStep+1) += n - nProduced;
+		
+		fNElectrons[iTimeStep] += nProduced;
+	}
+	
+	return true;
+}
 
-	iTimeStep = 0;
+bool TAvalanche1D::avalanche() {
+	iTimeStep = 1;
 
 	while(true){
 		
 		if ( bComputeSpaceChargeEffet )
 			computeSCEffect();
-		
-		copy = fElecDetectorGrid;
-		
-		for(iCurrentDetectorStep=0; iCurrentDetectorStep<iNstep-1; iCurrentDetectorStep++){
-			n = copy.at(iCurrentDetectorStep);
 			
-			if (bHasReachSpaceChargeLimit)
-				nProduced = n;
-			else 
-				nProduced = multiplication(n);
-				
-			if (eAvalStatus != AVAL_NO_ERROR)
-				return false;
-			
-			fElecDetectorGrid.at(iCurrentDetectorStep+1) = nProduced;
-			
-			if( (nProduced - n) > 0 )
-				fPosIonDetectorGrid.at(iCurrentDetectorStep+1) += nProduced - n;
-			else
-				fNegIonDetectorGrid.at(iCurrentDetectorStep+1) += n - nProduced;
-			
-			fNElectrons[iTimeStep] += nProduced;
-		}
+		if ( !propagate() )
+			return false;
 		
 		// Empty the first bin after the first multplication procedure to avoid infinite elec creation
 		if (iTimeStep == 1)
@@ -565,7 +570,7 @@ bool TAvalanche1D::avalanche(){
 		
 		computeInducedSignal2();
 		
-		// Elecs in last bin will leave to the anode, so we empty it
+		// Elecs in last bin has reached the anode, so we empty it
 		fNelecAnode += fElecDetectorGrid.at(iNstep-1);
 		if (fElecDetectorGrid.at(iNstep-1) > 0){
 			fElecOnAnode.push_back( make_pair(fElecDetectorGrid.at(iNstep-1),iTimeStep*fDx) );
@@ -578,7 +583,7 @@ bool TAvalanche1D::avalanche(){
 		if (bSnapshots)
 			makeSnapshot();
 		
-		if (bVerbose){
+		if (bVerbose) {
 			cout << "time step: " << iTimeStep << "\t Nelec: " << fNElectrons[iTimeStep] << "\t" << "NelecLastBin: " << fNelecAnode;
 			cout << " " << -sumVec(fPosIonDetectorGrid)+sumVec(fElecDetectorGrid)+sumVec(fNegIonDetectorGrid) << endl;
 		}
@@ -588,8 +593,8 @@ bool TAvalanche1D::avalanche(){
 				return false;
 		}
 		
-		if (!bComputeSpaceChargeEffet and !bHasReachSpaceChargeLimit and fNElectrons[iTimeStep]>fSpaceChargeLimit)
-			bHasReachSpaceChargeLimit = true;
+		//if (!bComputeSpaceChargeEffet and !bHasReachSpaceChargeLimit and fNElectrons[iTimeStep]>fSpaceChargeLimit)
+		//	bHasReachSpaceChargeLimit = true;
 		
 		iTimeStep++;
 	}
