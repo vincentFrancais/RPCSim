@@ -54,8 +54,8 @@ void TAvalanche::computeClusterDensity(const TDetector* det, const string& parti
 
 void TAvalanche::computeElectronsProduction(const TDetector* det, const string& particleName, const double& P, const int& nTracks){
 	cout << "TAvalanche::Computing electron density and cluster size." << endl;
-	string outFileName = "out/electron_density_"+particleName+"_"+to_string(P)+".dat";
-	string clSizeFileName = "out/cluster_size_"+particleName+"_"+to_string(P)+".dat";
+	string outFileName = "out/electron_density_"+particleName+"_"+toString(P)+".dat";
+	string clSizeFileName = "out/cluster_size_"+particleName+"_"+toString(P)+".dat";
 	ofstream data(outFileName.c_str(), ios::out | ios::trunc);
 	ofstream clSize(clSizeFileName.c_str(), ios::out | ios::trunc);
 	
