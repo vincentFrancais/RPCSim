@@ -64,7 +64,7 @@ class TDetector{
 	#if defined(PYTHON)
 		double computeEbar_Python(const double& z, const double& l, const double& zp);
 	#endif
-	void makeEbarTable();
+	void makeEbarTable( bool const& binary=true );
 	
 	double getGapWidth(void) const	{return fGeometry.gapWidth;}
 	const double* getResistiveLayersWidth(void) const {return fGeometry.resistiveLayersWidth;}
@@ -95,7 +95,8 @@ class TDetector{
 	
 	void plotSC();
 	
-	string getUniqueTableName(int const& n);
+	string getUniqueTableName(int const& n); //TO BE REMOVED!
+	string getUniqueTableName();
 	
 	private:
 	int iNstep;

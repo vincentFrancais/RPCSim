@@ -121,8 +121,8 @@ void TAvalanche1D::computeClusterDensity(const string& particleName, const doubl
 
 void TAvalanche1D::computeElectronsProduction(const string& particleName, const double& P, const int& nTracks){
 
-	string outFileName = "out/electron_density_"+particleName+"_"+to_string(P)+".dat";
-	string clSizeFileName = "out/cluster_size_"+particleName+"_"+to_string(P)+".dat";
+	string outFileName = "out/electron_density_"+particleName+"_"+toString(P)+".dat";
+	string clSizeFileName = "out/cluster_size_"+particleName+"_"+toString(P)+".dat";
 	ofstream data(outFileName.c_str(), ios::out | ios::trunc);
 	ofstream clSize(clSizeFileName.c_str(), ios::out | ios::trunc);
 	
@@ -157,7 +157,7 @@ void TAvalanche1D::initialiseTrackHeed(const string& particleName, const double&
 		return;
 	}
 	
-	cout << "Initialising avalanche with Heed track for " << particleName << " with momentum " << to_string(momentum) << " at position " << to_string(x0) << " with angle " << to_string(theta) << endl;
+	cout << "Initialising avalanche with Heed track for " << particleName << " with momentum " << toString(momentum) << " at position " << toString(x0) << " with angle " << toString(theta) << endl;
 	
 	Garfield::TrackHeed* track = new Garfield::TrackHeed();
 	track->SetSensor(fDet->getSensor());
@@ -189,7 +189,7 @@ void TAvalanche1D::initialiseTrackHeed(const string& particleName, const double&
 	fClusterDensity = track->GetClusterDensity();
 	delete track;
 	
-	cout << "TAvalanche1D::initialiseTrackHeed -- " << to_string( fNElectrons[0] ) << " electrons produced by heed track." << endl;
+	cout << "TAvalanche1D::initialiseTrackHeed -- " << toString( fNElectrons[0] ) << " electrons produced by heed track." << endl;
 	bAvalancheInitialised = true;
 }
 
@@ -199,7 +199,7 @@ void TAvalanche1D::initialiseSingleCluster(const double& x0, const double& n0){
 		return;
 	}
 	
-	cout << "Initialising avalanche with " << to_string(n0) << " electron(s) at position " << to_string(x0) << endl;
+	cout << "Initialising avalanche with " << toString(n0) << " electron(s) at position " << toString(x0) << endl;
 	
 	fNElectrons = new double[iNElectronsSize];
 	for(int i=0; i<iNElectronsSize; i++)
@@ -496,7 +496,7 @@ void TAvalanche1D::computeLongitudinalDiffusion(){
 	int newPosIndex;
 	
 	for(int iz=0; iz<iNstep; iz++){
-		pos = (iz) * fDx;
+		pos = (iz+0.5) * fDx;
 		
 		for(int n=0; n<fElecDetectorGrid.at(iz); n++){
 			newPos = Gaus(pos, fLongiDiffSigma, fRandRngLongiDiff);
@@ -629,11 +629,11 @@ void TAvalanche1D::makeSnapshot(){
 	cout << "Snapshot at: " << iTimeStep*fDt << endl;
 	string fileName;
 	if (iTimeStep<10)
-		fileName = "out/snaps/snap-00"+to_string(iTimeStep)+".dat";
+		fileName = "out/snaps/snap-00"+toString(iTimeStep)+".dat";
 	else if (iTimeStep<100 and iTimeStep>9) 
-		fileName = "out/snaps/snap-0"+to_string(iTimeStep)+".dat";
+		fileName = "out/snaps/snap-0"+toString(iTimeStep)+".dat";
 	else
-		fileName = "out/snaps/snap-"+to_string(iTimeStep)+".dat";
+		fileName = "out/snaps/snap-"+toString(iTimeStep)+".dat";
 	
 	ofstream data(fileName.c_str(), ios::out | ios::trunc);
 	for(int i=0; i<iNstep; i++){

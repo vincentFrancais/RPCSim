@@ -26,7 +26,7 @@ extern double cm;
 TDetector::TDetector(const DetectorGeometry& geometry, const int& nStep){
 	iNstep = nStep;
 	fGeometry = geometry;
-	iEbarTableSize = 75;
+	iEbarTableSize = 10;
 
 	bHasEbarTable = false;
 	bGasLoaded = false;
@@ -50,8 +50,8 @@ void TDetector::setGasMixture(Garfield::MediumMagboltz* gas){
 	}
 
 	for(vector< pair<string,double> >::iterator it = composition.begin(); it != composition.end(); it++)	
-		mGasTableName += it->first + "-" + to_string(it->second) + "_";
-	mGasTableName += "temp-" + to_string(mGas->GetTemperature()) + "_pres-" + to_string(mGas->GetPressure()) + ".gas";
+		mGasTableName += it->first + "-" + toString(it->second) + "_";
+	mGasTableName += "temp-" + toString(mGas->GetTemperature()) + "_pres-" + toString(mGas->GetPressure()) + ".gas";
 	
 	cout << "\tGas table file: " << mGasTableName << endl;
 	
@@ -330,8 +330,10 @@ double TDetector::computeEbar(const double& z, const double& l, const double& zp
 	}
 #endif
 
-void TDetector::makeEbarTable(){
-	// TODO: option to write table in binary format to save HDD space and loading time
+void TDetector::makeEbarTable( bool const& binary ){
+	// WARNING if table was written in plain text, the loading from binary format will be incorrect!!!!
+	// WARNING writing and loading has to be done in the same format (binary or plain text)
+	
 	if( !bDetectorInitialised ){
 		cerr << "Error -- TDetector::makeEbarTable -- Detector needs to be initialised first." << endl;
 		exit(0);
@@ -342,10 +344,7 @@ void TDetector::makeEbarTable(){
 	int n = iEbarTableSize+1;
 	int size = (n)*(n)*(n);
 	
-	//string fileName = to_string(fDiffT)+to_string(fGeometry.gapWidth)+to_string(fGeometry.relativePermittivity[0])
-	//+to_string(fGeometry.relativePermittivity[1])+to_string(iNstep)+to_string(n)+to_string(fDx)+to_string(iEbarTableSize);
-	string fileName = getUniqueTableName(n);
-	
+	string fileName = getUniqueTableName();
 	cout << "FileName: " << fileName << endl;
 
 	unsigned char* uc = new unsigned char[fileName.size()+1];
@@ -369,21 +368,29 @@ void TDetector::makeEbarTable(){
 	fEbarVecTable = vector<double> (size);
 
 	if (file_exist("EbarTables/"+hexFileName)){
-		//ifstream inf(("EbarTables/"+hexFileName).c_str(),ios::binary);
-		ifstream inf(("EbarTables/"+hexFileName).c_str());
-		double z,zp,l,Ebar;
-		int i=0;
-		while (inf >> z >> zp >> l >> Ebar){
-			fEbarVecTable[i] = Ebar;
-			i++;
+		ifstream inf;
+		
+		if ( binary ) {
+			inf.open(("EbarTables/"+hexFileName).c_str(),ios::binary);
+			inf.read(reinterpret_cast<char*>(&fEbarVecTable[0]), fEbarVecTable.size() * sizeof(fEbarVecTable[0]));
 		}
-		//inf.read((char*)&table,sizeof(table));
-		//inf.read(reinterpret_cast<char*>(&fEbarVecTable[0]), fEbarVecTable.size() * sizeof(fEbarVecTable[0]));
-
-		//fEbarVecTable = arrayToVec(table, size);
-
+		else {
+			inf.open(("EbarTables/"+hexFileName).c_str());
+			double z,zp,l,Ebar;
+			int i=0;
+			while (inf >> z >> zp >> l >> Ebar){
+				fEbarVecTable[i] = Ebar;
+				i++;
+			}
+		}
+		inf.read(reinterpret_cast<char*>(&fEbarVecTable[0]), fEbarVecTable.size() * sizeof(fEbarVecTable[0]));
+		
+		if ( std::accumulate(fEbarVecTable.begin(),fEbarVecTable.end(),0.) == 0 ) {
+			cerr << "Error while loading Ebar table." << endl;
+			exit(0);
+		}
+		
 		fEbarTableHexName = hexFileName;
-
 		bHasEbarTable = true;
 		return;
 	}
@@ -397,33 +404,31 @@ void TDetector::makeEbarTable(){
 	for(i=0; i<n; i++){	//z
 		for(j=0; j<n; j++){	//zp
 			for(k=0; k<n; k++){	//l
-				//double Ebar = computeEbar((i)*zStep,(k+1)*lStep,(j)*zpStep);
 				double Ebar = computeEbar( fEbarZarray[i], fEbarLarray[k], fEbarZparray[j] );
 				fEbarVecTable[ (long)i*(long)n*(long)n + (long)j*(long)n + (long)k ] = Ebar;
 			}
 		}
 	}
-
-	//ofstream o(("EbarTables/"+hexFileName).c_str(),ios::binary);
-	ofstream o(("EbarTables/"+hexFileName).c_str(), ios::out | ios::trunc);
-	//const char* pointer = reinterpret_cast<const char*>(&fEbarVecTable[0]);
-	//o.write((char*)&fEbarVecTable[0], fEbarVecTable.size() * sizeof(fEbarVecTable[0]));
-	//o.write((char*)&table,sizeof(table));
-	//o.write((const char*)&fEbarVecTable, sizeof(fEbarVecTable));
-
-	//fEbarVecTable = arrayToVec(table, size);
-	//delete table;
-
-	fEbarTableHexName = hexFileName;
-
-	for(int i=0; i<n; i++){
-		for(int j=0; j<n; j++){
-			for(int k=0; k<n; k++){
-				data << (i)*zStep << "\t" << (j)*zpStep << "\t" << (k+1)*lStep << "\t" << fEbarVecTable[ (long)i*(long)n*(long)n + (long)j*(long)n + (long)k ] << endl;
-				o << fEbarZarray[i] << "\t" << fEbarZparray[j] << "\t" << fEbarLarray[k] << "\t" << fEbarVecTable[ (long)i*(long)n*(long)n + (long)j*(long)n + (long)k ] << endl;
+	
+	ofstream o;
+	if (binary) {
+		o.open(("EbarTables/"+hexFileName).c_str(),ios::binary);
+		const char* pointer = reinterpret_cast<const char*>(&fEbarVecTable[0]);
+		o.write( pointer, sizeof(fEbarVecTable[0])*fEbarVecTable.size() );
+	}
+	else {
+		o.open(("EbarTables/"+hexFileName).c_str(), ios::out | ios::trunc);
+		for(int i=0; i<n; i++){
+			for(int j=0; j<n; j++){
+				for(int k=0; k<n; k++){
+					data << (i)*zStep << "\t" << (j)*zpStep << "\t" << (k+1)*lStep << "\t" << fEbarVecTable[ (long)i*(long)n*(long)n + (long)j*(long)n + (long)k ] << endl;
+					o << fEbarZarray[i] << "\t" << fEbarZparray[j] << "\t" << fEbarLarray[k] << "\t" << fEbarVecTable[ (long)i*(long)n*(long)n + (long)j*(long)n + (long)k ] << endl;
+				}
 			}
 		}
 	}
+
+	fEbarTableHexName = hexFileName;
 
 	o.close();
 	data.close();
@@ -451,8 +456,16 @@ void TDetector::plotSC(){
 }
 
 string TDetector::getUniqueTableName(int const& n){
-	string name = to_string(fDiffT) + to_string(fGeometry.gapWidth) + to_string(fGeometry.relativePermittivity[0]) + to_string(fGeometry.resistiveLayersWidth[0]) + to_string(fGeometry.resistiveLayersWidth[1])
-	+to_string(fGeometry.relativePermittivity[1]) + to_string(iNstep)+ to_string(n)+ to_string(fDx) + to_string(iEbarTableSize);
+	string name = toString(fDiffT) + toString(fGeometry.gapWidth) + toString(fGeometry.relativePermittivity[0]) + toString(fGeometry.resistiveLayersWidth[0]) + toString(fGeometry.resistiveLayersWidth[1])
+	+toString(fGeometry.relativePermittivity[1]) + toString(iNstep)+ toString(n)+ toString(fDx) + toString(iEbarTableSize);
+	
+	return name;
+}
+
+string TDetector::getUniqueTableName(){
+	string name = "fDiffT:"+toString(fDiffT) + "-gapWidth:"+toString(fGeometry.gapWidth) + "-eps1:"+toString(fGeometry.relativePermittivity[0]) + "-eps3:"+toString(fGeometry.relativePermittivity[1])
+	+ "-cathode:"+toString(fGeometry.resistiveLayersWidth[0]) + "-anode:"+toString(fGeometry.resistiveLayersWidth[1])
+	+ "-Nstep:"+toString(iNstep) + "-Dx:"+toString(fDx) + "-EbarTableSize:"+toString(iEbarTableSize);
 	
 	return name;
 }

@@ -183,7 +183,7 @@ int main(int argc, char** argv) {
 	detector->setElectricField(HV,0.,0.);
 	detector->initialiseDetector();
 	detector->makeEbarTable();
-	detector->setGarfieldSeed( 2844356529 );
+	//detector->setGarfieldSeed( 2844356529 );
 	
 	ThreadData* data = new ThreadData(detector, config);
 	
