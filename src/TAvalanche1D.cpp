@@ -267,7 +267,7 @@ void TAvalanche1D::simulateEvent(){
 		fSignal.push_back(-1);
 		fCharges.push_back(-1);
 		makeResultFile();
-		cout << "Avalanche simulation (thread id " << tId << ") terminated with error: " << eAvalStatus << endl;
+		cout << "Avalanche simulation id " << Id << " (thread id " << tId << ") terminated with error: " << eAvalStatus << endl;
 	}
 }
 
