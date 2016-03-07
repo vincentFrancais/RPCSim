@@ -3,6 +3,7 @@
 using namespace std;
 
 TAvalanche::TAvalanche (TDetector* det, bool const& randomSeed) {
+	//fDet = det;
 	fDet = det;
 	fGeometry = det->getGeometry();
 	
@@ -23,6 +24,7 @@ TAvalanche::TAvalanche (TDetector* det, bool const& randomSeed) {
 	fRandRngCLT = new RngStream();
 	fRandRngLongiDiff = new RngStream();
 	
+	//count++;
 }
 
 TAvalanche::~TAvalanche() {

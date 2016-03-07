@@ -25,27 +25,28 @@ extern double cm;
 
 TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche(det, randomSeed) {
 	tId = gettid();
+	Id = count++;
 	
-	iNstep = det->getNstep();
+	iNstep = fDet->getNstep();
 	 
-	fGapWidth = det->getGapWidth();
-	fResistiveLayersWidth = det->getResistiveLayersWidth();
-	fDt = det->getTimeStep();
-	fDx = det->getSpaceStep();
+	fGapWidth = fDet->getGapWidth();
+	fResistiveLayersWidth = fDet->getResistiveLayersWidth();
+	fDt = fDet->getTimeStep();
+	fDx = fDet->getSpaceStep();
 	
-	//fGeometry = det->getGeometry();
+	//fGeometry = fDet->getGeometry();
 	
-	fDiffL = det->getDiffL();
-	fDiffT = det->getDiffT();
+	fDiffL = fDet->getDiffL();
+	fDiffT = fDet->getDiffT();
 	fVx = vector<double> (iNstep,0);
 	fAlpha = vector<double> (iNstep,0);
 	fEta = vector<double> (iNstep,0);
 	fE = vector<double> (iNstep,0);
 	for(int i=0; i<iNstep; i++){
-		fVx.at(i) = det->getVx();
-		fAlpha.at(i) = det->getAlpha();
-		fEta.at(i) = det->getEta();
-		fE.at(i) = det->getElectricField()[0];
+		fVx.at(i) = fDet->getVx();
+		fAlpha.at(i) = fDet->getAlpha();
+		fEta.at(i) = fDet->getEta();
+		fE.at(i) = fDet->getElectricField()[0];
 	}
 	fEini = fE.at(0);
 	
@@ -66,16 +67,16 @@ TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche(
 
 	bThrCrossTime = false;
 	bHasReachSpaceChargeLimit = false;
-	bEbarComputed = det->hasEBarTable();
+	bEbarComputed = fDet->hasEBarTable();
 	bComputeSpaceChargeEffet = true;
 	bAvalancheInitialised = false;
 	
-	bVerbose = true;
-	bSnapshots = true;
+	bVerbose = false;
+	bSnapshots = false;
 
 	// if n == -1 Ebar table has not been computed
 	if ( bEbarComputed ){
-		iEbarTableSize = det->getEbarTableSize();
+		iEbarTableSize = fDet->getEbarTableSize();
 		int n = iEbarTableSize+1;
 		fEbarTable = vector<double>(n*n*n,0);
 		fEbarTable = fDet->getEbarVecTable();
@@ -96,7 +97,7 @@ TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche(
 }
 
 TAvalanche1D::~TAvalanche1D(){
-	delete fNElectrons;
+	//delete fNElectrons;
 }
 
 void TAvalanche1D::computeClusterDensity(const string& particleName, const double& Pmin, const double& Pmax, const int& steps){
@@ -157,7 +158,8 @@ void TAvalanche1D::initialiseTrackHeed(const string& particleName, const double&
 		return;
 	}
 	
-	cout << "Initialising avalanche with Heed track for " << particleName << " with momentum " << toString(momentum) << " at position " << toString(x0) << " with angle " << toString(theta) << endl;
+	if (bVerbose)
+		cout << "Initialising avalanche with Heed track for " << particleName << " with momentum " << toString(momentum) << " at position " << toString(x0) << " with angle " << toString(theta) << endl;
 	
 	Garfield::TrackHeed* track = new Garfield::TrackHeed();
 	track->SetSensor(fDet->getSensor());
@@ -174,8 +176,7 @@ void TAvalanche1D::initialiseTrackHeed(const string& particleName, const double&
 	int nc = 0; 								// Number of electrons produced in a collision
 	double ec = 0.; 							// Energy loss in a collision
 	double dummy = 0.; 							// Dummy variable (not used at present)
-	fNElectrons = new double[iNElectronsSize];
-	for(int i=0; i<iNElectronsSize; i++)	fNElectrons[i] = 0;
+	fNElectrons = vector<double> (iNElectronsSize,0);
 	
 	while (track->GetCluster(xc, yc, zc, tc, nc, ec, dummy)){
 		fClPosX.push_back(xc);
@@ -189,7 +190,9 @@ void TAvalanche1D::initialiseTrackHeed(const string& particleName, const double&
 	fClusterDensity = track->GetClusterDensity();
 	delete track;
 	
-	cout << "TAvalanche1D::initialiseTrackHeed -- " << toString( fNElectrons[0] ) << " electrons produced by heed track." << endl;
+	if (bVerbose)
+		cout << "TAvalanche1D::initialiseTrackHeed -- " << toString( fNElectrons[0] ) << " electrons produced by heed track." << endl;
+	
 	bAvalancheInitialised = true;
 }
 
@@ -201,9 +204,7 @@ void TAvalanche1D::initialiseSingleCluster(const double& x0, const double& n0){
 	
 	cout << "Initialising avalanche with " << toString(n0) << " electron(s) at position " << toString(x0) << endl;
 	
-	fNElectrons = new double[iNElectronsSize];
-	for(int i=0; i<iNElectronsSize; i++)
-		fNElectrons[i] = 0;
+	fNElectrons = vector<double> (iNElectronsSize,0);
 	
 	fNElectrons[0] = n0;
 	fElecDetectorGrid[ int(trunc(x0/fDx)) ] = n0;
@@ -258,7 +259,7 @@ void TAvalanche1D::simulateEvent(){
 		chargesTotData.close();
 		/* ========= */
 		makeResultFile();
-		cout << "Avalanche simulation (thread id " << tId << ") terminated with success" << endl;
+		cout << "Avalanche simulation id " << Id << " (thread id " << tId << ") terminated with success" << endl;
 	}
 	else{
 		fSignal.clear();
@@ -496,7 +497,7 @@ void TAvalanche1D::computeLongitudinalDiffusion(){
 	int newPosIndex;
 	
 	for(int iz=0; iz<iNstep; iz++){
-		pos = (iz+0.5) * fDx;
+		pos = (iz) * fDx;
 		
 		for(int n=0; n<fElecDetectorGrid.at(iz); n++){
 			newPos = Gaus(pos, fLongiDiffSigma, fRandRngLongiDiff);

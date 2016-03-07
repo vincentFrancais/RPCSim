@@ -35,6 +35,7 @@ typedef unsigned int uint;
 typedef unsigned long ulong;
 
 double cm = 0.01;
+int TAvalanche::count = 0;
 
 pthread_mutex_t gPipeLock;
 pthread_mutex_t gTrackLock;
@@ -224,6 +225,7 @@ end:
     pthread_mutex_destroy(&gPipeLock);
     pthread_mutex_destroy(&gTrackLock);
     delete detector;
+    delete data;
 
     return 0;
 }

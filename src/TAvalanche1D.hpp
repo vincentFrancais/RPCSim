@@ -94,7 +94,8 @@ class TAvalanche1D : public TAvalanche {
 	
 	private:
 	uint tId;
-
+	int Id;
+	
 	int iNstep;
 	double fGapWidth;
 	const double* fResistiveLayersWidth;
@@ -123,7 +124,7 @@ class TAvalanche1D : public TAvalanche {
 	vector< pair<double,double> > fElecOnAnode;
 	
 	double* fLongiDiffFrac;
-	double * fNElectrons;
+	vector<double> fNElectrons;
 	vector<double> fSignal;
 	vector<double> fCharges;
 	vector<double> fTotalCharges;
