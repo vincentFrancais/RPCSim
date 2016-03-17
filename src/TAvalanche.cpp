@@ -2,12 +2,13 @@
 
 using namespace std;
 
-TAvalanche::TAvalanche (TDetector* det, bool const& randomSeed) {
+TAvalanche::TAvalanche () {
 	//fDet = det;
-	fDet = det;
-	fGeometry = det->getGeometry();
+	//fDet = new TDetector (*det);
+	//fGeometry = det->getGeometry();
+	fTimer.start();
 	
-		fRandRng = new RngStream();
+	/*fRandRng = new RngStream();
 	if ( randomSeed ) {
 		random_device rd;
 		ulong seed[6];
@@ -23,15 +24,13 @@ TAvalanche::TAvalanche (TDetector* det, bool const& randomSeed) {
 	
 	fRandRngCLT = new RngStream();
 	fRandRngLongiDiff = new RngStream();
-	
-	//count++;
+	*/
+	count++;
 }
 
+
 TAvalanche::~TAvalanche() {
-	//delete fDet;
-	delete fRandRng;
-	delete fRandRngCLT;
-	delete fRandRngLongiDiff;
+	
 }
 
 void TAvalanche::computeClusterDensity(const TDetector* det, const string& particleName, const double& Pmin, const double& Pmax, const int& steps){

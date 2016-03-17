@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <utility>
-//#include <cstdint>
+#include <chrono>
 
 #include <TRandom3.h>
 #include "RngStream.h"
@@ -18,7 +18,6 @@
 #include "TAvalanche.hpp"
 #include "TDetector.hpp"
 #include "TResult.hpp"
-#include "TRNQueue.hpp"
 
 #if defined( _DEBUG ) || defined( DEBUG ) || defined (__DEBUG__)
 #   ifndef DEBUG
@@ -49,7 +48,7 @@ enum EAvalancheStatus{
 class TAvalanche1D : public TAvalanche {
 	
 	public:
-	TAvalanche1D(){};
+	//TAvalanche1D(){};
 	TAvalanche1D(TDetector* det, bool const& randomSeed=false);
 	
 	~TAvalanche1D();
@@ -96,6 +95,9 @@ class TAvalanche1D : public TAvalanche {
 	uint tId;
 	int Id;
 	
+	TDetector* fDet;
+	DetectorGeometry fGeometry;
+	
 	int iNstep;
 	double fGapWidth;
 	const double* fResistiveLayersWidth;
@@ -123,7 +125,6 @@ class TAvalanche1D : public TAvalanche {
 	double fNelecAnode;
 	vector< pair<double,double> > fElecOnAnode;
 	
-	double* fLongiDiffFrac;
 	vector<double> fNElectrons;
 	vector<double> fSignal;
 	vector<double> fCharges;
@@ -155,6 +156,18 @@ class TAvalanche1D : public TAvalanche {
 	bool bHasReachSpaceChargeLimit;
 	
 	EAvalancheStatus eAvalStatus;
+	
+	//static int count;
+	//TDetector* fDet;
+	//DetectorGeometry fGeometry;
+	
+	RngStream* fRandRng;
+	RngStream* fRandRngCLT;
+	RngStream* fRandRngLongiDiff;
+	
+	TResult fResult;
+	
+	//TTimer fTimer;
 };
 
 #endif

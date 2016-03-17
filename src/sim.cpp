@@ -4,8 +4,6 @@
 #include <cmath>
 #include <vector>
 #include <utility>
-#include <sys/stat.h>
-#include <typeinfo>
 #include <fcntl.h>
 #include <cassert>
 
@@ -15,10 +13,8 @@
 #include "ComponentConstant.hh"
 #include "Sensor.hh"
 #include "TrackHeed.hh"
-#include "Plotting.hh"
 
 #include "TDetector.hpp"
-#include "TAvalanche1D.hpp"
 #include "TAvalanche1D.hpp"
 #include "helper_functions.hpp"
 #include "TThreadsFactory.h"

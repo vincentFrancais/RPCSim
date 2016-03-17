@@ -23,9 +23,32 @@ using namespace std;
 //double cm = 0.01;
 extern double cm;
 
-TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche(det, randomSeed) {
+TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche() {
+	
+	fTimer.start();
+	
+	fRandRng = new RngStream();
+	if ( randomSeed ) {
+		random_device rd;
+		ulong seed[6];
+		cout << "TAvalanche :: RNGStream seeds set to ";
+		for (int i=0; i<6; i++){
+			seed[i] = rd();
+			cout << seed[i] << " ";
+		}
+		cout << endl;
+		
+		fRandRng->SetSeed( seed );
+	}
+	
+	fRandRngCLT = new RngStream();
+	fRandRngLongiDiff = new RngStream();
+	
+	//========================
+	
 	tId = gettid();
 	Id = count++;
+	fDet = det;
 	
 	iNstep = fDet->getNstep();
 	 
@@ -34,7 +57,7 @@ TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche(
 	fDt = fDet->getTimeStep();
 	fDx = fDet->getSpaceStep();
 	
-	//fGeometry = fDet->getGeometry();
+	fGeometry = fDet->getGeometry();
 	
 	fDiffL = fDet->getDiffL();
 	fDiffT = fDet->getDiffT();
@@ -71,10 +94,9 @@ TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche(
 	bComputeSpaceChargeEffet = true;
 	bAvalancheInitialised = false;
 	
-	bVerbose = false;
-	bSnapshots = false;
+	bVerbose = true;
+	bSnapshots = true;
 
-	// if n == -1 Ebar table has not been computed
 	if ( bEbarComputed ){
 		iEbarTableSize = fDet->getEbarTableSize();
 		int n = iEbarTableSize+1;
@@ -98,6 +120,12 @@ TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche(
 
 TAvalanche1D::~TAvalanche1D(){
 	//delete fNElectrons;
+	//delete fDet;
+	//delete fLongiDiffFrac;
+	//delete fResistiveLayersWidth;
+	delete fRandRng;
+	delete fRandRngCLT;
+	delete fRandRngLongiDiff;
 }
 
 void TAvalanche1D::computeClusterDensity(const string& particleName, const double& Pmin, const double& Pmax, const int& steps){
@@ -236,13 +264,14 @@ void TAvalanche1D::simulateEvent(){
 		exit(0);
 	}
 	
-	// check if Ebar table is computed if space charge effect is enable
+	// if Space Charge Effect is enabled check if Ebar table has been computed
 	if ( bComputeSpaceChargeEffet && !bEbarComputed ){
 		cerr << "Error -- TAvalanche1D::simulateEvent -- No Ebar table found. Aborting simulation." << endl;
 		exit(0); 
 	}
 		
 	if( avalanche() ){
+		const auto elapsed = fTimer.time_elapsed();
 		checkDetectorGrid();
 		/* debug outputs */
 		ofstream data("out/electrons.dat", ios::out | ios::trunc);
@@ -259,15 +288,16 @@ void TAvalanche1D::simulateEvent(){
 		chargesTotData.close();
 		/* ========= */
 		makeResultFile();
-		cout << "Avalanche simulation id " << Id << " (thread id " << tId << ") terminated with success" << endl;
+		cout << "Avalanche simulation id " << Id << " (thread id " << tId << ") terminated with success (" << duration_cast<seconds>(elapsed).count() << " seconds)." << endl;
 	}
 	else{
+		const auto elapsed = fTimer.time_elapsed();
 		fSignal.clear();
 		fCharges.clear();
 		fSignal.push_back(-1);
 		fCharges.push_back(-1);
 		makeResultFile();
-		cout << "Avalanche simulation id " << Id << " (thread id " << tId << ") terminated with error: " << eAvalStatus << endl;
+		cout << "Avalanche simulation id " << Id << " (thread id " << tId << ") terminated with error: " << eAvalStatus << " (" << duration_cast<seconds>(elapsed).count() << " seconds)." << endl;
 	}
 }
 
@@ -362,7 +392,7 @@ double TAvalanche1D::electron_multiplication(const double& x, const double& s){
 		}
 	}
 	
-	else if (alpha == 0) { // alpha << 0
+	else if (alpha < 0.01) { // alpha << 0
 		thr = exp(-eta*x);
 		if (s >= thr)	return 0;
 		else return 1;
@@ -433,7 +463,7 @@ double TAvalanche1D::CLT(const double& x, const double& n){
 	
 	double sigma;
 	if (alpha == eta)	sigma = sqrt(n) * sqrt(2*alpha*x);
-	else if (alpha == 0)	sigma = sqrt(n) * sqrt( exp(-2*eta*x)*(exp(eta*x)-1) ); // alpha << 0
+	else if (alpha < 0.01)	sigma = sqrt(n) * sqrt( exp(-2*eta*x)*(exp(eta*x)-1) ); // alpha << 0
 	else	sigma = sqrt(n) * sqrt( ((1+k)/(1-k)) * nm * (nm-1) ); // alpha, eta > 0
 	
 	double c = Gaus(m, sigma, fRandRngCLT);
@@ -498,9 +528,10 @@ void TAvalanche1D::computeLongitudinalDiffusion(){
 	
 	for(int iz=0; iz<iNstep; iz++){
 		pos = (iz) * fDx;
+		double sigma = fDet->getDiffusionCoefficients(fE.at(iz), 0, 0)[0] * sqrt(fDx);
 		
 		for(int n=0; n<fElecDetectorGrid.at(iz); n++){
-			newPos = Gaus(pos, fLongiDiffSigma, fRandRngLongiDiff);
+			newPos = Gaus(pos, sigma, fRandRngLongiDiff);
 			newPosIndex = (int)trunc(newPos/fDx);
 			if ( newPosIndex >= iNstep){
 				 newPosIndex = iNstep-1;

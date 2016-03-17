@@ -156,6 +156,12 @@ double* TDetector::getTransportParameters(double Ex, double Ey, double Ez){
 
 }
 
+double* TDetector::getDiffusionCoefficients( double const& Ex, double const& Ey, double const& Ez ) {
+	double* coeff = new double[2];
+	mGas->ElectronDiffusion(Ex,Ey,Ez,0.,0.,0.,coeff[0],coeff[1]);
+	return coeff;
+}
+
 void TDetector::writeGasTransportParameters(){
 	if (!bGasLoaded) {
 		cerr << "TDetector::writeGasTransportParameters -- No gas table found/loaded." << endl;

@@ -7,15 +7,15 @@
 #include <random>
 
 #include "TDetector.hpp"
-#include "TResult.hpp"
 #include "helper_functions.hpp"
+#include "TTimer.hpp"
 
 using namespace std;
 
 class TAvalanche {
 	public:
-	TAvalanche(){};
-	TAvalanche(TDetector* det, bool const& randomSeed=false);
+	//TAvalanche(){};
+	TAvalanche();
 	
 	~TAvalanche();
 	
@@ -25,12 +25,14 @@ class TAvalanche {
 	
 	protected:
 	static int count;
-	TDetector* fDet;
-	DetectorGeometry fGeometry;
+	//TDetector* fDet;
+	//DetectorGeometry fGeometry;
 	
-	RngStream* fRandRng;
-	RngStream* fRandRngCLT;
-	RngStream* fRandRngLongiDiff;
+	//RngStream* fRandRng;
+	//RngStream* fRandRngCLT;
+	//RngStream* fRandRngLongiDiff;
 	
-	TResult fResult;
+	//TResult fResult;
+	
+	TTimer fTimer;
 };

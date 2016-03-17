@@ -4,8 +4,6 @@
 #include <vector>
 #include <utility>
 
-//#include <TRandom3.h>
-#include "RngStream.h"
 #include "TConfig.hpp"
 
 #include "MediumMagboltz.hh"
@@ -87,6 +85,7 @@ class TDetector{
 	int getNstep(void) const	{return iNstep;}
 	double* getElectricField(void) {return fElectricField;}
 	double* getTransportParameters(double Ex, double Ey, double Ez);
+	double* getDiffusionCoefficients( double const& Ex, double const& Ey, double const& Ez );
 	Garfield::Sensor* getSensor(void) const	{return mSensor;}
 
 	vector<double> getEbarZarray(void) {return fEbarZarray;}
