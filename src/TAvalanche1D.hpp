@@ -1,8 +1,32 @@
-#ifndef DEF_AVALANCHE
-#define DEF_AVALANCHE
+/*
+ * TAvalanche1D.hpp
+ * 
+ * Copyright 2016 Vincent Français <francais@clermont.in2p3.fr>
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301, USA.
+ * 
+ * 
+ */
+ 
+ 
+#pragma once
 
 #include <vector>
 #include <utility>
+#include <map>
 #include <chrono>
 
 #include <TRandom3.h>
@@ -24,6 +48,8 @@
 #       define DEBUG
 #   endif
 #endif
+
+
 
 #if defined(DEBUG)
 #	include <assert.h>
@@ -48,7 +74,6 @@ enum EAvalancheStatus{
 class TAvalanche1D : public TAvalanche {
 	
 	public:
-	//TAvalanche1D(){};
 	TAvalanche1D(TDetector* det, bool const& randomSeed=false);
 	
 	~TAvalanche1D();
@@ -67,10 +92,10 @@ class TAvalanche1D : public TAvalanche {
 	bool propagate();
 	void computeLongitudinalDiffusion();
 	bool avalanche();
-	double n_moy(const double& x);
-	double electron_multiplication(const double& x, const double& s);
-	double multiplication(const double& n);
-	double CLT(const double& x, const double& n);
+	inline double n_moy(const double& x);
+	double multiplicationRiegler(const double& x, const double& s);
+	double electronMultiplication(const double& n);
+	double multiplicationCLT(const double& x, const double& n);
 	void makeResultFile();
 	void computeSCEffect();
 	double interpolateEbar(const double& z, const double& zp, const double& l);
@@ -139,7 +164,7 @@ class TAvalanche1D : public TAvalanche {
 	double fEini;
 	
 	double fClusterDensity;
-	vector<double> fClPosX, fClPosY, fClPosZ;
+	map<double,int> fClustersX, fClustersY, fClustersZ;
 	
 	double fLongiDiffSigma;
 	
@@ -157,17 +182,13 @@ class TAvalanche1D : public TAvalanche {
 	
 	EAvalancheStatus eAvalStatus;
 	
-	//static int count;
-	//TDetector* fDet;
-	//DetectorGeometry fGeometry;
-	
 	RngStream* fRandRng;
 	RngStream* fRandRngCLT;
 	RngStream* fRandRngLongiDiff;
+	
+	long double fRandomNumberGenerated;
 	
 	TResult fResult;
 	
 	//TTimer fTimer;
 };
-
-#endif

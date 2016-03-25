@@ -21,6 +21,8 @@
 #include "TResult.hpp"
 #include "TConfig.hpp"
 
+#include "RngStream.h"
+
 //#define PATH_MAX 0x1000
 #define PI 3.14159265358979323846
 

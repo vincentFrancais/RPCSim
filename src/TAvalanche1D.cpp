@@ -16,8 +16,6 @@
 #include "gsl/gsl_const_mksa.h"
 #include "gsl/gsl_math.h"
 
-#define PI 3.14159265358979323846
-
 using namespace std;
 
 //double cm = 0.01;
@@ -26,6 +24,8 @@ extern double cm;
 TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche() {
 	
 	fTimer.start();
+	
+	fRandomNumberGenerated = 0;
 	
 	fRandRng = new RngStream();
 	if ( randomSeed ) {
@@ -95,7 +95,7 @@ TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche(
 	bAvalancheInitialised = false;
 	
 	bVerbose = true;
-	bSnapshots = true;
+	bSnapshots = false;
 
 	if ( bEbarComputed ){
 		iEbarTableSize = fDet->getEbarTableSize();
@@ -196,7 +196,7 @@ void TAvalanche1D::initialiseTrackHeed(const string& particleName, const double&
 	
 	double t0 = 0.;
 	double y0 = 0, z0 = 0;
-	double dx0 = cos(theta * PI / 180.0), dy0 = sin(theta * PI / 180.0), dz0 = 0.;
+	double dx0 = cos(theta * M_PI / 180.0), dy0 = sin(theta * M_PI / 180.0), dz0 = 0.;
 	
 	track->NewTrack(x0, y0, z0, t0, dx0, dy0, dz0);
 	
@@ -207,9 +207,13 @@ void TAvalanche1D::initialiseTrackHeed(const string& particleName, const double&
 	fNElectrons = vector<double> (iNElectronsSize,0);
 	
 	while (track->GetCluster(xc, yc, zc, tc, nc, ec, dummy)){
-		fClPosX.push_back(xc);
-		fClPosY.push_back(yc);
-		fClPosZ.push_back(zc);
+		//fClPosX.push_back(xc);
+		//fClPosY.push_back(yc);
+		//fClPosZ.push_back(zc);
+		fClustersX[xc] = nc;
+		fClustersY[yc] = nc;
+		fClustersZ[zc] = nc;
+		
 		fNElectrons[0] += nc;
 		fElecDetectorGrid[int(trunc(xc/fDx))] += nc;
 		fPosIonDetectorGrid[int(trunc(xc/fDx))] += nc;
@@ -288,6 +292,7 @@ void TAvalanche1D::simulateEvent(){
 		chargesTotData.close();
 		/* ========= */
 		makeResultFile();
+		cout << "Random number generated: " << fRandomNumberGenerated << endl;
 		cout << "Avalanche simulation id " << Id << " (thread id " << tId << ") terminated with success (" << duration_cast<seconds>(elapsed).count() << " seconds)." << endl;
 	}
 	else{
@@ -368,11 +373,11 @@ void TAvalanche1D::computeInducedCharges(){
 }
 
 
-double TAvalanche1D::n_moy(const double& x){
+inline double TAvalanche1D::n_moy(const double& x){
 	return exp( ( fAlpha.at(iCurrentDetectorStep)-fEta.at(iCurrentDetectorStep) )*x );
 }
 
-double TAvalanche1D::electron_multiplication(const double& x, const double& s){
+double TAvalanche1D::multiplicationRiegler(const double& x, const double& s){
 	double nm = n_moy(x);
 	double alpha = fAlpha.at(iCurrentDetectorStep);
 	double eta = fEta.at(iCurrentDetectorStep);
@@ -426,17 +431,17 @@ double TAvalanche1D::electron_multiplication(const double& x, const double& s){
 	
 }
 
-double TAvalanche1D::multiplication(const double& n){
+double TAvalanche1D::electronMultiplication(const double& n){
 	double nProduced = 0;
 	
 	if(n > fThrCLT){
-		double c = CLT(fDx,n);
+		double c = multiplicationCLT(fDx,n);
 		if( eAvalStatus  == AVAL_CLT_FAIL ){
 			/* CLT has failed to return an acceptable value. Try with classic multiplication */
 			for(int i=0; i<n; i++){
 				double s = fRandRng->RandU01();
 				if (s==1)	s = fRandRng->RandU01();
-				nProduced += electron_multiplication(fDx,s);
+				nProduced += multiplicationRiegler(fDx,s);
 			}
 			if( eAvalStatus == AVAL_CLT_FAIL )
 				eAvalStatus = AVAL_NO_ERROR;
@@ -448,12 +453,12 @@ double TAvalanche1D::multiplication(const double& n){
 	for(int i=0; i<n; i++){
 		double s = fRandRng->RandU01();
 		if (s==1)	s = fRandRng->RandU01();
-		nProduced += electron_multiplication(fDx,s);
+		nProduced += multiplicationRiegler(fDx,s);
 	}
 	return nProduced;
 }
 
-double TAvalanche1D::CLT(const double& x, const double& n){
+double TAvalanche1D::multiplicationCLT(const double& x, const double& n){
 	double nm = n_moy(x);
 	//if(fAlpha[iCurrentDetectorStep] == 0) 	fAlpha[iCurrentDetectorStep] += numeric_limits<double>::epsilon();
 	double k = fEta[iCurrentDetectorStep]/fAlpha[iCurrentDetectorStep];
@@ -531,6 +536,7 @@ void TAvalanche1D::computeLongitudinalDiffusion(){
 		double sigma = fDet->getDiffusionCoefficients(fE.at(iz), 0, 0)[0] * sqrt(fDx);
 		
 		for(int n=0; n<fElecDetectorGrid.at(iz); n++){
+			fRandomNumberGenerated += n;
 			newPos = Gaus(pos, sigma, fRandRngLongiDiff);
 			newPosIndex = (int)trunc(newPos/fDx);
 			if ( newPosIndex >= iNstep){
@@ -565,7 +571,7 @@ bool TAvalanche1D::propagate() {
 		//if (bHasReachSpaceChargeLimit and !bComputeSpaceChargeEffet)
 		//	nProduced = n;
 		//else 
-			nProduced = multiplication(n);
+			nProduced = electronMultiplication(n);
 			
 		if (eAvalStatus != AVAL_NO_ERROR)
 			return false;
