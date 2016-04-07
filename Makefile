@@ -76,7 +76,7 @@ ifeq ( $(PYTHON),yes )
 endif
 
 # The pre-processor options used by the cpp (man cpp for more).
-CPPFLAGS  = -fopenmp -W -Wall -Wno-unused-result
+CPPFLAGS  = -fopenmp -W -Wall -Wno-unused-result -msse2 -DHAVE_SSE2
 
 # The options used in linking as well as in any direct use of ld.
 LDFLAGS   = 
