@@ -36,7 +36,8 @@
 #include <sys/stat.h>
 #include <numeric>
 
-#include "RngStream.h"
+//#include "RngStream.hpp"
+#include "TRandomEngine.hpp"
 
 
 #if defined( _PYTHON ) || defined( PYTHON ) || defined (__PYTHON__)
@@ -82,9 +83,11 @@ S sumArray(S array[], int size){
 	return sumArray;
 }
 
-double generateGaussianNumber(double mu, double sigma, RngStream* stream);
+double generateGaussianNumber(double mu, double sigma, TRandomEngine* stream);
 
-double Gaus(double mean, double sigma, RngStream* stream);
+//double Gaus(double mean, double sigma, RngStream* stream);
+//double Gaus(double mean, double sigma, TRandomEngineSFMT* stream);
+double Gaus(double mean, double sigma, TRandomEngine* stream);
 
 template <typename Iterator, typename T>
 std::size_t getLowerIndex(Iterator first, Iterator last, const T & val){

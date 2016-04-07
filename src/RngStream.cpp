@@ -13,7 +13,7 @@
 
 #include <cstdlib>
 #include <iostream>
-#include "RngStream.h"
+#include "RngStream.hpp"
 using namespace std;
 
 namespace

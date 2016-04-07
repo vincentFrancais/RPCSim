@@ -149,7 +149,7 @@ double gaussIntegral(int steps, double min, double max, double mean, double sigm
 	return integral;
 }
 
-double generateGaussianNumber(double mu, double sigma, RngStream* stream){
+double generateGaussianNumber(double mu, double sigma, TRandomEngine* stream){
 	// Simple Box-Muller gaussiam random number generator
 
 	const double epsilon = std::numeric_limits<double>::min();
@@ -173,7 +173,7 @@ double generateGaussianNumber(double mu, double sigma, RngStream* stream){
 	return z0 * sigma + mu;
 }
 
-double Gaus(double mean, double sigma, RngStream* stream){
+double Gaus(double mean, double sigma, TRandomEngine* stream){
    // Samples a random number from the standard Normal (Gaussian) Distribution
    // with the given mean and sigma.
    // Uses the Acceptance-complement ratio from W. Hoermann and G. Derflinger
@@ -189,7 +189,7 @@ double Gaus(double mean, double sigma, RngStream* stream){
    // Implementation taken from
    // UNURAN (c) 2000  W. Hoermann & J. Leydold, Institut f. Statistik, WU Wien
    //
-   // Implementation from ROOT TRandom, modified for using RNGStream
+   // Implementation from ROOT TRandom, modified for using different RNG
 
    const double kC1 = 1.448242853;
    const double kC2 = 3.307147487;

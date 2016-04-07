@@ -29,8 +29,11 @@
 #include <map>
 #include <chrono>
 
-#include <TRandom3.h>
-#include "RngStream.h"
+#include "RngStream.hpp"
+#include "TRandomEngineSFMT.hpp"
+#include "TRandomEngineMRG.hpp"
+#include "TRandomEngineMT.hpp"
+#include "TRandomEngine.hpp"
 
 #include "MediumMagboltz.hh"
 #include "SolidBox.hh"
@@ -74,7 +77,8 @@ enum EAvalancheStatus{
 class TAvalanche1D : public TAvalanche {
 	
 	public:
-	TAvalanche1D(TDetector* det, bool const& randomSeed=false);
+	//TAvalanche1D(TDetector* det, bool const& randomSeed=false);
+	TAvalanche1D(TDetector* det, sfmt_t sfmt, bool const& randomSeed=false);
 	
 	~TAvalanche1D();
 	
@@ -183,8 +187,10 @@ class TAvalanche1D : public TAvalanche {
 	EAvalancheStatus eAvalStatus;
 	
 	RngStream* fRandRng;
-	RngStream* fRandRngCLT;
+	TRandomEngineMRG* fRandRngCLT;
 	RngStream* fRandRngLongiDiff;
+
+	TRandomEngine* fRNG;
 	
 	long double fRandomNumberGenerated;
 	

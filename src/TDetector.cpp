@@ -26,7 +26,7 @@ extern double cm;
 TDetector::TDetector(const DetectorGeometry& geometry, const int& nStep){
 	iNstep = nStep;
 	fGeometry = geometry;
-	iEbarTableSize = 75;
+	iEbarTableSize = 10;
 
 	bHasEbarTable = false;
 	bGasLoaded = false;

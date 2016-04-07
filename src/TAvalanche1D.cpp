@@ -21,12 +21,17 @@ using namespace std;
 //double cm = 0.01;
 extern double cm;
 
-TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche() {
+TAvalanche1D::TAvalanche1D(TDetector* det, sfmt_t sfmt, bool const& randomSeed) : TAvalanche() {
 	
-	fTimer.start();
+	//fTimer.start();
 	
 	fRandomNumberGenerated = 0;
 	
+	//fSFMT = new TRandomEngineSFMT(sfmt);
+	//fMRG = new TRandomEngineMRG();
+	//fMT = new TRandomEngineMT();
+	fRNG = new TRandomEngineMT();
+
 	fRandRng = new RngStream();
 	if ( randomSeed ) {
 		random_device rd;
@@ -41,7 +46,7 @@ TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche(
 		fRandRng->SetSeed( seed );
 	}
 	
-	fRandRngCLT = new RngStream();
+	fRandRngCLT = new TRandomEngineMRG();
 	fRandRngLongiDiff = new RngStream();
 	
 	//========================
@@ -51,6 +56,9 @@ TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche(
 	fDet = det;
 	
 	iNstep = fDet->getNstep();
+	cout << "TAvalanche1D :: Nstep:" << iNstep << endl;
+	cout << "TAvalanche1D :: Nstep:" << fDet->getNstep() << endl;
+	cout << "TAvalanche1D :: Nstep:" << det->getNstep() << endl;
 	 
 	fGapWidth = fDet->getGapWidth();
 	fResistiveLayersWidth = fDet->getResistiveLayersWidth();
@@ -65,6 +73,7 @@ TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche(
 	fAlpha = vector<double> (iNstep,0);
 	fEta = vector<double> (iNstep,0);
 	fE = vector<double> (iNstep,0);
+	cout << iNstep << endl;
 	for(int i=0; i<iNstep; i++){
 		fVx.at(i) = fDet->getVx();
 		fAlpha.at(i) = fDet->getAlpha();
@@ -96,7 +105,7 @@ TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche(
 	
 	bVerbose = true;
 	bSnapshots = false;
-
+	
 	if ( bEbarComputed ){
 		iEbarTableSize = fDet->getEbarTableSize();
 		int n = iEbarTableSize+1;
@@ -118,14 +127,11 @@ TAvalanche1D::TAvalanche1D(TDetector* det, bool const& randomSeed) : TAvalanche(
 	eAvalStatus = AVAL_NO_ERROR; //Avalanche status to NO_ERROR at begining
 }
 
-TAvalanche1D::~TAvalanche1D(){
-	//delete fNElectrons;
-	//delete fDet;
-	//delete fLongiDiffFrac;
-	//delete fResistiveLayersWidth;
+TAvalanche1D::~TAvalanche1D() {
 	delete fRandRng;
 	delete fRandRngCLT;
 	delete fRandRngLongiDiff;
+	delete fRNG;
 }
 
 void TAvalanche1D::computeClusterDensity(const string& particleName, const double& Pmin, const double& Pmax, const int& steps){
@@ -490,18 +496,7 @@ double TAvalanche1D::multiplicationCLT(const double& x, const double& n){
 		//cin.ignore();
 	}
 	
-	if( abs(c > 1) and !(trunc(c)>0) and bVerbose ){
-		cout << "k: " << k << endl;
-		cout << "eta: " << fEta.at(iCurrentDetectorStep) << endl;
-		cout << "alpha: " << fAlpha.at(iCurrentDetectorStep) << endl;
-		cout << "E: " << fE.at(iCurrentDetectorStep) << endl;
-		cout << "nm: " << nm << endl;
-		cout << "m: " << m << endl;
-		cout << "sigma: " << sigma << endl;
-		cout << "c: " << c << endl;
-	}
-	
-	if( abs(c < 1) and !(round(c)>=0) and bVerbose ){
+	if( ( (abs(c > 1) and !trunc(c)>0) or (abs(c < 1) and !round(c)>=0) ) and bVerbose ) {
 		cout << "k: " << k << endl;
 		cout << "eta: " << fEta.at(iCurrentDetectorStep) << endl;
 		cout << "alpha: " << fAlpha.at(iCurrentDetectorStep) << endl;
@@ -518,6 +513,7 @@ double TAvalanche1D::multiplicationCLT(const double& x, const double& n){
 			eAvalStatus = AVAL_CLT_FAIL;
 		return trunc(c);
 	}
+	
 	else{
 		DEBUGASSERT(round(c) >= 0);
 		if ( !(round(c) >= 0) ) 
@@ -526,25 +522,25 @@ double TAvalanche1D::multiplicationCLT(const double& x, const double& n){
 	}
 }
 
-void TAvalanche1D::computeLongitudinalDiffusion(){	
+void TAvalanche1D::computeLongitudinalDiffusion() {	
 	vector<double> newDetectorGrid (iNstep,0);
 	double pos, newPos;
 	int newPosIndex;
+	double sqrtDx = sqrt(fDx);
 	
 	for(int iz=0; iz<iNstep; iz++){
 		pos = (iz) * fDx;
-		double sigma = fDet->getDiffusionCoefficients(fE.at(iz), 0, 0)[0] * sqrt(fDx);
+		double sigma = fDet->getDiffusionCoefficients(fE.at(iz), 0, 0)[0] * sqrtDx;
 		
 		for(int n=0; n<fElecDetectorGrid.at(iz); n++){
 			fRandomNumberGenerated += n;
-			newPos = Gaus(pos, sigma, fRandRngLongiDiff);
+			newPos = Gaus(pos, sigma, fRNG);
 			newPosIndex = (int)trunc(newPos/fDx);
-			if ( newPosIndex >= iNstep){
+			
+			if ( newPosIndex >= iNstep)
 				 newPosIndex = iNstep-1;
-			}
-			else if (newPosIndex < 0){
+			else if (newPosIndex < 0)
 				newPosIndex = 0;
-			}
 			
 			try{
 				newDetectorGrid.at(newPosIndex)++;
@@ -640,7 +636,7 @@ bool TAvalanche1D::avalanche() {
 	return true;
 }
 
-void TAvalanche1D::computeSCEffect(){
+void TAvalanche1D::computeSCEffect() {
 	double SCEField[iNstep];
 	double tmp;
 	
@@ -663,7 +659,7 @@ void TAvalanche1D::computeSCEffect(){
 	}
 }
 
-void TAvalanche1D::makeSnapshot(){
+void TAvalanche1D::makeSnapshot() {
 	cout << "Snapshot at: " << iTimeStep*fDt << endl;
 	string fileName;
 	if (iTimeStep<10)
@@ -680,7 +676,7 @@ void TAvalanche1D::makeSnapshot(){
 	data.close();
 }
 
-void TAvalanche1D::testInterpolation(){
+void TAvalanche1D::testInterpolation() {
 	ofstream data("out/interp.dat", ios::out | ios::trunc);
 	
 	double z = 0.001;
@@ -697,12 +693,12 @@ void TAvalanche1D::testInterpolation(){
 	data.close();
 }
 
-size_t TAvalanche1D::getIndex3D(const size_t& i, const size_t& j, const size_t& k){
+size_t TAvalanche1D::getIndex3D(const size_t& i, const size_t& j, const size_t& k) {
 	int n = iEbarTableSize+1;
 	return (long)i*(long)n*(long)n + (long)j*(long)n + (long)k;
 }
 
-double TAvalanche1D::interpolateEbar(const double& z, const double& zp, const double& l){  //x==z y==zp z==l
+double TAvalanche1D::interpolateEbar(const double& z, const double& zp, const double& l) {  //x==z y==zp z==l
 	bool debug = false;
 
 	size_t iz0 = getLowerIndex(fEbarZarray.begin(),fEbarZarray.end(), z);
