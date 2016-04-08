@@ -10,6 +10,7 @@ struct TResult
 	int iNstep;
 	int thrCrossTimeStep;
 	int avalStatus;
+	double computeTime;
 	uint charges_size;
 	uint chargesTot_size;
 	uint signal_size;

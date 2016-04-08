@@ -29,11 +29,13 @@
 #include "SFMT.h"
 
 
+
 class TRandomEngineSFMT : public TRandomEngine {
 	public:
 		TRandomEngineSFMT(sfmt_t status) : TRandomEngine(), fSFMT(status) {};
 		
 		double RandU01() { return sfmt_genrand_real2( &fSFMT ); }
+		std::string Generator() { return "SIMD-oriented Fast Mersenne Twister"; }
 		
 	private:
 	sfmt_t fSFMT;

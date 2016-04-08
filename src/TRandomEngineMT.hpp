@@ -35,6 +35,7 @@ class TRandomEngineMT : public TRandomEngine {
 		}
 		
 		double RandU01() { return mtRand(); }
+		std::string Generator() { return "Mersenne-Twister"; }
 		
 	private:
 	//sfmt_t fSFMT;

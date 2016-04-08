@@ -27,10 +27,9 @@ TAvalanche1D::TAvalanche1D(TDetector* det, sfmt_t sfmt, bool const& randomSeed) 
 	
 	fRandomNumberGenerated = 0;
 	
-	//fSFMT = new TRandomEngineSFMT(sfmt);
-	//fMRG = new TRandomEngineMRG();
-	//fMT = new TRandomEngineMT();
-	fRNG = new TRandomEngineMT();
+	fRNG = new TRandomEngineSFMT(sfmt);
+	
+	//cout << endl << "TAvalanche1D :: Random generator: " << fRNG->Generator() << endl << endl;
 
 	fRandRng = new RngStream();
 	if ( randomSeed ) {
@@ -56,9 +55,6 @@ TAvalanche1D::TAvalanche1D(TDetector* det, sfmt_t sfmt, bool const& randomSeed) 
 	fDet = det;
 	
 	iNstep = fDet->getNstep();
-	cout << "TAvalanche1D :: Nstep:" << iNstep << endl;
-	cout << "TAvalanche1D :: Nstep:" << fDet->getNstep() << endl;
-	cout << "TAvalanche1D :: Nstep:" << det->getNstep() << endl;
 	 
 	fGapWidth = fDet->getGapWidth();
 	fResistiveLayersWidth = fDet->getResistiveLayersWidth();
@@ -73,7 +69,6 @@ TAvalanche1D::TAvalanche1D(TDetector* det, sfmt_t sfmt, bool const& randomSeed) 
 	fAlpha = vector<double> (iNstep,0);
 	fEta = vector<double> (iNstep,0);
 	fE = vector<double> (iNstep,0);
-	cout << iNstep << endl;
 	for(int i=0; i<iNstep; i++){
 		fVx.at(i) = fDet->getVx();
 		fAlpha.at(i) = fDet->getAlpha();
@@ -103,7 +98,7 @@ TAvalanche1D::TAvalanche1D(TDetector* det, sfmt_t sfmt, bool const& randomSeed) 
 	bComputeSpaceChargeEffet = true;
 	bAvalancheInitialised = false;
 	
-	bVerbose = true;
+	bVerbose = false;
 	bSnapshots = false;
 	
 	if ( bEbarComputed ){
@@ -256,6 +251,7 @@ void TAvalanche1D::makeResultFile(){
 	fResult.iNstep = iNstep;
 	fResult.thrCrossTimeStep = iThrCrossTimeStep;
 	fResult.avalStatus = eAvalStatus;
+	fResult.computeTime = fElapsed;
 	fResult.charges_size = fCharges.size();
 	fResult.chargesTot_size = fTotalCharges.size();
 	fResult.signal_size = fSignal.size();
@@ -282,6 +278,7 @@ void TAvalanche1D::simulateEvent(){
 		
 	if( avalanche() ){
 		const auto elapsed = fTimer.time_elapsed();
+		fElapsed = static_cast<double>( duration_cast<seconds>(elapsed).count() );
 		checkDetectorGrid();
 		/* debug outputs */
 		ofstream data("out/electrons.dat", ios::out | ios::trunc);
@@ -303,6 +300,7 @@ void TAvalanche1D::simulateEvent(){
 	}
 	else{
 		const auto elapsed = fTimer.time_elapsed();
+		fElapsed = static_cast<double>( duration_cast<seconds>(elapsed).count() );
 		fSignal.clear();
 		fCharges.clear();
 		fSignal.push_back(-1);
@@ -531,9 +529,8 @@ void TAvalanche1D::computeLongitudinalDiffusion() {
 	for(int iz=0; iz<iNstep; iz++){
 		pos = (iz) * fDx;
 		double sigma = fDet->getDiffusionCoefficients(fE.at(iz), 0, 0)[0] * sqrtDx;
-		
+		fRandomNumberGenerated += fElecDetectorGrid.at(iz);
 		for(int n=0; n<fElecDetectorGrid.at(iz); n++){
-			fRandomNumberGenerated += n;
 			newPos = Gaus(pos, sigma, fRNG);
 			newPosIndex = (int)trunc(newPos/fDx);
 			

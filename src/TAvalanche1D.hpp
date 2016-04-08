@@ -195,6 +195,7 @@ class TAvalanche1D : public TAvalanche {
 	long double fRandomNumberGenerated;
 	
 	TResult fResult;
+	double fElapsed;
 	
 	//TTimer fTimer;
 };

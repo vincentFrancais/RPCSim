@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <string>
+
 class TRandomEngine {
 
 	public:
@@ -35,5 +37,7 @@ class TRandomEngine {
 	virtual double RandU01() = 0;
 	// Initialise the random number generator
 	//virtual void Seed(unsigned int s) = 0;
+	// Give the generator type
+	virtual std::string Generator() = 0;
 };
 
