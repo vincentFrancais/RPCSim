@@ -116,7 +116,6 @@ void * WriteResults(void * Arg)
 }
 
 int main(int argc, char** argv) {
-
 	/* Read config file */
 	TConfig config = readConfigFile("config/calice.xml");
     printConfig(config);
@@ -134,15 +133,18 @@ int main(int argc, char** argv) {
     unsigned int nThreads = config.nThreads;
     unsigned long nEvents = config.nEvents;
 	
-	/* Array of SFMT status */
-	sfmt_t sfmt[nThreads];
-	sfmt_init_gen_rand(&sfmt[0], 4321);
-	cout <<  endl << "Generating " << nThreads << " SFMT status by jump-ahead with period 10^20. ";
+	/* Init the SFMT status */
+	//sfmt_t sfmt[nThreads];
+	sfmt_t SFMT;
+	sfmt_init_gen_rand(&SFMT, 4321);
+	//sfmt_init_gen_rand(&sfmt[0], 4321);
+	/*cout <<  endl << "Generating " << nThreads << " SFMT status by jump-ahead with period 10^20. ";
 	for (uint i = 1; i < nThreads; i++) {
+		
 		sfmt[i] = sfmt[i - 1];
 		SFMT_jump(&sfmt[i], jump10_20);
     }
-    cout << "done!" << endl << endl;
+    cout << "done!" << endl << endl;*/
     
     
     /* Initialize our pipe lock */
@@ -200,11 +202,11 @@ int main(int argc, char** argv) {
 	detector->setElectricField(HV,0.,0.);
 	detector->initialiseDetector();
 	detector->makeEbarTable();
-	detector->setGarfieldSeed( 123456789 );
+	//detector->setGarfieldSeed( 123456789 );
 	
 	
 	/* Init struct of simulation parameters */
-	ThreadData* data = new ThreadData(detector, config, sfmt[0]);
+	ThreadData* data = new ThreadData(detector, config, SFMT);
 	
 	
     /* Open the communication pipe */
@@ -221,8 +223,10 @@ int main(int argc, char** argv) {
 
     /* Hot loop, the simulation happens here */
     for (unsigned long i = 0; i < nEvents; ++i){
-		data->sfmt = sfmt[i];
+		/* the SFMT status is given to the thread and then jump-ahead by 10^20 numbers (ensure independant and large enough streams) */
+		data->sfmt = SFMT;
 		TThreadsFactory::GetInstance()->CreateThread(wrapperFunction, data);
+		SFMT_jump(&SFMT, jump10_20);
     }
 
 
