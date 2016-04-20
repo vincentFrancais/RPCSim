@@ -90,6 +90,20 @@ using namespace std;
 	}
 #endif
 
+
+// Get current date/time, format is YYYY-MM-DD.HH:mm:ss
+// From http://stackoverflow.com/a/10467633
+string currentDateTime() {
+    time_t     now = time(0);
+    struct tm  tstruct;
+    char       buf[80];
+    tstruct = *localtime(&now);
+    
+    strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
+
+    return buf;
+}
+
 uint64_t gettid() {
     pthread_t ptid = pthread_self();
     uint64_t threadId = 0;
@@ -269,4 +283,22 @@ double Gaus(double mean, double sigma, TRandomEngine* stream){
    } while(0);
 
    return mean + sigma * result;
+}
+
+size_t getUUID() {
+	uint t = 0;
+	
+	ifstream f;
+	f.open("/dev/urandom", std::ios::binary | std::ios::in);
+	
+	if (!f.good()) {
+		cerr << "Error reading /dev/urandom" << endl;
+		exit(0);
+	}
+	
+	f.read(reinterpret_cast<char *>(&t), sizeof(t));
+	f.close();
+	
+	hash<uint> uinthash;
+	return uinthash(t);
 }

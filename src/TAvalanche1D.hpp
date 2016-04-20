@@ -124,6 +124,8 @@ class TAvalanche1D : public TAvalanche {
 	uint tId;
 	int Id;
 	
+	uint fSeed;
+	
 	TDetector* fDet;
 	DetectorGeometry fGeometry;
 	
@@ -183,6 +185,8 @@ class TAvalanche1D : public TAvalanche {
 	bool bThrCrossTime;
 	bool bComputeSpaceChargeEffet;
 	bool bHasReachSpaceChargeLimit;
+	
+	int iVerbosityLevel;
 	
 	EAvalancheStatus eAvalStatus;
 	

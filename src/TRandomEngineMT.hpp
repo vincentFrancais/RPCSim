@@ -33,6 +33,9 @@ class TRandomEngineMT : public TRandomEngine {
 			unsigned long init[4]={0x123, 0x234, 0x345, 0x456}, length=4;
 			init_by_array(init, length);
 		}
+		TRandomEngineMT(ulong init[], ulong length) : TRandomEngine() {
+			init_by_array(init, length);
+		}
 		
 		double RandU01() { return mtRand(); }
 		std::string Generator() { return "Mersenne-Twister"; }
