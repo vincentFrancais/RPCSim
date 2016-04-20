@@ -4,9 +4,9 @@
 #include <cmath>
 #include <vector>
 #include <assert.h>
-#include <utility>
-#include <cstring>
 #include <fcntl.h>
+#include <functional>
+#include <string>
 
 #include "TDetector.hpp"
 #include "helper_functions.hpp"
@@ -137,11 +137,6 @@ void TDetector::initialiseDetector(){
 	cout << "\tDt: " << fDt << endl;
 	cout << endl;
 	
-	//makeEbarTable();
-	//writeGasTransportParameters();
-	//test();
-	//Py_Finalize();
-	//exit(0);
 	bDetectorInitialised = true;
 }
 
@@ -186,7 +181,9 @@ void TDetector::writeGasTransportParameters(){
 }
 
 void TDetector::setGarfieldSeed( const int& s ) {
+	cout.setstate(ios_base::failbit);
 	Garfield::randomEngine.Seed(s);
+	cout.clear();
 }
 
 double TDetector::R(const double& k, const double& z, const double& zp){
@@ -231,7 +228,7 @@ double integrand(double x, void * params){
 	return gsl_sf_bessel_J0(x*param[0]) * tgsl->R(x,param[1],param[2])/tgsl->D(x);
 }
 
-double TDetector::SCFieldSimplified(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp){
+double TDetector::SCFieldSimplified(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
 	double e0 = GSL_CONST_MKSA_ELECTRON_CHARGE;
 	double g = fGeometry.gapWidth * cm;
 	double eps0 = GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
@@ -245,7 +242,7 @@ double TDetector::SCFieldSimplified(const double& r, const double& phi, const do
 
 }
 
-double TDetector::SCField(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp){
+double TDetector::SCField(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
 	double h = 0.001 * cm;
 
 	double m1 = ( SCPotential(r,phi,z+h,rp,phip,zp) - SCPotential(r,phi,z-h,rp,phip,zp) ) / (2*h);
@@ -353,13 +350,16 @@ void TDetector::makeEbarTable( bool const& binary ){
 	string fileName = getUniqueTableName();
 	cout << "FileName: " << fileName << endl;
 
-	unsigned char* uc = new unsigned char[fileName.size()+1];
+	/*unsigned char* uc = new unsigned char[fileName.size()+1];
 	memcpy(uc, fileName.c_str(), fileName.size());
 	uc[fileName.size()]=0;
 	string hexFileName = GetHexRepresentation(uc, fileName.size());
 	cout << "Hex representation: " << hexFileName << endl;
-	delete uc;
-
+	delete uc; */
+	hash<string> hash;
+	string hexFileName = toString( hash(fileName) );
+	cout << "Hash representation: " << hexFileName << endl;
+	
 	double zStep = fGeometry.gapWidth * cm / (n-1), zpStep = fGeometry.gapWidth * cm / (n-1), lStep = iNstep*fDx / (n);
 	fEbarLarray = vector<double>(n,0.);
 	fEbarZarray = vector<double>(n,0.);

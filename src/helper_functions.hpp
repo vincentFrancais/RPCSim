@@ -25,16 +25,20 @@
 #pragma once
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <sstream>
 #include <iomanip>
 #include <utility>
-#include <limits>
+#include <climits>
 #include <cmath>
 #include <iterator>
 #include <algorithm>
 #include <sys/stat.h>
 #include <numeric>
+#include <ctime>
+#include <functional>
+#include <string>
 
 //#include "RngStream.hpp"
 #include "TRandomEngine.hpp"
@@ -58,7 +62,11 @@ std::string toString(const T & value)
 	return oss.str();
 }
 
+std::string currentDateTime();
+
 uint64_t gettid();
+
+size_t getUUID();
 
 #if defined(PYTHON)
 	int call_python_fun(std::string funName, std::vector<double> args, double& result);

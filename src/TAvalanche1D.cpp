@@ -100,6 +100,7 @@ TAvalanche1D::TAvalanche1D(TDetector* det, sfmt_t sfmt, bool const& randomSeed) 
 	
 	bVerbose = false;
 	bSnapshots = false;
+	iVerbosityLevel = 0;
 	
 	if ( bEbarComputed ){
 		iEbarTableSize = fDet->getEbarTableSize();
@@ -187,8 +188,11 @@ void TAvalanche1D::initialiseTrackHeed(const string& particleName, const double&
 		return;
 	}
 	
-	if (bVerbose)
-		cout << "Initialising avalanche with Heed track for " << particleName << " with momentum " << toString(momentum) << " at position " << toString(x0) << " with angle " << toString(theta) << endl;
+	if (iVerbosityLevel > 0)
+		cout << "Initialising avalanche with Heed track (thread " << Id << ") for " << particleName << " with momentum " << toString(momentum) << " at position " << toString(x0) << " with angle " << toString(theta) << endl;
+	
+	fSeed = getUUID();
+	fDet->setGarfieldSeed(fSeed);
 	
 	Garfield::TrackHeed* track = new Garfield::TrackHeed();
 	track->SetSensor(fDet->getSensor());
@@ -223,7 +227,7 @@ void TAvalanche1D::initialiseTrackHeed(const string& particleName, const double&
 	fClusterDensity = track->GetClusterDensity();
 	delete track;
 	
-	if (bVerbose)
+	if (iVerbosityLevel > 1)
 		cout << "TAvalanche1D::initialiseTrackHeed -- " << toString( fNElectrons[0] ) << " electrons produced by heed track." << endl;
 	
 	bAvalancheInitialised = true;
@@ -245,7 +249,7 @@ void TAvalanche1D::initialiseSingleCluster(const double& x0, const double& n0){
 	bAvalancheInitialised = true;
 }
 
-void TAvalanche1D::makeResultFile(){
+void TAvalanche1D::makeResultFile() {
 	fResult.Dt = fDt;
 	fResult.Dx = fDx;
 	fResult.iNstep = iNstep;
@@ -266,13 +270,13 @@ void TAvalanche1D::makeResultFile(){
 void TAvalanche1D::simulateEvent(){
 	// check if avalanche has been initialised
 	if ( !bAvalancheInitialised ){
-		cerr << "Error -- TAvalanche1D::simulateEvent -- Avalanche has not been initialised. Aborting" << endl;
+		cerr << "Error -- TAvalanche1D::simulateEvent -- Avalanche has not been initialised. Aborting" << endl<< endl;
 		exit(0);
 	}
 	
 	// if Space Charge Effect is enabled check if Ebar table has been computed
 	if ( bComputeSpaceChargeEffet && !bEbarComputed ){
-		cerr << "Error -- TAvalanche1D::simulateEvent -- No Ebar table found. Aborting simulation." << endl;
+		cerr << "Error -- TAvalanche1D::simulateEvent -- No Ebar table found. Aborting simulation." << endl<< endl;
 		exit(0); 
 	}
 		
@@ -295,8 +299,8 @@ void TAvalanche1D::simulateEvent(){
 		chargesTotData.close();
 		/* ========= */
 		makeResultFile();
-		cout << "Random number generated: " << fRandomNumberGenerated << endl;
-		cout << "Avalanche simulation id " << Id << " (thread id " << tId << ") terminated with success (" << duration_cast<seconds>(elapsed).count() << " seconds)." << endl;
+		//cout << "Random number generated: " << fRandomNumberGenerated << endl;
+		cout << currentDateTime() << " - Avalanche simulation id " << Id << " (thread id " << tId << ") terminated with success (" << duration_cast<seconds>(elapsed).count() << " seconds)." << endl<< endl;
 	}
 	else{
 		const auto elapsed = fTimer.time_elapsed();
@@ -306,7 +310,7 @@ void TAvalanche1D::simulateEvent(){
 		fSignal.push_back(-1);
 		fCharges.push_back(-1);
 		makeResultFile();
-		cout << "Avalanche simulation id " << Id << " (thread id " << tId << ") terminated with error: " << eAvalStatus << " (" << duration_cast<seconds>(elapsed).count() << " seconds)." << endl;
+		cout << currentDateTime() << " - Avalanche simulation id " << Id << " (thread id " << tId << ") terminated with error: " << eAvalStatus << " (" << duration_cast<seconds>(elapsed).count() << " seconds)." << endl<< endl;
 	}
 }
 

@@ -23,7 +23,6 @@
 
 #define SFMT_MEXP 19937
 
-#include "RngStream.hpp"
 #include "SFMT.h"
 #include "SFMT-jump.h"
 
@@ -134,18 +133,8 @@ int main(int argc, char** argv) {
     unsigned long nEvents = config.nEvents;
 	
 	/* Init the SFMT status */
-	//sfmt_t sfmt[nThreads];
 	sfmt_t SFMT;
 	sfmt_init_gen_rand(&SFMT, 4321);
-	//sfmt_init_gen_rand(&sfmt[0], 4321);
-	/*cout <<  endl << "Generating " << nThreads << " SFMT status by jump-ahead with period 10^20. ";
-	for (uint i = 1; i < nThreads; i++) {
-		
-		sfmt[i] = sfmt[i - 1];
-		SFMT_jump(&sfmt[i], jump10_20);
-    }
-    cout << "done!" << endl << endl;*/
-    
     
     /* Initialize our pipe lock */
     pthread_mutex_init(&gPipeLock, 0);

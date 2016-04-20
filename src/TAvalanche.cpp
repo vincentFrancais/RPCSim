@@ -25,7 +25,7 @@ TAvalanche::TAvalanche () {
 	fRandRngCLT = new RngStream();
 	fRandRngLongiDiff = new RngStream();
 	*/
-	count++;
+	//count++;
 }
 
 
