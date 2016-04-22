@@ -80,7 +80,7 @@ class TDetector{
 	double SCFieldSimplified(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp);
 	double SCField(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp);
 	
-	double RadialChargeDistribution(const double& r, const double& l);
+	inline double RadialChargeDistribution(const double& r, const double& l);
 	double computeEbar(const double& z, const double& l, const double& zp);
 	#if defined(PYTHON)
 		double computeEbar_Python(const double& z, const double& l, const double& zp);
@@ -117,7 +117,6 @@ class TDetector{
 	
 	void plotSC();
 	
-	string getUniqueTableName(int const& n); //TO BE REMOVED!
 	string getUniqueTableName();
 	
 	private:

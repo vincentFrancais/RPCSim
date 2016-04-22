@@ -26,7 +26,7 @@ extern double cm;
 TDetector::TDetector(const DetectorGeometry& geometry, const int& nStep){
 	iNstep = nStep;
 	fGeometry = geometry;
-	iEbarTableSize = 75;
+	iEbarTableSize = 15;
 
 	bHasEbarTable = false;
 	bGasLoaded = false;
@@ -124,7 +124,7 @@ void TDetector::initialiseDetector(){
 
 	fDt = fDx/fVx; //ns
 
-	assert( (fAlpha>fEta) or (fAlpha>0) );
+	assert(  (fAlpha>0) and (fEta>0) );
 	
 	cout << endl;
 	cout << "Transport parameters:" << endl;
@@ -136,6 +136,10 @@ void TDetector::initialiseDetector(){
 	cout << "\tDiffusion coefficient: (" << fDiffL << ", " << fDiffT << ")" << endl;
 	cout << "\tDt: " << fDt << endl;
 	cout << endl;
+	
+	delete box;
+	delete geo;
+	delete comp;
 	
 	bDetectorInitialised = true;
 }
@@ -282,16 +286,16 @@ double TDetector::SCPotential(const double& r, const double& phi, const double& 
     return pot;
 }
 
-double TDetector::RadialChargeDistribution(const double& r, const double& l){
-	//cout << fDiffT << " " << l << " " << r << endl;
+inline double TDetector::RadialChargeDistribution(const double& r, const double& l){
 	return ( 1./(fDiffT*fDiffT * l) ) * exp( -(r*r)/(2*fDiffT*fDiffT * l) ) ;
 }
 
 double Ebar(double x, void * params){
-	//x == rp
+	// x == rp
 
 	double* param = reinterpret_cast<double*> (params); //[z,l,zp]
-	double res =  tgsl->RadialChargeDistribution(x,param[1]) * tgsl->SCField(0.,0.,param[0],x*cm,0.,param[2])*0.01 * x;  //RadialDistrib en cm-2, rp*drp en cm2, SCField en V/cm. rp doit etre en m dans les params de SCField
+	// RadialDistrib en cm-2, rp*drp en cm2, SCField en V/cm. rp doit etre en m dans les params de SCField
+	double res =  tgsl->RadialChargeDistribution(x,param[1]) * tgsl->SCField(0.,0.,param[0],x*cm,0.,param[2])*0.01 * x;
 	return res;
 }
 
@@ -459,13 +463,6 @@ void TDetector::plotSC(){
 		}
 	}
 	data.close();
-}
-
-string TDetector::getUniqueTableName(int const& n){
-	string name = toString(fDiffT) + toString(fGeometry.gapWidth) + toString(fGeometry.relativePermittivity[0]) + toString(fGeometry.resistiveLayersWidth[0]) + toString(fGeometry.resistiveLayersWidth[1])
-	+toString(fGeometry.relativePermittivity[1]) + toString(iNstep)+ toString(n)+ toString(fDx) + toString(iEbarTableSize);
-	
-	return name;
 }
 
 string TDetector::getUniqueTableName(){
