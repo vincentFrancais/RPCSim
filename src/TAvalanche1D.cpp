@@ -608,8 +608,8 @@ bool TAvalanche1D::avalanche() {
 		computeInducedSignal2();
 		
 		// Elecs in last bin has reached the anode, so we empty it
-		fNelecAnode += fElecDetectorGrid.at(iNstep-1);
 		if (fElecDetectorGrid.at(iNstep-1) > 0){
+			fNelecAnode += fElecDetectorGrid.at(iNstep-1);
 			fElecOnAnode.push_back( make_pair(fElecDetectorGrid.at(iNstep-1),iTimeStep*fDx) );
 			fElecDetectorGrid.at(iNstep-1) = 0;
 		}
