@@ -26,7 +26,7 @@ extern double cm;
 TDetector::TDetector(const DetectorGeometry& geometry, const int& nStep){
 	iNstep = nStep;
 	fGeometry = geometry;
-	iEbarTableSize = 15;
+	iEbarTableSize = 75;
 
 	bHasEbarTable = false;
 	bGasLoaded = false;
@@ -137,9 +137,9 @@ void TDetector::initialiseDetector(){
 	cout << "\tDt: " << fDt << endl;
 	cout << endl;
 	
-	delete box;
+	/*delete box;
 	delete geo;
-	delete comp;
+	delete comp;*/
 	
 	bDetectorInitialised = true;
 }

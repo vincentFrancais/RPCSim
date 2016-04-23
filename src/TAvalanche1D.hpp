@@ -190,8 +190,8 @@ class TAvalanche1D : public TAvalanche {
 	
 	EAvalancheStatus eAvalStatus;
 	
-	RngStream* fRandRng;
-	TRandomEngineMRG* fRandRngCLT;
+	TRandomEngine* fRandRng;
+	TRandomEngine* fRandRngCLT;
 	RngStream* fRandRngLongiDiff;
 
 	TRandomEngine* fRNG;

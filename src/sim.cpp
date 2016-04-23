@@ -36,6 +36,7 @@ typedef unsigned long ulong;
 
 double cm = 0.01;
 int TAvalanche::count = 0;
+int TAvalanche::countSim = 0;
 
 pthread_mutex_t gPipeLock;
 pthread_mutex_t gTrackLock;

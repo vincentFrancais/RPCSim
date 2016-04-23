@@ -3,29 +3,8 @@
 using namespace std;
 
 TAvalanche::TAvalanche () {
-	//fDet = det;
-	//fDet = new TDetector (*det);
-	//fGeometry = det->getGeometry();
+
 	fTimer.start();
-	
-	/*fRandRng = new RngStream();
-	if ( randomSeed ) {
-		random_device rd;
-		ulong seed[6];
-		cout << "TAvalanche :: RNGStream seeds set to ";
-		for (int i=0; i<6; i++){
-			seed[i] = rd();
-			cout << seed[i] << " ";
-		}
-		cout << endl;
-		
-		fRandRng->SetSeed( seed );
-	}
-	
-	fRandRngCLT = new RngStream();
-	fRandRngLongiDiff = new RngStream();
-	*/
-	//count++;
 }
 
 

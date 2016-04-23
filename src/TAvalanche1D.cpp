@@ -31,8 +31,8 @@ TAvalanche1D::TAvalanche1D(TDetector* det, sfmt_t sfmt, bool const& randomSeed) 
 	
 	//cout << endl << "TAvalanche1D :: Random generator: " << fRNG->Generator() << endl << endl;
 
-	fRandRng = new RngStream();
-	if ( randomSeed ) {
+	//fRandRng = new RngStream();
+	/*if ( randomSeed ) {
 		random_device rd;
 		ulong seed[6];
 		cout << "TAvalanche :: RNGStream seeds set to ";
@@ -43,10 +43,10 @@ TAvalanche1D::TAvalanche1D(TDetector* det, sfmt_t sfmt, bool const& randomSeed) 
 		cout << endl;
 		
 		fRandRng->SetSeed( seed );
-	}
-	
+	}*/
+	fRandRng = new TRandomEngineMRG();
 	fRandRngCLT = new TRandomEngineMRG();
-	fRandRngLongiDiff = new RngStream();
+	//fRandRngLongiDiff = new RngStream();
 	
 	//========================
 	
@@ -193,24 +193,24 @@ void TAvalanche1D::initialiseTrackHeed(const string& particleName, const double&
 	
 	fSeed = getUUID();
 	fDet->setGarfieldSeed(fSeed);
-	
+
 	Garfield::TrackHeed* track = new Garfield::TrackHeed();
 	track->SetSensor(fDet->getSensor());
 	track->SetParticle(particleName);
 	track->SetMomentum(momentum);
-	
+
 	double t0 = 0.;
 	double y0 = 0, z0 = 0;
 	double dx0 = cos(theta * M_PI / 180.0), dy0 = sin(theta * M_PI / 180.0), dz0 = 0.;
-	
+
 	track->NewTrack(x0, y0, z0, t0, dx0, dy0, dz0);
-	
+
 	double xc = 0., yc = 0., zc = 0., tc = 0.; 	// Cluster coordinates
 	int nc = 0; 								// Number of electrons produced in a collision
 	double ec = 0.; 							// Energy loss in a collision
 	double dummy = 0.; 							// Dummy variable (not used at present)
 	fNElectrons = vector<double> (iNElectronsSize,0);
-	
+
 	while (track->GetCluster(xc, yc, zc, tc, nc, ec, dummy)){
 		//fClPosX.push_back(xc);
 		//fClPosY.push_back(yc);
@@ -300,7 +300,7 @@ void TAvalanche1D::simulateEvent(){
 		/* ========= */
 		makeResultFile();
 		//cout << "Random number generated: " << fRandomNumberGenerated << endl;
-		cout << currentDateTime() << " - Avalanche simulation id " << Id << " (thread id " << tId << ") terminated with success (" << duration_cast<seconds>(elapsed).count() << " seconds)." << endl<< endl;
+		cout << currentDateTime() << " - Avalanche simulation id " << Id << " (" << countSim << "nth simulation) terminated with success (" << duration_cast<seconds>(elapsed).count() << " seconds)." << endl<< endl;
 	}
 	else{
 		const auto elapsed = fTimer.time_elapsed();
@@ -310,8 +310,10 @@ void TAvalanche1D::simulateEvent(){
 		fSignal.push_back(-1);
 		fCharges.push_back(-1);
 		makeResultFile();
-		cout << currentDateTime() << " - Avalanche simulation id " << Id << " (thread id " << tId << ") terminated with error: " << eAvalStatus << " (" << duration_cast<seconds>(elapsed).count() << " seconds)." << endl<< endl;
+		cout << currentDateTime() << " - Avalanche simulation id " << Id << " (" << countSim << "nth simulation) terminated with error: " << eAvalStatus << " (" << duration_cast<seconds>(elapsed).count() << " seconds)." << endl<< endl;
 	}
+	
+	countSim++;
 }
 
 void TAvalanche1D::checkDetectorGrid(){

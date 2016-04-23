@@ -48,6 +48,7 @@ class TAvalanche {
 	
 	protected:
 	static int count;
+	static int countSim;
 	//TDetector* fDet;
 	//DetectorGeometry fGeometry;
 	
