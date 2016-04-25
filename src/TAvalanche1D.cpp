@@ -102,6 +102,8 @@ TAvalanche1D::TAvalanche1D(TDetector* det, sfmt_t sfmt, bool const& randomSeed) 
 	bSnapshots = false;
 	iVerbosityLevel = 0;
 	
+	bDummyRun = true;
+	
 	if ( bEbarComputed ){
 		iEbarTableSize = fDet->getEbarTableSize();
 		int n = iEbarTableSize+1;
@@ -629,6 +631,10 @@ bool TAvalanche1D::avalanche() {
 				eAvalStatus = AVAL_ERROR_TIMESTEP_EXCEEDING_LIMIT;
 				return false;
 		}
+		
+		if (bDummyRun and iTimeStep == 100)
+			break;
+			
 		
 		//if (!bComputeSpaceChargeEffet and !bHasReachSpaceChargeLimit and fNElectrons[iTimeStep]>fSpaceChargeLimit)
 		//	bHasReachSpaceChargeLimit = true;

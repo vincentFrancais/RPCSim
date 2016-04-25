@@ -201,5 +201,7 @@ class TAvalanche1D : public TAvalanche {
 	TResult fResult;
 	double fElapsed;
 	
+	bool bDummyRun;
+	
 	//TTimer fTimer;
 };
