@@ -102,7 +102,7 @@ TAvalanche1D::TAvalanche1D(TDetector* det, sfmt_t sfmt, bool const& randomSeed) 
 	bSnapshots = false;
 	iVerbosityLevel = 0;
 	
-	bDummyRun = true;
+	bDummyRun = false;
 	
 	if ( bEbarComputed ){
 		iEbarTableSize = fDet->getEbarTableSize();
@@ -472,7 +472,6 @@ double TAvalanche1D::electronMultiplication(const double& n){
 
 double TAvalanche1D::multiplicationCLT(const double& x, const double& n){
 	double nm = n_moy(x);
-	//if(fAlpha[iCurrentDetectorStep] == 0) 	fAlpha[iCurrentDetectorStep] += numeric_limits<double>::epsilon();
 	double k = fEta[iCurrentDetectorStep]/fAlpha[iCurrentDetectorStep];
 	double alpha = fAlpha[iCurrentDetectorStep];
 	double eta = fEta[iCurrentDetectorStep];
@@ -497,7 +496,7 @@ double TAvalanche1D::multiplicationCLT(const double& x, const double& n){
 			cout << "c: " << c << endl;
 		}
 		cerr << "Explosive behavior detected -- stopping avalanche" <<endl;
-		eAvalStatus = AVAL_EXPLOSIVE_BEHAVIOR;
+		eAvalStatus = AVAL_EXPLOSIVE_BEHAVIOR_CLT;
 		return 0;
 		//cin.ignore();
 	}
@@ -534,7 +533,15 @@ void TAvalanche1D::computeLongitudinalDiffusion() {
 	int newPosIndex;
 	double sqrtDx = sqrt(fDx);
 	
+	//TTimer timer;
+	//timer.start();
+	
 	for(int iz=0; iz<iNstep; iz++){
+		/*if ( duration<double>(timer.time_elapsed()).count() > 1000.){
+			eAvalStatus = AVAL_LONGI_DIFF_TIME_LIMIT_EXCEEDED;
+			break;
+		}*/
+		
 		pos = (iz) * fDx;
 		double sigma = fDet->getDiffusionCoefficients(fE.at(iz), 0, 0)[0] * sqrtDx;
 		fRandomNumberGenerated += fElecDetectorGrid.at(iz);
@@ -562,6 +569,15 @@ void TAvalanche1D::computeLongitudinalDiffusion() {
 	fElecDetectorGrid = newDetectorGrid;
 }
 
+bool TAvalanche1D::checkForExplosiveBehavior() {
+	double n0 = fNElectrons.at(iTimeStep-1);
+	double n1 = fNElectrons.at(iTimeStep);
+	if ( 100.*(n1-n0)/n1 > 30. )
+		return true;
+	else
+		return false;
+}
+
 bool TAvalanche1D::propagate() {
 	double n, nProduced;
 	vector<double> copy (fElecDetectorGrid);
@@ -573,7 +589,7 @@ bool TAvalanche1D::propagate() {
 		//	nProduced = n;
 		//else 
 			nProduced = electronMultiplication(n);
-			
+		
 		if (eAvalStatus != AVAL_NO_ERROR)
 			return false;
 		
@@ -592,7 +608,8 @@ bool TAvalanche1D::propagate() {
 
 bool TAvalanche1D::avalanche() {
 	iTimeStep = 1;
-
+	//ofstream debugOut("out/debugOut/outDebug"+toString(Id), ios::out | ios::trunc);
+	
 	while(true){
 		
 		if ( bComputeSpaceChargeEffet )
@@ -605,7 +622,16 @@ bool TAvalanche1D::avalanche() {
 		if (iTimeStep == 1)
 			fElecDetectorGrid.at(0) = 0;
 		
+		if (iTimeStep > 400) {
+			if( checkForExplosiveBehavior() ){
+				eAvalStatus = AVAL_POTENTIAL_EXPLOSIVE_BEHAVIOR;
+				return false;
+			}
+		}
+		
 		computeLongitudinalDiffusion();
+		if (eAvalStatus != AVAL_NO_ERROR)
+			return false;
 		
 		computeInducedSignal2();
 		
@@ -627,6 +653,8 @@ bool TAvalanche1D::avalanche() {
 			cout << " " << -sumVec(fPosIonDetectorGrid)+sumVec(fElecDetectorGrid)+sumVec(fNegIonDetectorGrid) << endl;
 		}
 		
+		//debugOut << fNElectrons[iTimeStep] << endl;
+		
 		if ( iTimeStep > iNElectronsSize ) {
 				eAvalStatus = AVAL_ERROR_TIMESTEP_EXCEEDING_LIMIT;
 				return false;
@@ -635,7 +663,6 @@ bool TAvalanche1D::avalanche() {
 		if (bDummyRun and iTimeStep == 100)
 			break;
 			
-		
 		//if (!bComputeSpaceChargeEffet and !bHasReachSpaceChargeLimit and fNElectrons[iTimeStep]>fSpaceChargeLimit)
 		//	bHasReachSpaceChargeLimit = true;
 		

@@ -45,6 +45,7 @@
 #include "TAvalanche.hpp"
 #include "TDetector.hpp"
 #include "TResult.hpp"
+#include "TAvalError.hpp"
 
 #if defined( _DEBUG ) || defined( DEBUG ) || defined (__DEBUG__)
 #   ifndef DEBUG
@@ -62,17 +63,6 @@
 #endif
 
 using namespace std;
-
-enum EAvalancheStatus{
-	AVAL_SUCCESS,
-	AVAL_NO_ERROR,
-	
-	AVAL_CLT_FAIL,
-	AVAL_MULT_FAIL,
-	AVAL_ERROR_GRID_NOT_EMPTY,
-	AVAL_ERROR_TIMESTEP_EXCEEDING_LIMIT,
-	AVAL_EXPLOSIVE_BEHAVIOR
-};
 
 class TAvalanche1D : public TAvalanche {
 	
@@ -93,6 +83,7 @@ class TAvalanche1D : public TAvalanche {
 	void computeClusterDensity(const string& particleName, const double& Pmin, const double& Pmax, const int& steps);
 	void computeElectronsProduction(const string& particleName, const double& P, const int& nTracks);
 	void checkDetectorGrid();
+	bool checkForExplosiveBehavior();
 	bool propagate();
 	void computeLongitudinalDiffusion();
 	bool avalanche();
