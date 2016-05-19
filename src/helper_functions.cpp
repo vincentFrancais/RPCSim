@@ -302,3 +302,11 @@ size_t getUUID() {
 	hash<uint> uinthash;
 	return uinthash(t);
 }
+
+bool checkTimerExceededLimit(TTimer timer, double const& limit) {
+	auto elapsed = timer.time_elapsed();
+	if ( static_cast<double>( duration_cast<seconds>(elapsed).count() ) >= limit)
+		return true;
+	else
+		return false;
+}

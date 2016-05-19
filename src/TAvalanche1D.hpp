@@ -194,5 +194,6 @@ class TAvalanche1D : public TAvalanche {
 	
 	bool bDummyRun;
 	
-	//TTimer fTimer;
+	TTimer fLongiDiffTimer;
+	double fLongiDiffTimeLimit;
 };

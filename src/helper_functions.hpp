@@ -42,6 +42,7 @@
 
 //#include "RngStream.hpp"
 #include "TRandomEngine.hpp"
+#include "TTimer.hpp"
 
 
 #if defined( _PYTHON ) || defined( PYTHON ) || defined (__PYTHON__)
@@ -108,3 +109,5 @@ template<typename T>
 T sumVec(std::vector<T> vec){
 	return std::accumulate(vec.begin(), vec.end(), 0.0);
 }
+
+bool checkTimerExceededLimit(TTimer timer, double const& limit);

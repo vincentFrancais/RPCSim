@@ -104,6 +104,8 @@ TAvalanche1D::TAvalanche1D(TDetector* det, sfmt_t sfmt, bool const& randomSeed) 
 	
 	bDummyRun = false;
 	
+	fLongiDiffTimeLimit = 1400;
+	
 	if ( bEbarComputed ){
 		iEbarTableSize = fDet->getEbarTableSize();
 		int n = iEbarTableSize+1;
@@ -533,19 +535,23 @@ void TAvalanche1D::computeLongitudinalDiffusion() {
 	int newPosIndex;
 	double sqrtDx = sqrt(fDx);
 	
-	//TTimer timer;
-	//timer.start();
+	fLongiDiffTimer.start();
 	
 	for(int iz=0; iz<iNstep; iz++){
-		/*if ( duration<double>(timer.time_elapsed()).count() > 1000.){
+		if ( checkTimerExceededLimit(fTimer,fLongiDiffTimeLimit) or eAvalStatus == AVAL_LONGI_DIFF_TIME_LIMIT_EXCEEDED ) {
 			eAvalStatus = AVAL_LONGI_DIFF_TIME_LIMIT_EXCEEDED;
 			break;
-		}*/
+		}
 		
 		pos = (iz) * fDx;
 		double sigma = fDet->getDiffusionCoefficients(fE.at(iz), 0, 0)[0] * sqrtDx;
 		fRandomNumberGenerated += fElecDetectorGrid.at(iz);
 		for(int n=0; n<fElecDetectorGrid.at(iz); n++){
+			if ( checkTimerExceededLimit(fTimer,fLongiDiffTimeLimit) ) {
+				eAvalStatus = AVAL_LONGI_DIFF_TIME_LIMIT_EXCEEDED;
+				break;
+			}
+			
 			newPos = Gaus(pos, sigma, fRNG);
 			newPosIndex = (int)trunc(newPos/fDx);
 			
