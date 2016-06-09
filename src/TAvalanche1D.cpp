@@ -21,38 +21,54 @@ using namespace std;
 //double cm = 0.01;
 extern double cm;
 
-TAvalanche1D::TAvalanche1D(TDetector* det, sfmt_t sfmt, bool const& randomSeed) : TAvalanche() {
-	
-	//fTimer.start();
-	
-	fRandomNumberGenerated = 0;
+
+TAvalanche1D::TAvalanche1D(TDetector* det, sfmt_t sfmt) : TAvalanche() {
+	fDet = det;
 	
 	fRNG = new TRandomEngineSFMT(sfmt);
-	
-	//cout << endl << "TAvalanche1D :: Random generator: " << fRNG->Generator() << endl << endl;
-
-	//fRandRng = new RngStream();
-	/*if ( randomSeed ) {
-		random_device rd;
-		ulong seed[6];
-		cout << "TAvalanche :: RNGStream seeds set to ";
-		for (int i=0; i<6; i++){
-			seed[i] = rd();
-			cout << seed[i] << " ";
-		}
-		cout << endl;
-		
-		fRandRng->SetSeed( seed );
-	}*/
 	fRandRng = new TRandomEngineMRG();
 	fRandRngCLT = new TRandomEngineMRG();
-	//fRandRngLongiDiff = new RngStream();
 	
 	//========================
 	
+	init();
+}
+
+TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, int id) : TAvalanche() {
+	fDet = det;
+	
+	int MTstatus = (id*100/config.nEvents)+1;
+	string filename;
+	if (MTstatus < 10)
+		filename = "MTStatus/mtS10p12i-000"+toString(MTstatus);
+	else if (MTstatus == 100)
+		filename = "MTStatus/mtS10p12i-0"+toString(MTstatus);
+	else
+		filename = "MTStatus/mtS10p12i-00"+toString(MTstatus);
+		
+	cout << id << " " << filename << endl;
+	
+	fRNG = new TRandomEngineMT(filename);
+	fRandRng = new TRandomEngineMRG();
+	fRandRngCLT = new TRandomEngineMRG();
+	
+	//========================
+	
+	init();
+}
+
+TAvalanche1D::~TAvalanche1D() {
+	delete fRandRng;
+	delete fRandRngCLT;
+	delete fRandRngLongiDiff;
+	delete fRNG;
+}
+
+void TAvalanche1D::init() {
 	tId = gettid();
 	Id = count++;
-	fDet = det;
+	
+	fRandomNumberGenerated = 0;
 	
 	iNstep = fDet->getNstep();
 	 
@@ -125,13 +141,6 @@ TAvalanche1D::TAvalanche1D(TDetector* det, sfmt_t sfmt, bool const& randomSeed) 
 	fCharges.clear();
 	
 	eAvalStatus = AVAL_NO_ERROR; //Avalanche status to NO_ERROR at begining
-}
-
-TAvalanche1D::~TAvalanche1D() {
-	delete fRandRng;
-	delete fRandRngCLT;
-	delete fRandRngLongiDiff;
-	delete fRNG;
 }
 
 void TAvalanche1D::computeClusterDensity(const string& particleName, const double& Pmin, const double& Pmax, const int& steps){

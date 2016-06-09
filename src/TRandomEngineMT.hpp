@@ -1,4 +1,5 @@
-// TRandomEngineMT.hpp
+
+// TRandomEngineMT2.hpp
 // 
 // Copyright 2016 Vincent Français <francais@clermont.in2p3.fr>
 // 
@@ -24,24 +25,30 @@
 #pragma once
 
 #include "TRandomEngine.hpp"
-#include "MT.h"
+#include "TGenMT.hpp"
 
 
 class TRandomEngineMT : public TRandomEngine {
 	public:
 		TRandomEngineMT() : TRandomEngine() {
-			unsigned long init[4]={0x123, 0x234, 0x345, 0x456}, length=4;
-			init_by_array(init, length);
+			rand = TGenMT();
 		}
 		TRandomEngineMT(ulong init[], ulong length) : TRandomEngine() {
-			init_by_array(init, length);
+			rand = TGenMT(init, length);
+		}
+		TRandomEngineMT(std::string filename): TRandomEngine() {
+			rand = TGenMT(filename);
 		}
 		
-		double RandU01() { return mtRand(); }
+		TRandomEngineMT(ulong s): TRandomEngine() {
+			rand = TGenMT(s);
+		}
+		
+		double RandU01() { return rand.mtRand(); }
 		std::string Generator() { return "Mersenne-Twister"; }
 		
 	private:
-	//sfmt_t fSFMT;
+	TGenMT rand;
 };
 
 

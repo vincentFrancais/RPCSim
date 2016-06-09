@@ -43,6 +43,7 @@
 #include "TrackHeed.hh"
 
 #include "TAvalanche.hpp"
+#include "TConfig.hpp"
 #include "TDetector.hpp"
 #include "TResult.hpp"
 #include "TAvalError.hpp"
@@ -68,9 +69,12 @@ class TAvalanche1D : public TAvalanche {
 	
 	public:
 	//TAvalanche1D(TDetector* det, bool const& randomSeed=false);
-	TAvalanche1D(TDetector* det, sfmt_t sfmt, bool const& randomSeed=false);
+	TAvalanche1D(TDetector* det, sfmt_t sfmt);
+	TAvalanche1D(TDetector* det, TConfig& config, int id);
 	
 	~TAvalanche1D();
+	
+	void init();
 	
 	void initialiseTrackHeed(const string& particleName, const double& momentum, const double& x0, const double& theta);
 	void initialiseSingleCluster(const double& x0, const double& n0=1);

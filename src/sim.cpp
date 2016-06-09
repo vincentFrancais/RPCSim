@@ -49,8 +49,9 @@ struct ThreadData{
 	TDetector * detector;
 	TConfig config;
 	sfmt_t sfmt;
+	int id;
 	
-	ThreadData (TDetector * det, TConfig conf, sfmt_t status) : detector(det), config(conf), sfmt(status)	{ };
+	ThreadData (TDetector * det, TConfig conf, sfmt_t status, int i) : detector(det), config(conf), sfmt(status), id(i)	{ };
 };
 
 void * wrapperFunction(void * Arg){
@@ -60,7 +61,7 @@ void * wrapperFunction(void * Arg){
 	ThreadData* data = reinterpret_cast< ThreadData* > (Arg);
 	
 	TResult result;
-	TAvalanche1D avalanche(data->detector, data->sfmt, false);
+	TAvalanche1D avalanche(data->detector, data->sfmt);
 	
 	
 	sem_post(TThreadsFactory::GetInstance()->GetInitLock());
@@ -196,7 +197,7 @@ int main(int argc, char** argv) {
 	
 	
 	/* Init struct of simulation parameters */
-	ThreadData* data = new ThreadData(detector, config, SFMT);
+	ThreadData* data = new ThreadData(detector, config, SFMT, 0);
 	
 	
     /* Open the communication pipe */
@@ -215,6 +216,7 @@ int main(int argc, char** argv) {
     for (unsigned long i = 0; i < nEvents; ++i){
 		/* the SFMT status is given to the thread and then jump-ahead by 10^20 numbers (ensure independant and large enough streams) */
 		data->sfmt = SFMT;
+		data->id = i;
 		TThreadsFactory::GetInstance()->CreateThread(wrapperFunction, data);
 		SFMT_jump(&SFMT, jump10_20);
     }
