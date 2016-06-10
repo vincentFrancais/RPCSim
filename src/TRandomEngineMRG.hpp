@@ -30,6 +30,7 @@
 class TRandomEngineMRG : public TRandomEngine {
 	public:
 		TRandomEngineMRG() : TRandomEngine() { rng = RngStream(); }
+		TRandomEngineMRG(std::string s) : TRandomEngine() { rng = RngStream(s.c_str()); } 
 		
 		double RandU01() { return rng.RandU01(); }
 		std::string Generator() { return "MRG32k3a"; }
