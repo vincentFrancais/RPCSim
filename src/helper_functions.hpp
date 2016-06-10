@@ -42,6 +42,9 @@
 
 //#include "RngStream.hpp"
 #include "TRandomEngine.hpp"
+#include "TRandomEngineMT.hpp"
+#include "TRandomEngineMRG.hpp"
+#include "TRandomEngineSFMT.hpp"
 #include "TTimer.hpp"
 
 
@@ -111,3 +114,5 @@ T sumVec(std::vector<T> vec){
 }
 
 bool checkTimerExceededLimit(TTimer timer, double const& limit);
+
+void testRNG(std::string const& rng);

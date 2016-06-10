@@ -23,11 +23,11 @@
 
 #include <string>
 
-#define N 624
-#define M 397
-#define MATRIX_A 0x9908b0dfUL   /* constant vector a */
-#define UPPER_MASK 0x80000000UL /* most significant w-r bits */
-#define LOWER_MASK 0x7fffffffUL /* least significant r bits */
+const int N = 624;
+const int M = 397;
+const long MATRIX_A = 0x9908b0dfUL;   /* constant vector a */
+const long UPPER_MASK = 0x80000000UL; /* most significant w-r bits */
+const long LOWER_MASK = 0x7fffffffUL; /* least significant r bits */
 
 class TGenMT {
 	public:

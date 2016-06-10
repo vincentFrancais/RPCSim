@@ -310,3 +310,34 @@ bool checkTimerExceededLimit(TTimer timer, double const& limit) {
 	else
 		return false;
 }
+
+void testRNG(string const& rng) {
+	if (rng == "MT" or rng == "Mersenne-Twister" or rng == "mt") {
+		ofstream mt_out("out/testRNG/mt.out", ios::out | ios::trunc);
+		unsigned long init[4]={0x123, 0x234, 0x345, 0x456}, length=4;
+		TRandomEngineMT mt = TRandomEngineMT(init,length);
+		for (int i=0; i<1000; i++) {
+			mt_out << mt.RandU01() << " ";
+			if (i%5==4) mt_out << endl;
+		}
+		mt_out.close();
+	}
+	else if (rng == "MRG" or rng == "mrg" or rng == "RngStream") {
+		ofstream mrg_out("out/testRNG/mrg.out", ios::out | ios::trunc);
+		TRandomEngineMRG mrg = TRandomEngineMRG("g1");
+		for (int i=0; i<1000; i++) {
+			mrg_out << mrg.RandU01() << " ";
+			if (i%5==4) mrg_out << endl;
+		}
+		mrg_out.close();
+	}
+	else if (rng == "sfmt" or rng == "SFMT") {
+		ofstream sfmt_out("out/testRNG/sfmt.out", ios::out | ios::trunc);
+		TRandomEngineSFMT sfmt = TRandomEngineSFMT(1234);
+		for (int i=0; i<1000; i++) {
+			sfmt_out << sfmt.RandU01() << " ";
+			if (i%5==4) sfmt_out << endl;
+		}
+		sfmt_out.close();
+	}
+}

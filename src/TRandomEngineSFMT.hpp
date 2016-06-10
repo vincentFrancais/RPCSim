@@ -33,6 +33,8 @@
 class TRandomEngineSFMT : public TRandomEngine {
 	public:
 		TRandomEngineSFMT(sfmt_t status) : TRandomEngine(), fSFMT(status) {};
+		TRandomEngineSFMT() : TRandomEngine() { sfmt_init_gen_rand(&fSFMT, 4321); }
+		TRandomEngineSFMT(int seed) : TRandomEngine() { sfmt_init_gen_rand(&fSFMT, seed); }
 		
 		double RandU01() { return sfmt_genrand_real2( &fSFMT ); }
 		std::string Generator() { return "SIMD-oriented Fast Mersenne Twister"; }

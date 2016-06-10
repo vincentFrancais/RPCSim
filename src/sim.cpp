@@ -117,6 +117,8 @@ void * WriteResults(void * Arg)
 }
 
 int main(int argc, char** argv) {
+	testRNG("sfmt");
+	exit(0);
 	/* Read config file */
 	TConfig config = readConfigFile("config/calice.xml");
     printConfig(config);
