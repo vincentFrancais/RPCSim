@@ -23,10 +23,11 @@ static TDetector* tgsl = 0;
 
 extern double cm;
 
-TDetector::TDetector(const DetectorGeometry& geometry, const int& nStep){
+TDetector::TDetector(const DetectorGeometry& geometry, const TConfig& config, const int& nStep){
+	fConfig = config;
 	iNstep = nStep;
 	fGeometry = geometry;
-	iEbarTableSize = 75;
+	iEbarTableSize = 15;
 
 	bHasEbarTable = false;
 	bGasLoaded = false;
@@ -188,6 +189,8 @@ void TDetector::setGarfieldSeed( const int& s ) {
 	cout.setstate(ios_base::failbit);
 	Garfield::randomEngine.Seed(s);
 	cout.clear();
+	
+	cout << "Garfield TRandom3 seed: " << s << endl;
 }
 
 double TDetector::R(const double& k, const double& z, const double& zp){

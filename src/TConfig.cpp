@@ -3,12 +3,20 @@
 using namespace std;
 using namespace tinyxml2;
 
-TConfig readConfigFile(string fileName){
+TConfig::TConfig (string file) {
 	
-	TConfig config;
+	//TConfig config;
+	nResisLayers = 0; 
+	nGases = 0;
+	outFile = "out/";
+	generator = "SFMT";
+	garfieldSeed = -1;
+	verbose = false;
+	verbosityLevel = 0;
+	snaps = false;
 	
 	XMLDocument doc;
-	if ( doc.LoadFile( fileName.c_str() ) != XML_SUCCESS ){
+	if ( doc.LoadFile( file.c_str() ) != XML_SUCCESS ){
 		cerr << "TConfig -- Error opening file" << endl;
 		exit(0);
 	}
@@ -22,22 +30,22 @@ TConfig readConfigFile(string fileName){
 		exit(0);
 	}
 	
-	detectorElement->FirstChildElement( "GapWidth" )->QueryDoubleText( &config.gapWidth );
-	detectorElement->FirstChildElement( "Steps" )->QueryIntText( &config.nSteps );
-	detectorElement->FirstChildElement( "ElectricField" )->QueryDoubleText( &config.ElectricField );
+	detectorElement->FirstChildElement( "GapWidth" )->QueryDoubleText( &gapWidth );
+	detectorElement->FirstChildElement( "Steps" )->QueryIntText( &nSteps );
+	detectorElement->FirstChildElement( "ElectricField" )->QueryDoubleText( &ElectricField );
 	
 	for (XMLElement* child = docHandle.FirstChildElement("Detector").FirstChildElement("ResistiveLayers").FirstChildElement("layer").ToElement(); child != NULL; child = child->NextSiblingElement("layer")){
 		double width, epsilon;
 		child->FirstChildElement( "width" )->QueryDoubleText( &width );
 		child->FirstChildElement( "resistivity" )->QueryDoubleText( &epsilon );
 		
-		config.nResisLayers++;
-		config.resisLayersWidth.push_back(width);
-		config.resisLayersEpsilon.push_back(epsilon);
+		nResisLayers++;
+		resisLayersWidth.push_back(width);
+		resisLayersEpsilon.push_back(epsilon);
 	}
 	
-	docHandle.FirstChildElement("Gas").FirstChildElement("temperature").ToElement()->QueryDoubleText( &config.gasTemperature );
-	docHandle.FirstChildElement("Gas").FirstChildElement("pressure").ToElement()->QueryDoubleText( &config.gasPressure );
+	docHandle.FirstChildElement("Gas").FirstChildElement("temperature").ToElement()->QueryDoubleText( &gasTemperature );
+	docHandle.FirstChildElement("Gas").FirstChildElement("pressure").ToElement()->QueryDoubleText( &gasPressure );
 	
 	for (XMLElement* child = docHandle.FirstChildElement("Gas").FirstChildElement("gas").ToElement(); child != NULL; child = child->NextSiblingElement("gas")){
 		string name;
@@ -46,9 +54,9 @@ TConfig readConfigFile(string fileName){
 		name = child->FirstChildElement("name")->GetText();
 		child->FirstChildElement( "percentage" )->QueryDoubleText( &percentage );
 		
-		config.nGases++;
-		config.gasNames.push_back(name);
-		config.gasPercentage.push_back(percentage);
+		nGases++;
+		gasNames.push_back(name);
+		gasPercentage.push_back(percentage);
 	}
 	
 	XMLElement* simElement = docHandle.FirstChildElement("Simulation").ToElement();
@@ -58,46 +66,83 @@ TConfig readConfigFile(string fileName){
 		exit(0);
 	}
 	
-	config.particleName = simElement->FirstChildElement( "Particle" )->FirstChildElement( "name" )->GetText();
-	simElement->FirstChildElement( "Particle" )->FirstChildElement( "momentum" )->QueryDoubleText( &config.particleMomentum );
-	simElement->FirstChildElement( "Particle" )->FirstChildElement( "x0" )->QueryDoubleText( &config.x0 );
-	simElement->FirstChildElement( "Particle" )->FirstChildElement( "theta" )->QueryDoubleText( &config.theta );
-	simElement->FirstChildElement( "Events" )->QueryIntText( &config.nEvents );
-	simElement->FirstChildElement( "Threads" )->QueryIntText( &config.nThreads );
+	particleName = simElement->FirstChildElement( "Particle" )->FirstChildElement( "name" )->GetText();
+	simElement->FirstChildElement( "Particle" )->FirstChildElement( "momentum" )->QueryDoubleText( &particleMomentum );
+	simElement->FirstChildElement( "Particle" )->FirstChildElement( "x0" )->QueryDoubleText( &x0 );
+	simElement->FirstChildElement( "Particle" )->FirstChildElement( "theta" )->QueryDoubleText( &theta );
+	simElement->FirstChildElement( "Events" )->QueryIntText( &nEvents );
+	simElement->FirstChildElement( "Threads" )->QueryIntText( &nThreads );
+	generator = simElement->FirstChildElement( "Generator" )->GetText();
 	
-	XMLElement* outFileChild = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "outFile" ).ToElement();
+	XMLElement* outFileChild = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "OutFile" ).ToElement();
 	if ( outFileChild )
-		config.outFile += outFileChild->GetText();
+		outFile += outFileChild->GetText();
 	else
-		config.outFile += "out.dat";
-	//config.outFile = simElement->FirstChildElement( "outFile" )->GetText();
+		outFile += "out.dat";
+	//outFile = simElement->FirstChildElement( "outFile" )->GetText();
 	
-	return config;
+	XMLElement* seedsElemnt = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "Seeds" ).FirstChildElement("seed").ToElement();
+	while (seedsElemnt) {
+		int s;
+		seedsElemnt->QueryIntText( &s );
+		seeds.push_back(s);
+		seedsElemnt = seedsElemnt->NextSiblingElement();
+	}
+	
+	XMLElement* GarSeed = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "GarfieldSeed" ).ToElement();
+	if (GarSeed) {
+		GarSeed->QueryIntText( &garfieldSeed );
+	}
+	
+	if ( simElement->FirstChildElement( "Verbose" )->ToElement() )
+		simElement->FirstChildElement( "Verbose" )->QueryBoolText( &verbose );
+		
+	if ( simElement->FirstChildElement( "Snapshots" )->ToElement() )
+		simElement->FirstChildElement( "Snapshots" )->QueryBoolText( &snaps );
+		
+	if ( simElement->FirstChildElement( "VerbosityLevel" )->ToElement() )
+		simElement->FirstChildElement( "VerbosityLevel" )->QueryIntText( &verbosityLevel );
+	
+	//return config;
 }
 
-void printConfig(TConfig config){
+void TConfig::print () {
 	cout << "Configuration:" << endl;
 	cout << "   Detector:" << endl;
-	cout << "\t gap width: " << config.gapWidth << endl;
-	cout << "\t steps: " << config.nSteps << endl;
-	cout << "\t electric field: " << config.ElectricField << endl;
-	cout << "\t resistive layers: " << config.nResisLayers << endl;
-	for(int i=0; i<config.nResisLayers; i++)
-		cout << "\t layer " << i << " -- width: " << config.resisLayersWidth[i] << " - epsilon: " << config.resisLayersEpsilon[i] << endl;
+	cout << "\t gap width: " << gapWidth << endl;
+	cout << "\t steps: " << nSteps << endl;
+	cout << "\t electric field: " << ElectricField << endl;
+	cout << "\t resistive layers: " << nResisLayers << endl;
+	for(int i=0; i<nResisLayers; i++)
+		cout << "\t layer " << i << " -- width: " << resisLayersWidth[i] << " - epsilon: " << resisLayersEpsilon[i] << endl;
 		
 	cout << "   Gas composition:" << endl;
-	cout << "\t temperature: " << config.gasTemperature << endl;
-	cout << "\t pressure: " << config.gasPressure << endl;
-	cout << "\t gases: " << config.nGases << endl;
-	for(int i=0; i<config.nGases; i++)
-		cout << "\t gas " << i << " -- name: " << config.gasNames[i] << " - percentage: " << config.gasPercentage[i] << endl;
+	cout << "\t temperature: " << gasTemperature << endl;
+	cout << "\t pressure: " << gasPressure << endl;
+	cout << "\t gases: " << nGases << endl;
+	for(int i=0; i<nGases; i++)
+		cout << "\t gas " << i << " -- name: " << gasNames[i] << " - percentage: " << gasPercentage[i] << endl;
 		
 	cout << "   Simulation parameters:" << endl;
-	cout << "\t particle: " << config.particleName << endl;
-	cout << "\t momentum: " << config.particleMomentum << endl;
-	cout << "\t x0: " << config.x0 << endl;
-	cout << "\t theta: " << config.theta << endl;
-	cout << "\t events to simulate: " << config.nEvents << endl;
-	cout << "\t threads to use: " << config.nThreads << endl;
-	cout << "\t outfile path: " << config.outFile << endl;
+	cout << "\t particle: " << particleName << endl;
+	cout << "\t momentum: " << particleMomentum << endl;
+	cout << "\t x0: " << x0 << endl;
+	cout << "\t theta: " << theta << endl;
+	cout << "\t events to simulate: " << nEvents << endl;
+	cout << "\t threads to use: " << nThreads << endl;
+	cout << "\t outfile path: " << outFile << endl;
+	cout << "\t generator: " << generator << endl;
+	if (garfieldSeed != -1)
+		cout << "\t garfield Seed: " << garfieldSeed << endl;
+	if (seeds.size() > 0) {
+		cout << "\t seeds: ";
+		for (uint i=0; i<seeds.size(); i++)
+			cout << seeds.at(i) << "  ";
+		cout << endl;  
+	}
+	cout << "\t verbose: " << verbose << endl;
+	cout << "\t verbosity level: " << verbosityLevel << endl;
+	cout << "\t snapshots: " << snaps << endl;
+	
+	
 }

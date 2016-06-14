@@ -61,7 +61,7 @@ struct DetectorGeometry{
 class TDetector{
 	
 	public:
-	TDetector(const DetectorGeometry& geometry, const int& nStep = 500);
+	TDetector(const DetectorGeometry& geometry, const TConfig& config, const int& nStep = 500);
 	
 	~TDetector();
 	
@@ -87,6 +87,7 @@ class TDetector{
 	#endif
 	void makeEbarTable( bool const& binary=true );
 	
+	//TConfig getConfig(void) const {return fConfig;}
 	double getGapWidth(void) const	{return fGeometry.gapWidth;}
 	const double* getResistiveLayersWidth(void) const {return fGeometry.resistiveLayersWidth;}
 	DetectorGeometry getGeometry(void) const {return fGeometry;}
@@ -102,6 +103,8 @@ class TDetector{
 	double getK(void) const	{return k;}
 	int getEbarTableSize(void) const {return iEbarTableSize;}
 	string getEbarTableHexName(void) const {return fEbarTableHexName;}
+	
+	
 	bool hasEBarTable(void) const {return bHasEbarTable;}
 
 	vector<double> getEbarVecTable(void) const {return fEbarVecTable;}
@@ -121,7 +124,8 @@ class TDetector{
 	
 	private:
 	int iNstep;
-
+	TConfig fConfig;
+	
 	DetectorGeometry fGeometry;
 	double fDt;
 	double fDx;

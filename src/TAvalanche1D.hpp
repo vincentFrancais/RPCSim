@@ -69,8 +69,8 @@ class TAvalanche1D : public TAvalanche {
 	
 	public:
 	//TAvalanche1D(TDetector* det, bool const& randomSeed=false);
-	TAvalanche1D(TDetector* det, sfmt_t sfmt);
-	TAvalanche1D(TDetector* det, TConfig& config, int id);
+	TAvalanche1D(TDetector* det, TConfig& config, const sfmt_t sfmt, const int& id);
+	//TAvalanche1D(TDetector* det, TConfig& config, int id);
 	
 	~TAvalanche1D();
 	
@@ -123,6 +123,7 @@ class TAvalanche1D : public TAvalanche {
 	
 	TDetector* fDet;
 	DetectorGeometry fGeometry;
+	TConfig fConfig;
 	
 	int iNstep;
 	double fGapWidth;

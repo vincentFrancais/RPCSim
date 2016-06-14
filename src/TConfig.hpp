@@ -10,6 +10,14 @@
 using namespace std;
 
 struct TConfig {
+	
+	TConfig (string file);
+	TConfig () {};
+	~TConfig () {};
+	
+	void print();
+	
+	//private:
 	double gapWidth;
 	int nSteps;
 	
@@ -32,8 +40,15 @@ struct TConfig {
 	int nThreads;
 	int nEvents;
 	string outFile;
-	TConfig() : nResisLayers(0), nGases(0), outFile("out/") { }
+	
+	string generator;
+	vector<int> seeds;
+	int garfieldSeed;
+	int verbosityLevel;
+	bool verbose;
+	bool snaps;
+	//TConfig() : nResisLayers(0), nGases(0), outFile("out/"), generator("SFMT"), garfieldSeed(-1) { }
 };
 
-TConfig readConfigFile(string fileName);
-void printConfig(TConfig config);
+//TConfig readConfigFile(string fileName);
+//void printConfig(TConfig config);

@@ -11,7 +11,7 @@
 			<resistivity>10</resistivity>
 		</layer>
     </ResistiveLayers>
-    <ElectricField>60000</ElectricField>
+    <ElectricField>55000</ElectricField>
 </Detector>
 
 <Gas>
@@ -38,8 +38,17 @@
 		<x0>0.</x0>
 		<theta>0</theta>
 	</Particle>
-	<Events>1</Events>
+	<Events>2</Events>
 	<Threads>1</Threads>
-	<outFile>test.dat</outFile>
-	
+	<OutFile>run-SFMT-repro.dat</OutFile>
+	<Generator>MT</Generator>
+	<Seeds>
+		<seed>1</seed>
+		<seed>2</seed>
+		<seed>3</seed>
+	</Seeds>
+	<GarfieldSeed>123456</GarfieldSeed>
+	<Verbose>1</Verbose>
+	<VerbosityLevel>3</VerbosityLevel>
+	<Snapshots>0</Snapshots>
 </Simulation>

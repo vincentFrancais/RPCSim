@@ -61,7 +61,8 @@ void * wrapperFunction(void * Arg){
 	ThreadData* data = reinterpret_cast< ThreadData* > (Arg);
 	
 	TResult result;
-	TAvalanche1D avalanche(data->detector, data->sfmt);
+	TAvalanche1D avalanche(data->detector, data->config, data->sfmt, data->id);
+	//TAvalanche1D avalanche(data);
 	
 	
 	sem_post(TThreadsFactory::GetInstance()->GetInitLock());
@@ -117,11 +118,9 @@ void * WriteResults(void * Arg)
 }
 
 int main(int argc, char** argv) {
-	testRNG("sfmt");
-	exit(0);
 	/* Read config file */
-	TConfig config = readConfigFile("config/calice.xml");
-    printConfig(config);
+	TConfig config("config/calice.xml");
+    config.print();
      
     char outputFile[PATH_MAX];
     if(argc > 2)
@@ -190,7 +189,7 @@ int main(int argc, char** argv) {
 	geom.resistiveLayersWidth[1] = 0.07;	//0.2;	//CALICE 0.07
 	geom.relativePermittivity[0] = 7.;	//10.;	//CALICE 7
 	geom.relativePermittivity[1] = 7.;	//10.;	//CALICE 7
-	TDetector* detector = new TDetector(geom,500);
+	TDetector* detector = new TDetector(geom,config,500);
 	detector->setGasMixture(gas);
 	detector->setElectricField(HV,0.,0.);
 	detector->initialiseDetector();

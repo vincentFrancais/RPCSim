@@ -22,29 +22,54 @@ using namespace std;
 extern double cm;
 
 
-TAvalanche1D::TAvalanche1D(TDetector* det, sfmt_t sfmt) : TAvalanche() {
+TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, sfmt_t sfmt, const int& id) : TAvalanche() {
 	fDet = det;
+	fConfig = config;
 	
-	fRNG = new TRandomEngineSFMT(sfmt);
-	fRandRng = new TRandomEngineMRG();
-	fRandRngCLT = new TRandomEngineMRG();
+	/* Initialise RNGs */
+	if (fConfig.generator == "SFMT") {
+		fRNG = new TRandomEngineSFMT(sfmt);
+		fRandRng = new TRandomEngineMRG();
+		fRandRngCLT = new TRandomEngineMRG();
+	}
 	
-	//========================
+	else if (fConfig.generator == "MT") {
+		int MTstatus = (id*100/config.nEvents)+1;
+		string filename;
+		if (MTstatus < 10)
+			filename = "MTStatus/mtS10p12i-000"+toString(MTstatus);
+		else if (MTstatus == 100)
+			filename = "MTStatus/mtS10p12i-0"+toString(MTstatus);
+		else
+			filename = "MTStatus/mtS10p12i-00"+toString(MTstatus);
+		
+		cout << id << " " << filename << endl;
+		
+		fRNG = new TRandomEngineMT(filename);
+		fRandRng = new TRandomEngineMRG();
+		fRandRngCLT = new TRandomEngineMRG();
+	}
 	
+	else if (fConfig.generator == "MRG") {
+		fRNG = new TRandomEngineMRG();
+		fRandRng = new TRandomEngineMRG();
+		fRandRngCLT = new TRandomEngineMRG();
+	}
+	
+	else {
+		fRNG = new TRandomEngineMRG();
+		fRandRng = new TRandomEngineMRG();
+		fRandRngCLT = new TRandomEngineMRG();
+	}
+	
+	/* Call to initialisation function */
 	init();
 }
 
+/*
 TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, int id) : TAvalanche() {
 	fDet = det;
-	
-	int MTstatus = (id*100/config.nEvents)+1;
-	string filename;
-	if (MTstatus < 10)
-		filename = "MTStatus/mtS10p12i-000"+toString(MTstatus);
-	else if (MTstatus == 100)
-		filename = "MTStatus/mtS10p12i-0"+toString(MTstatus);
-	else
-		filename = "MTStatus/mtS10p12i-00"+toString(MTstatus);
+	fConfig = config;
 		
 	cout << id << " " << filename << endl;
 	
@@ -56,6 +81,7 @@ TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, int id) : TAvalanche
 	
 	init();
 }
+*/
 
 TAvalanche1D::~TAvalanche1D() {
 	delete fRandRng;
@@ -114,9 +140,9 @@ void TAvalanche1D::init() {
 	bComputeSpaceChargeEffet = true;
 	bAvalancheInitialised = false;
 	
-	bVerbose = false;
-	bSnapshots = false;
-	iVerbosityLevel = 0;
+	bVerbose = fConfig.verbose;
+	bSnapshots = fConfig.snaps;
+	iVerbosityLevel = fConfig.verbosityLevel;
 	
 	bDummyRun = false;
 	
@@ -204,7 +230,11 @@ void TAvalanche1D::initialiseTrackHeed(const string& particleName, const double&
 	if (iVerbosityLevel > 0)
 		cout << "Initialising avalanche with Heed track (thread " << Id << ") for " << particleName << " with momentum " << toString(momentum) << " at position " << toString(x0) << " with angle " << toString(theta) << endl;
 	
-	fSeed = getUUID();
+	if (fConfig.garfieldSeed != -1)
+		fSeed = fConfig.garfieldSeed;
+	else
+		fSeed = getUUID();
+	
 	fDet->setGarfieldSeed(fSeed);
 
 	Garfield::TrackHeed* track = new Garfield::TrackHeed();
