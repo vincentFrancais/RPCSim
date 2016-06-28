@@ -38,7 +38,7 @@
 		<x0>0.</x0>
 		<theta>0</theta>
 	</Particle>
-	<Events>2</Events>
+	<Events>1</Events>
 	<Threads>1</Threads>
 	<OutFile>run-SFMT-repro.dat</OutFile>
 	<Generator>MT</Generator>
@@ -51,4 +51,8 @@
 	<Verbose>1</Verbose>
 	<VerbosityLevel>3</VerbosityLevel>
 	<Snapshots>0</Snapshots>
+	<SingleCluster>
+		<x0>0</x0>
+		<n0>1</n0>
+	</SingleCluster>
 </Simulation>
