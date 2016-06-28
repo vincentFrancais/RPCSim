@@ -47,6 +47,9 @@ struct TConfig {
 	int verbosityLevel;
 	bool verbose;
 	bool snaps;
+	
+	bool singleCluster;
+	int n0;
 	//TConfig() : nResisLayers(0), nGases(0), outFile("out/"), generator("SFMT"), garfieldSeed(-1) { }
 };
 

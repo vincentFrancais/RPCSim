@@ -12,8 +12,9 @@
 
 #include "TAvalanche1D.hpp"
 #include "helper_functions.hpp"
+#include "TConstants.hpp"
 
-#include "gsl/gsl_const_mksa.h"
+//#include "gsl/gsl_const_mksa.h"
 #include "gsl/gsl_math.h"
 
 using namespace std;
@@ -221,14 +222,18 @@ void TAvalanche1D::computeElectronsProduction(const string& particleName, const 
 	delete track;
 }
 
-void TAvalanche1D::initialiseTrackHeed(const string& particleName, const double& momentum, const double& x0, const double& theta){
+void TAvalanche1D::initialiseTrackHeed(){
 	if( bAvalancheInitialised ) {
 		cerr << "TAvalanche1D::initialiseTrackHeed -- Avalanche already initialised." << endl;
 		return;
 	}
 	
+	if (fConfig.singleCluster)
+		initialiseSingleCluster();
+		return;
+	
 	if (iVerbosityLevel > 0)
-		cout << "Initialising avalanche with Heed track (thread " << Id << ") for " << particleName << " with momentum " << toString(momentum) << " at position " << toString(x0) << " with angle " << toString(theta) << endl;
+		cout << "Initialising avalanche with Heed track (thread " << Id << ") for " << fConfig.particleName << " with momentum " << toString(fConfig.particleMomentum) << " at position " << toString(fConfig.x0) << " with angle " << toString(fConfig.theta) << endl;
 	
 	if (fConfig.garfieldSeed != -1)
 		fSeed = fConfig.garfieldSeed;
@@ -239,14 +244,14 @@ void TAvalanche1D::initialiseTrackHeed(const string& particleName, const double&
 
 	Garfield::TrackHeed* track = new Garfield::TrackHeed();
 	track->SetSensor(fDet->getSensor());
-	track->SetParticle(particleName);
-	track->SetMomentum(momentum);
+	track->SetParticle(fConfig.particleName);
+	track->SetMomentum(fConfig.particleMomentum);
 
 	double t0 = 0.;
 	double y0 = 0, z0 = 0;
-	double dx0 = cos(theta * M_PI / 180.0), dy0 = sin(theta * M_PI / 180.0), dz0 = 0.;
+	double dx0 = cos(fConfig.theta * Constants::Pi / 180.0), dy0 = sin(fConfig.theta * Constants::Pi / 180.0), dz0 = 0.;
 
-	track->NewTrack(x0, y0, z0, t0, dx0, dy0, dz0);
+	track->NewTrack(fConfig.x0, y0, z0, t0, dx0, dy0, dz0);
 
 	double xc = 0., yc = 0., zc = 0., tc = 0.; 	// Cluster coordinates
 	int nc = 0; 								// Number of electrons produced in a collision
@@ -255,9 +260,6 @@ void TAvalanche1D::initialiseTrackHeed(const string& particleName, const double&
 	fNElectrons = vector<double> (iNElectronsSize,0);
 
 	while (track->GetCluster(xc, yc, zc, tc, nc, ec, dummy)){
-		//fClPosX.push_back(xc);
-		//fClPosY.push_back(yc);
-		//fClPosZ.push_back(zc);
 		fClustersX[xc] = nc;
 		fClustersY[yc] = nc;
 		fClustersZ[zc] = nc;
@@ -276,18 +278,18 @@ void TAvalanche1D::initialiseTrackHeed(const string& particleName, const double&
 	bAvalancheInitialised = true;
 }
 
-void TAvalanche1D::initialiseSingleCluster(const double& x0, const double& n0){
+void TAvalanche1D::initialiseSingleCluster(){
 	if( bAvalancheInitialised ) {
 		cerr << "TAvalanche1D::initialiseSingleCluster -- Avalanche already initialised." << endl;
 		return;
 	}
 	
-	cout << "Initialising avalanche with " << toString(n0) << " electron(s) at position " << toString(x0) << endl;
+	cout << "Initialising avalanche with " << fConfig.n0 << " electron(s) at position " << fConfig.x0 << endl;
 	
 	fNElectrons = vector<double> (iNElectronsSize,0);
 	
-	fNElectrons[0] = n0;
-	fElecDetectorGrid[ int(trunc(x0/fDx)) ] = n0;
+	fNElectrons[0] = fConfig.n0;
+	fElecDetectorGrid[ int(trunc(fConfig.x0/fDx)) ] = fConfig.n0;
 	
 	bAvalancheInitialised = true;
 }
@@ -370,7 +372,7 @@ void TAvalanche1D::checkDetectorGrid(){
 void TAvalanche1D::computeInducedSignal(){
 	/* OBSOLETE */
 	// drift velocity in cm/ns
-	double e0 = GSL_CONST_MKSA_ELECTRON_CHARGE;//1.60217657e-19; //Coulombs
+	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;//1.60217657e-19; //Coulombs
 	double eps = 10.;
 	double glassThickness = fResistiveLayersWidth[0];//0.2; //cm
 	double weightingField = eps/(2*glassThickness + fGapWidth*eps);
@@ -388,7 +390,7 @@ void TAvalanche1D::computeInducedSignal(){
 
 void TAvalanche1D::computeInducedSignal2(){
 	// drift velocity in cm/ns
-	double e0 = GSL_CONST_MKSA_ELECTRON_CHARGE;//1.60217657e-19; //Coulombs
+	double e0 = Constants::ElectronCharge; //1.60217657e-19; //Coulombs
 	double eps = fGeometry.relativePermittivity[0]; 	//10.;
 	double weightingField = eps/(fResistiveLayersWidth[0]+fResistiveLayersWidth[1] + fGapWidth*eps);
 
@@ -774,9 +776,8 @@ void TAvalanche1D::testInterpolation() {
 	data.close();
 }
 
-size_t TAvalanche1D::getIndex3D(const size_t& i, const size_t& j, const size_t& k) {
-	int n = iEbarTableSize+1;
-	return (long)i*(long)n*(long)n + (long)j*(long)n + (long)k;
+inline size_t TAvalanche1D::getIndex3D(const size_t& i, const size_t& j, const size_t& k) {
+	return (long)i*(long)(iEbarTableSize+1)*(long)(iEbarTableSize+1) + (long)j*(long)(iEbarTableSize+1) + (long)k;
 }
 
 double TAvalanche1D::interpolateEbar(const double& z, const double& zp, const double& l) {  //x==z y==zp z==l

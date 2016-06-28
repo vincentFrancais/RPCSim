@@ -68,7 +68,7 @@ void * wrapperFunction(void * Arg){
 	sem_post(TThreadsFactory::GetInstance()->GetInitLock());
 	
 	pthread_mutex_lock(&gTrackLock);
-	avalanche.initialiseTrackHeed(data->config.particleName, data->config.particleMomentum, data->config.x0, data->config.theta);
+	avalanche.initialiseTrackHeed();
 	//avalanche.initialiseSingleCluster(0);
 	pthread_mutex_unlock(&gTrackLock);
 	

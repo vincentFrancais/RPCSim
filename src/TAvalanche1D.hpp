@@ -76,8 +76,8 @@ class TAvalanche1D : public TAvalanche {
 	
 	void init();
 	
-	void initialiseTrackHeed(const string& particleName, const double& momentum, const double& x0, const double& theta);
-	void initialiseSingleCluster(const double& x0, const double& n0=1);
+	void initialiseTrackHeed();
+	void initialiseSingleCluster();
 		
 	void simulateEvent();
 	void computeInducedCharges();
@@ -111,7 +111,7 @@ class TAvalanche1D : public TAvalanche {
 	TResult getResultFile() const {return fResult;}
 	
 	void testInterpolation();
-	size_t getIndex3D(const size_t& i, const size_t& j, const size_t& k);
+	inline size_t getIndex3D(const size_t& i, const size_t& j, const size_t& k);
 	
 	
 	

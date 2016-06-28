@@ -11,8 +11,8 @@
 #include "TDetector.hpp"
 #include "helper_functions.hpp"
 #include "integration.hpp"
+#include "TConstants.hpp"
 
-#include "gsl/gsl_const_mksa.h"
 #include "gsl/gsl_sf_bessel.h"
 #include <gsl/gsl_integration.h>
 #include "gsl/gsl_math.h"
@@ -21,7 +21,7 @@
 using namespace std;
 static TDetector* tgsl = 0;
 
-extern double cm;
+//extern double cm;
 
 TDetector::TDetector(const DetectorGeometry& geometry, const TConfig& config, const int& nStep){
 	fConfig = config;
@@ -194,10 +194,10 @@ void TDetector::setGarfieldSeed( const int& s ) {
 }
 
 double TDetector::R(const double& k, const double& z, const double& zp){
-	double q = fGeometry.resistiveLayersWidth[0] * cm; //cathode
-	double g = fGeometry.gapWidth * cm;
-	double p = (g + fGeometry.resistiveLayersWidth[1]) * cm; //anode
-	double eps0 = GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
+	double q = fGeometry.resistiveLayersWidth[0] * Constants::cm; //cathode
+	double g = fGeometry.gapWidth * Constants::cm;
+	double p = (g + fGeometry.resistiveLayersWidth[1]) * Constants::cm; //anode
+	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
 	double eps1 = fGeometry.relativePermittivity[0] * eps0;
 	double eps3 = eps1;
 	double eps2 = eps0;
@@ -214,11 +214,11 @@ double TDetector::R(const double& k, const double& z, const double& zp){
 }
 
 double TDetector::D(const double& k){
-	double q = fGeometry.resistiveLayersWidth[0] * cm;	// cathode
-	double g = fGeometry.gapWidth * cm;
-	double p = (g + fGeometry.resistiveLayersWidth[1]) * cm;	// anode
+	double q = fGeometry.resistiveLayersWidth[0] * Constants::cm;	// cathode
+	double g = fGeometry.gapWidth * Constants::cm;
+	double p = (g + fGeometry.resistiveLayersWidth[1]) * Constants::cm;	// anode
 
-	double eps0 = GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
+	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
 	double eps1 = fGeometry.relativePermittivity[0] * eps0;
 	double eps3 = eps1;
 	double eps2 = eps0;
@@ -236,21 +236,21 @@ double integrand(double x, void * params){
 }
 
 double TDetector::SCFieldSimplified(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
-	double e0 = GSL_CONST_MKSA_ELECTRON_CHARGE;
-	double g = fGeometry.gapWidth * cm;
-	double eps0 = GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
+	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
+	double g = fGeometry.gapWidth * Constants::cm;
+	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
 	double eps1 = fGeometry.relativePermittivity[0] * eps0;
 	double eps3 = eps1;
 	double eps2 = eps0;
 
 	double P2 = r*r - 2*r*rp*cos(phi-phip) + rp*rp;
 
-	return ( e0/(4*M_PI*eps2) ) * (   ( (z-zp)/(pow(P2 + (z-zp)*(z-zp),1.5)) )  -  ( ((eps2-eps3)/(eps2+eps3))*(2*g-z-zp)/(pow(P2+(2*g-z-zp)*(2*g-z-zp),1.5)) )     );
+	return ( e0/(4*Constants::Pi*eps2) ) * (   ( (z-zp)/(pow(P2 + (z-zp)*(z-zp),1.5)) )  -  ( ((eps2-eps3)/(eps2+eps3))*(2*g-z-zp)/(pow(P2+(2*g-z-zp)*(2*g-z-zp),1.5)) )     );
 
 }
 
 double TDetector::SCField(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
-	double h = 0.001 * cm;
+	double h = 0.001 * Constants::cm;
 
 	double m1 = ( SCPotential(r,phi,z+h,rp,phip,zp) - SCPotential(r,phi,z-h,rp,phip,zp) ) / (2*h);
 	double m2 = ( SCPotential(r,phi,z+2*h,rp,phip,zp) - SCPotential(r,phi,z-2*h,rp,phip,zp) ) / (4*h);
@@ -276,14 +276,14 @@ double TDetector::SCPotential(const double& r, const double& phi, const double& 
 	gsl_integration_qagiu (&F, 0., 1.e-2, 1e-7, 4000, w, &result, &error);
 	gsl_integration_workspace_free (w);
 
-    double Q = GSL_CONST_MKSA_ELECTRON_CHARGE;
-	double eps0 = GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
+    double Q = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
+	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
     double eps1 = fGeometry.relativePermittivity[0] * eps0;
 	double eps3 = eps1;
 	double eps2 = eps0;
-	double g = fGeometry.gapWidth * cm;
+	double g = fGeometry.gapWidth * Constants::cm;
 
-    double pot = ( Q/(4*M_PI*eps2) ) * ( (1./(sqrt(P*P+(z-zp)*(z-zp)))) - ((eps1-eps2)/((eps1+eps2)*sqrt(P*P+(z+zp)*(z+zp)))) - ((eps3-eps2)/((eps3+eps2)*sqrt(P*P+(2*g-z-zp)*(2*g-z-zp)))) +
+    double pot = ( Q/(4*Constants::Pi*eps2) ) * ( (1./(sqrt(P*P+(z-zp)*(z-zp)))) - ((eps1-eps2)/((eps1+eps2)*sqrt(P*P+(z+zp)*(z+zp)))) - ((eps3-eps2)/((eps3+eps2)*sqrt(P*P+(2*g-z-zp)*(2*g-z-zp)))) +
                                   (1./((eps1+eps2)*(eps2+eps3))) * result );
 
     return pot;
@@ -298,7 +298,7 @@ double Ebar(double x, void * params){
 
 	double* param = reinterpret_cast<double*> (params); //[z,l,zp]
 	// RadialDistrib en cm-2, rp*drp en cm2, SCField en V/cm. rp doit etre en m dans les params de SCField
-	double res =  tgsl->RadialChargeDistribution(x,param[1]) * tgsl->SCField(0.,0.,param[0],x*cm,0.,param[2])*0.01 * x;
+	double res =  tgsl->RadialChargeDistribution(x,param[1]) * tgsl->SCField(0.,0.,param[0],x*Constants::cm,0.,param[2])*0.01 * x;
 	return res;
 }
 
@@ -324,14 +324,14 @@ double TDetector::computeEbar(const double& z, const double& l, const double& zp
 #if defined(PYTHON)
 	double TDetector::computeEbar_Python(const double& z, const double& l, const double& zp){
 		// Very slow !!!!
-		double mm = 1.e-3;
+		//double mm = 1.e-3;
 		
-		double eps0 = GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
+		double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
 	    double eps1 = fGeometry.relativePermittivity[0] * eps0;
 		double eps3 = eps1;
 		double eps2 = eps0;
 		
-		double values[10] = {z, l, zp, fDiffT, eps1,eps2,eps3,4.*mm,2.*mm,2.*mm};
+		double values[10] = {z, l, zp, fDiffT, eps1,eps2,eps3,4.*Constants::mm,2.*Constants::mm,2.*Constants::mm};
 		vector<double> args (values, values + sizeof(values) / sizeof(values[0]) );
 		double Ebar;
 		call_python_fun("compute_Ebar", args, Ebar);
@@ -357,17 +357,11 @@ void TDetector::makeEbarTable( bool const& binary ){
 	string fileName = getUniqueTableName();
 	cout << "FileName: " << fileName << endl;
 
-	/*unsigned char* uc = new unsigned char[fileName.size()+1];
-	memcpy(uc, fileName.c_str(), fileName.size());
-	uc[fileName.size()]=0;
-	string hexFileName = GetHexRepresentation(uc, fileName.size());
-	cout << "Hex representation: " << hexFileName << endl;
-	delete uc; */
 	hash<string> hash;
 	string hexFileName = toString( hash(fileName) );
 	cout << "Hash representation: " << hexFileName << endl;
 	
-	double zStep = fGeometry.gapWidth * cm / (n-1), zpStep = fGeometry.gapWidth * cm / (n-1), lStep = iNstep*fDx / (n);
+	double zStep = fGeometry.gapWidth * Constants::cm / (n-1), zpStep = fGeometry.gapWidth * Constants::cm / (n-1), lStep = iNstep*fDx / (n);
 	fEbarLarray = vector<double>(n,0.);
 	fEbarZarray = vector<double>(n,0.);
 	fEbarZparray = vector<double>(n,0.);
@@ -450,7 +444,7 @@ void TDetector::makeEbarTable( bool const& binary ){
 
 void TDetector::plotSC(){
 	cout << "plot" << endl;
-	double mm = 0.001;
+	//double mm = 0.001;
 
 	double min = -1, max = 1;
 	double h = 0.05;
@@ -462,7 +456,7 @@ void TDetector::plotSC(){
 
 	for(uint i=0; i<r.size(); i++){
 		for(uint j=0; j<z.size(); j++) {
-				data << r[i] << "\t" << z[j] << "\t" << SCField(r[i]*mm,0,z[j],0,0,0.5*mm) << endl;
+				data << r[i] << "\t" << z[j] << "\t" << SCField(r[i]*Constants::mm,0,z[j],0,0,0.5*Constants::mm) << endl;
 		}
 	}
 	data.close();

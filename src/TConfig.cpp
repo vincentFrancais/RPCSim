@@ -103,6 +103,23 @@ TConfig::TConfig (string file) {
 	if ( simElement->FirstChildElement( "VerbosityLevel" )->ToElement() )
 		simElement->FirstChildElement( "VerbosityLevel" )->QueryIntText( &verbosityLevel );
 	
+	XMLElement* SCElement = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "SingleCluster" ).ToElement();
+	if ( SCElement ) {
+		singleCluster = true;
+		SCElement->FirstChildElement( "n0" )->QueryIntText( &n0 );
+		SCElement->FirstChildElement( "x0" )->QueryDoubleText( &x0 );
+		if (n0 <= 0) {
+			cerr << "TConfig -- n0 must be greater than 0. Aborting" << endl;
+			exit(0);
+		}
+		else if (x0 < 0) {
+			cerr << "TConfig -- n0 must be equal to or greater than 0. Aborting" << endl;
+			exit(0);
+		}
+	}
+	else
+		singleCluster = false;
+	
 	//return config;
 }
 
@@ -139,6 +156,9 @@ void TConfig::print () {
 		for (uint i=0; i<seeds.size(); i++)
 			cout << seeds.at(i) << "  ";
 		cout << endl;  
+	}
+	if (singleCluster) {
+		cout << "\t single cluster at " << x0 << " containing " << n0 << " electrons" << endl; 
 	}
 	cout << "\t verbose: " << verbose << endl;
 	cout << "\t verbosity level: " << verbosityLevel << endl;
