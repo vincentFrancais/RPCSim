@@ -51,20 +51,24 @@ using namespace std;
 double integrand(double x, void * params);
 double Ebar(double x, void * params);
 
+/*
 struct DetectorGeometry{
-	/* TODO: change array to anode and cathode variables -- more readable */
 	double gapWidth;
 	double resistiveLayersWidth[2];
+	double anodeWidth, anodePermittivity, cathodeWidth, cathodePermittivity;
 	double relativePermittivity[2];
 };
+*/
 
 class TDetector{
 	
 	public:
-	TDetector(const DetectorGeometry& geometry, const TConfig& config, const int& nStep = 500);
+	//TDetector(const DetectorGeometry& geometry, const TConfig& config, const int& nStep = 500);
+	TDetector(const TConfig& config);
 	
 	~TDetector();
 	
+	void setGasMixture();
 	void setGasMixture(Garfield::MediumMagboltz* gas);
 	void makeGasTable();
 	void setElectricField(const double& Ex ,const double& Ey, const double& Ez);
@@ -88,9 +92,9 @@ class TDetector{
 	void makeEbarTable( bool const& binary=true );
 	
 	//TConfig getConfig(void) const {return fConfig;}
-	double getGapWidth(void) const	{return fGeometry.gapWidth;}
-	const double* getResistiveLayersWidth(void) const {return fGeometry.resistiveLayersWidth;}
-	DetectorGeometry getGeometry(void) const {return fGeometry;}
+	//double getGapWidth(void) const	{return fGeometry.gapWidth;}
+	//const double* getResistiveLayersWidth(void) const {return fGeometry.resistiveLayersWidth;}
+	//DetectorGeometry getGeometry(void) const {return fGeometry;}
 	double getTimeStep(void) const	{return fDt;}
 	double getSpaceStep(void) const	{return fDx;}
 	double getDiffL(void) const	{return fDiffL;}
@@ -126,7 +130,7 @@ class TDetector{
 	int iNstep;
 	TConfig fConfig;
 	
-	DetectorGeometry fGeometry;
+	//DetectorGeometry fGeometry;
 	double fDt;
 	double fDx;
 	

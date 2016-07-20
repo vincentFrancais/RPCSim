@@ -122,12 +122,14 @@ class TAvalanche1D : public TAvalanche {
 	uint fSeed;
 	
 	TDetector* fDet;
-	DetectorGeometry fGeometry;
+	//DetectorGeometry fGeometry;
 	TConfig fConfig;
 	
 	int iNstep;
 	double fGapWidth;
-	const double* fResistiveLayersWidth;
+	//const double* fResistiveLayersWidth;
+	double fAnodeWidth, fCathodeWidth;
+	double fAnodePermittivity, fCathodePermittivity;
 	double fDt;
 	double fDx;
 	

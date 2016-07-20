@@ -21,10 +21,16 @@ struct TConfig {
 	double gapWidth;
 	int nSteps;
 	
+	double anodeWidth, cathodeWidth;
+	double anodePermittivity, cathodePermittivity;
+	
 	int nResisLayers;
 	vector<double> resisLayersWidth;
 	vector<double> resisLayersEpsilon;
+	
 	double ElectricField;
+	
+	int EbarTableCalculationSteps;
 	
 	int nGases;
 	vector<string> gasNames;

@@ -153,6 +153,7 @@ int main(int argc, char** argv) {
     
     
     /* Init our detector */
+    /*
 	MediumMagboltz* gas = new MediumMagboltz();
 	switch (config.nGases){
 		case (1): 
@@ -176,24 +177,27 @@ int main(int argc, char** argv) {
 	}
 	gas->SetTemperature(config.gasTemperature);
 	gas->SetPressure(config.gasPressure);
-	
+	*/
 	double HV = config.ElectricField;
 	if(argc > 1)	HV = atof(argv[1])*1000.;
 	
 	if ( argc > 1 )
 		cout << "Efficiency computation runs. HV=" << HV << " OutFile=" << outputFile << endl;
 	
+	/*
 	DetectorGeometry geom;
 	geom.gapWidth = 0.12;	//0.2; cm	//CALICE 0.12
 	geom.resistiveLayersWidth[0] = 0.11;	//0.2;	//CALICE 0.11
 	geom.resistiveLayersWidth[1] = 0.07;	//0.2;	//CALICE 0.07
 	geom.relativePermittivity[0] = 7.;	//10.;	//CALICE 7
 	geom.relativePermittivity[1] = 7.;	//10.;	//CALICE 7
-	TDetector* detector = new TDetector(geom,config,500);
-	detector->setGasMixture(gas);
-	detector->setElectricField(HV,0.,0.);
-	detector->initialiseDetector();
-	detector->makeEbarTable();
+	* */
+	
+	TDetector* detector = new TDetector(config);
+	//detector->setGasMixture(gas);
+	//detector->setElectricField(HV,0.,0.);
+	//detector->initialiseDetector();
+	//detector->makeEbarTable();
 	//detector->setGarfieldSeed( 123456789 );
 	
 	

@@ -23,6 +23,7 @@ static TDetector* tgsl = 0;
 
 //extern double cm;
 
+/*
 TDetector::TDetector(const DetectorGeometry& geometry, const TConfig& config, const int& nStep){
 	fConfig = config;
 	iNstep = nStep;
@@ -33,13 +34,95 @@ TDetector::TDetector(const DetectorGeometry& geometry, const TConfig& config, co
 	bGasLoaded = false;
 	bDetectorInitialised = false;
 }
+* */
+
+TDetector::TDetector(const TConfig& config){
+	fConfig = config;
+	iNstep = fConfig.nSteps;
+	//fGeometry = geometry;
+	if (fConfig.EbarTableCalculationSteps != 0)
+		iEbarTableSize = fConfig.EbarTableCalculationSteps;
+	else
+		iEbarTableSize = 15;
+
+	bHasEbarTable = false;
+	bGasLoaded = false;
+	bDetectorInitialised = false;
+	
+	setGasMixture();
+	setElectricField(fConfig.ElectricField,0.,0.);
+	initialiseDetector();
+	makeEbarTable();
+}
 
 TDetector::~TDetector(){
 	delete mGas;
 	delete mSensor;
 }
 
+void TDetector::setGasMixture() {
+	if (bGasLoaded){
+		cerr << "TDetector::setGasMixture -- Error, gas already set" << endl;
+		return;
+	}
+	
+	mGas = new Garfield::MediumMagboltz();
+	
+	switch (fConfig.nGases){
+		case (1): 
+			mGas->SetComposition(fConfig.gasNames[0], fConfig.gasPercentage[0]);
+			break;
+		case (2):
+			mGas->SetComposition(fConfig.gasNames[0], fConfig.gasPercentage[0], fConfig.gasNames[1], fConfig.gasPercentage[1]);
+			break;
+		case (3):
+			mGas->SetComposition(fConfig.gasNames[0], fConfig.gasPercentage[0], fConfig.gasNames[1], fConfig.gasPercentage[1], fConfig.gasNames[2], fConfig.gasPercentage[2]);
+			break;
+		case (4):
+			mGas->SetComposition(fConfig.gasNames[0], fConfig.gasPercentage[0], fConfig.gasNames[1], fConfig.gasPercentage[1], fConfig.gasNames[2], fConfig.gasPercentage[2], fConfig.gasNames[3], fConfig.gasPercentage[3]);
+			break;
+		case (5):
+			mGas->SetComposition(fConfig.gasNames[0], fConfig.gasPercentage[0], fConfig.gasNames[1], fConfig.gasPercentage[1], fConfig.gasNames[2], fConfig.gasPercentage[2], fConfig.gasNames[3], fConfig.gasPercentage[3], fConfig.gasNames[4], fConfig.gasPercentage[4]);
+			break;
+		case (6):
+			mGas->SetComposition(fConfig.gasNames[0], fConfig.gasPercentage[0], fConfig.gasNames[1], fConfig.gasPercentage[1], fConfig.gasNames[2], fConfig.gasPercentage[2], fConfig.gasNames[3], fConfig.gasPercentage[3], fConfig.gasNames[4], fConfig.gasPercentage[4], fConfig.gasNames[5], fConfig.gasPercentage[5]);
+			break;
+	}
+	mGas->SetTemperature(fConfig.gasTemperature);
+	mGas->SetPressure(fConfig.gasPressure);
+	
+	int nComponents = mGas->GetNumberOfComponents();
+	vector< pair<string,double> > composition;
+	for(int i=0; i<nComponents; i++) {
+		double fraction;
+		string label;
+		mGas->GetComponent(i,label,fraction);
+		composition.push_back( make_pair(label,fraction) );
+	}
+
+	for(vector< pair<string,double> >::iterator it = composition.begin(); it != composition.end(); it++)	
+		mGasTableName += it->first + "-" + toString(it->second) + "_";
+	mGasTableName += "temp-" + toString(mGas->GetTemperature()) + "_pres-" + toString(mGas->GetPressure()) + ".gas";
+	
+	cout << "\tGas table file: " << mGasTableName << endl;
+	
+	if(!file_exist("gastables/"+mGasTableName))	
+		makeGasTable();
+	mGas->LoadGasFile("gastables/"+mGasTableName);
+	//gas->EnableDebugging();
+
+	fTemperature = mGas->GetTemperature();
+	fPressure = mGas->GetPressure();
+	
+	bGasLoaded = true;
+}
+
 void TDetector::setGasMixture(Garfield::MediumMagboltz* gas){
+	if (bGasLoaded){
+		cerr << "TDetector::setGasMixture -- Error, gas already set" << endl;
+		return;
+	}
+	
 	mGas = gas;
 	int nComponents = mGas->GetNumberOfComponents();
 	vector< pair<string,double> > composition;
@@ -94,8 +177,8 @@ void TDetector::makeGasTable(){
 
 void TDetector::initialiseDetector(){
 
-	fDx = fGeometry.gapWidth/iNstep;
-	double cx = fGeometry.gapWidth/2., cy = 0, cz = 0, lx = fGeometry.gapWidth/2., ly = 10, lz = 10;
+	fDx = fConfig.gapWidth/iNstep;
+	double cx = fConfig.gapWidth/2., cy = 0, cz = 0, lx = fConfig.gapWidth/2., ly = 10, lz = 10;
 	// Detector geometry
 	// Gap [cm]
 	Garfield::SolidBox* box = new Garfield::SolidBox(cx, cy, cz, lx, ly, lz);
@@ -194,12 +277,13 @@ void TDetector::setGarfieldSeed( const int& s ) {
 }
 
 double TDetector::R(const double& k, const double& z, const double& zp){
-	double q = fGeometry.resistiveLayersWidth[0] * Constants::cm; //cathode
-	double g = fGeometry.gapWidth * Constants::cm;
-	double p = (g + fGeometry.resistiveLayersWidth[1]) * Constants::cm; //anode
+	//double q = fGeometry.resistiveLayersWidth[0] * Constants::cm; //cathode
+	double q = fConfig.cathodeWidth * Constants::cm; //cathode
+	double g = fConfig.gapWidth * Constants::cm;
+	double p = (g + fConfig.anodeWidth) * Constants::cm; //anode
 	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
-	double eps1 = fGeometry.relativePermittivity[0] * eps0;
-	double eps3 = eps1;
+	double eps1 = fConfig.cathodePermittivity * eps0; //cathode
+	double eps3 = fConfig.anodePermittivity * eps0;
 	double eps2 = eps0;
 
     return (eps1+eps2)*(eps1+eps2) * (eps2+eps3)*(eps2+eps3) * (exp(k*(-2*p-2*q+z-zp)) + exp(k*(-2*p-2*q-z+zp)))
@@ -214,13 +298,16 @@ double TDetector::R(const double& k, const double& z, const double& zp){
 }
 
 double TDetector::D(const double& k){
-	double q = fGeometry.resistiveLayersWidth[0] * Constants::cm;	// cathode
+	/*double q = fGeometry.resistiveLayersWidth[0] * Constants::cm;	// cathode
 	double g = fGeometry.gapWidth * Constants::cm;
 	double p = (g + fGeometry.resistiveLayersWidth[1]) * Constants::cm;	// anode
-
+*/
+	double q = fConfig.cathodeWidth * Constants::cm; //cathode
+	double g = fConfig.gapWidth * Constants::cm;
+	double p = (g + fConfig.anodeWidth) * Constants::cm; //anode
 	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
-	double eps1 = fGeometry.relativePermittivity[0] * eps0;
-	double eps3 = eps1;
+	double eps1 = fConfig.cathodePermittivity * eps0; //cathode
+	double eps3 = fConfig.anodePermittivity * eps0;
 	double eps2 = eps0;
 
     return (eps1+eps2)*(eps2+eps3)*(1-exp(-2*k*(p+q)))
@@ -237,10 +324,10 @@ double integrand(double x, void * params){
 
 double TDetector::SCFieldSimplified(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
 	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
-	double g = fGeometry.gapWidth * Constants::cm;
+	double g = fConfig.gapWidth * Constants::cm;
 	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
-	double eps1 = fGeometry.relativePermittivity[0] * eps0;
-	double eps3 = eps1;
+	double eps1 = fConfig.cathodePermittivity * eps0; //cathode
+	double eps3 = fConfig.anodePermittivity * eps0;
 	double eps2 = eps0;
 
 	double P2 = r*r - 2*r*rp*cos(phi-phip) + rp*rp;
@@ -278,10 +365,10 @@ double TDetector::SCPotential(const double& r, const double& phi, const double& 
 
     double Q = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
 	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
-    double eps1 = fGeometry.relativePermittivity[0] * eps0;
-	double eps3 = eps1;
+    double eps1 = fConfig.cathodePermittivity * eps0; //cathode
+	double eps3 = fConfig.anodePermittivity * eps0;
 	double eps2 = eps0;
-	double g = fGeometry.gapWidth * Constants::cm;
+	double g = fConfig.gapWidth * Constants::cm;
 
     double pot = ( Q/(4*Constants::Pi*eps2) ) * ( (1./(sqrt(P*P+(z-zp)*(z-zp)))) - ((eps1-eps2)/((eps1+eps2)*sqrt(P*P+(z+zp)*(z+zp)))) - ((eps3-eps2)/((eps3+eps2)*sqrt(P*P+(2*g-z-zp)*(2*g-z-zp)))) +
                                   (1./((eps1+eps2)*(eps2+eps3))) * result );
@@ -327,8 +414,8 @@ double TDetector::computeEbar(const double& z, const double& l, const double& zp
 		//double mm = 1.e-3;
 		
 		double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
-	    double eps1 = fGeometry.relativePermittivity[0] * eps0;
-		double eps3 = eps1;
+	    double eps1 = fConfig.cathodePermittivity * eps0; //cathode
+		double eps3 = fConfig.anodePermittivity * eps0;
 		double eps2 = eps0;
 		
 		double values[10] = {z, l, zp, fDiffT, eps1,eps2,eps3,4.*Constants::mm,2.*Constants::mm,2.*Constants::mm};
@@ -361,7 +448,7 @@ void TDetector::makeEbarTable( bool const& binary ){
 	string hexFileName = toString( hash(fileName) );
 	cout << "Hash representation: " << hexFileName << endl;
 	
-	double zStep = fGeometry.gapWidth * Constants::cm / (n-1), zpStep = fGeometry.gapWidth * Constants::cm / (n-1), lStep = iNstep*fDx / (n);
+	double zStep = fConfig.gapWidth * Constants::cm / (n-1), zpStep = fConfig.gapWidth * Constants::cm / (n-1), lStep = iNstep*fDx / (n);
 	fEbarLarray = vector<double>(n,0.);
 	fEbarZarray = vector<double>(n,0.);
 	fEbarZparray = vector<double>(n,0.);
@@ -451,7 +538,7 @@ void TDetector::plotSC(){
 	vector<double> r(1,min);
 	vector<double> z(1,0);
 	while(r.back() <= max)	r.push_back( r.back()+h );
-	while(z.back() <= fGeometry.gapWidth)	z.push_back( z.back() + h );
+	while(z.back() <= fConfig.gapWidth)	z.push_back( z.back() + h );
 	ofstream data("out/plotSC.dat", ios::out | ios::trunc);
 
 	for(uint i=0; i<r.size(); i++){
@@ -463,8 +550,8 @@ void TDetector::plotSC(){
 }
 
 string TDetector::getUniqueTableName(){
-	string name = "fDiffT:"+toString(fDiffT) + "-gapWidth:"+toString(fGeometry.gapWidth) + "-eps1:"+toString(fGeometry.relativePermittivity[0]) + "-eps3:"+toString(fGeometry.relativePermittivity[1])
-	+ "-cathode:"+toString(fGeometry.resistiveLayersWidth[0]) + "-anode:"+toString(fGeometry.resistiveLayersWidth[1])
+	string name = "fDiffT:"+toString(fDiffT) + "-gapWidth:"+toString(fConfig.gapWidth) + "-eps1:"+toString(fConfig.cathodePermittivity) + "-eps3:"+toString(fConfig.anodePermittivity)
+	+ "-cathode:"+toString(fConfig.cathodeWidth) + "-anode:"+toString(fConfig.anodeWidth)
 	+ "-Nstep:"+toString(iNstep) + "-Dx:"+toString(fDx) + "-EbarTableSize:"+toString(iEbarTableSize);
 	
 	return name;

@@ -97,14 +97,18 @@ void TAvalanche1D::init() {
 	
 	fRandomNumberGenerated = 0;
 	
-	iNstep = fDet->getNstep();
+	iNstep = fConfig.nSteps;
 	 
-	fGapWidth = fDet->getGapWidth();
-	fResistiveLayersWidth = fDet->getResistiveLayersWidth();
+	fGapWidth = fConfig.gapWidth;
+	//fResistiveLayersWidth = fDet->getResistiveLayersWidth();
+	fAnodeWidth = fConfig.anodeWidth;
+	fAnodePermittivity = fConfig.anodePermittivity;
+	fCathodePermittivity = fConfig.cathodePermittivity;
+	fCathodeWidth = fConfig.cathodeWidth;
 	fDt = fDet->getTimeStep();
 	fDx = fDet->getSpaceStep();
 	
-	fGeometry = fDet->getGeometry();
+	//fGeometry = fDet->getGeometry();
 	
 	fDiffL = fDet->getDiffL();
 	fDiffT = fDet->getDiffT();
@@ -228,9 +232,10 @@ void TAvalanche1D::initialiseTrackHeed(){
 		return;
 	}
 	
-	if (fConfig.singleCluster)
+	if (fConfig.singleCluster) {
 		initialiseSingleCluster();
 		return;
+	}
 	
 	if (iVerbosityLevel > 0)
 		cout << "Initialising avalanche with Heed track (thread " << Id << ") for " << fConfig.particleName << " with momentum " << toString(fConfig.particleMomentum) << " at position " << toString(fConfig.x0) << " with angle " << toString(fConfig.theta) << endl;
@@ -243,6 +248,7 @@ void TAvalanche1D::initialiseTrackHeed(){
 	fDet->setGarfieldSeed(fSeed);
 
 	Garfield::TrackHeed* track = new Garfield::TrackHeed();
+	track->EnablePhotoAbsorptionCrossSectionOutput();
 	track->SetSensor(fDet->getSensor());
 	track->SetParticle(fConfig.particleName);
 	track->SetMomentum(fConfig.particleMomentum);
@@ -369,8 +375,9 @@ void TAvalanche1D::checkDetectorGrid(){
 	}
 }
 
+/*
 void TAvalanche1D::computeInducedSignal(){
-	/* OBSOLETE */
+	// OBSOLETE
 	// drift velocity in cm/ns
 	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;//1.60217657e-19; //Coulombs
 	double eps = 10.;
@@ -387,12 +394,13 @@ void TAvalanche1D::computeInducedSignal(){
 	}
 	data.close();
 }
+*/
 
 void TAvalanche1D::computeInducedSignal2(){
 	// drift velocity in cm/ns
 	double e0 = Constants::ElectronCharge; //1.60217657e-19; //Coulombs
-	double eps = fGeometry.relativePermittivity[0]; 	//10.;
-	double weightingField = eps/(fResistiveLayersWidth[0]+fResistiveLayersWidth[1] + fGapWidth*eps);
+	double eps = fAnodePermittivity; 	//10.;
+	double weightingField = eps/(fCathodeWidth+fAnodeWidth + fGapWidth*eps);
 
 	double sig = 0;
 	double charges = 0;
@@ -617,6 +625,10 @@ void TAvalanche1D::computeLongitudinalDiffusion() {
 }
 
 bool TAvalanche1D::checkForExplosiveBehavior() {
+	/* Check if a large number of elec has been created between two steps (typically meaning
+	 * that the avalanche shows explosive behavior). If there is a production superior than 
+	 * 30% between two steps, the avalanche simulation is aborted */
+	 
 	double n0 = fNElectrons.at(iTimeStep-1);
 	double n1 = fNElectrons.at(iTimeStep);
 	if ( 100.*(n1-n0)/n1 > 30. )

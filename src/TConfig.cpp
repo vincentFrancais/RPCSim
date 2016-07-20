@@ -34,6 +34,21 @@ TConfig::TConfig (string file) {
 	detectorElement->FirstChildElement( "Steps" )->QueryIntText( &nSteps );
 	detectorElement->FirstChildElement( "ElectricField" )->QueryDoubleText( &ElectricField );
 	
+	XMLElement* anodeElem = docHandle.FirstChildElement( "Detector" ).FirstChildElement( "Anode" ).ToElement();
+	XMLElement* cathodeElem = docHandle.FirstChildElement( "Detector" ).FirstChildElement( "Cathode" ).ToElement();
+	
+	if ( anodeElem and cathodeElem ) {
+		anodeElem->FirstChildElement( "width" )->QueryDoubleText( &anodeWidth );
+		anodeElem->FirstChildElement( "permittivity" )->QueryDoubleText( &anodePermittivity );
+		
+		cathodeElem->FirstChildElement( "width" )->QueryDoubleText( &cathodeWidth );
+		cathodeElem->FirstChildElement( "permittivity" )->QueryDoubleText( &cathodePermittivity );
+	} 
+	else {
+		cerr << "TConfig -- Error, anode and/or cathode informations missing." << endl;
+		exit(0);
+	}
+	
 	for (XMLElement* child = docHandle.FirstChildElement("Detector").FirstChildElement("ResistiveLayers").FirstChildElement("layer").ToElement(); child != NULL; child = child->NextSiblingElement("layer")){
 		double width, epsilon;
 		child->FirstChildElement( "width" )->QueryDoubleText( &width );
@@ -120,6 +135,12 @@ TConfig::TConfig (string file) {
 	else
 		singleCluster = false;
 	
+	XMLElement* EbarElem = docHandle.FirstChildElement( "Detector" ).FirstChildElement( "EbarTableCalculationSteps" ).ToElement();
+	if ( EbarElem )
+		EbarElem->QueryIntText( &EbarTableCalculationSteps );
+	else
+		EbarTableCalculationSteps = 0;
+	
 	//return config;
 }
 
@@ -129,10 +150,13 @@ void TConfig::print () {
 	cout << "\t gap width: " << gapWidth << endl;
 	cout << "\t steps: " << nSteps << endl;
 	cout << "\t electric field: " << ElectricField << endl;
+	/*
 	cout << "\t resistive layers: " << nResisLayers << endl;
 	for(int i=0; i<nResisLayers; i++)
 		cout << "\t layer " << i << " -- width: " << resisLayersWidth[i] << " - epsilon: " << resisLayersEpsilon[i] << endl;
-		
+	*/
+	cout << "\t anode: " << anodeWidth << " cm, epsilon=" << anodePermittivity << endl;
+	cout << "\t cathode: " << cathodeWidth << " cm, epsilon=" << cathodePermittivity << endl;\
 	cout << "   Gas composition:" << endl;
 	cout << "\t temperature: " << gasTemperature << endl;
 	cout << "\t pressure: " << gasPressure << endl;
