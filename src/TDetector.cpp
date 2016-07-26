@@ -60,6 +60,47 @@ TDetector::~TDetector(){
 	delete mSensor;
 }
 
+
+void TDetector::printPACSData(Garfield::MediumMagboltz* gas) {
+	/* Print PhotoAbsorption Cross Section data to txt file heed_pacs.txt (the file name is 
+	 * hardcoded in heed and cannot be changed). 
+	 * Takes a pointer to a Magboltz gas as parameter.
+	 * The printing is done through the function TrackHeed::SetupGas which is private. So we
+	 * define a dummy TrackHeed (with simple geometry and particle) which itself will call SetupGas. */
+	 
+	cout << "Printing PACS data to file heed_pacs.txt" << endl;
+	cout.setstate(ios_base::failbit);	// To avoid unecessary Garfield printing. 
+	
+	Garfield::TrackHeed* track = new Garfield::TrackHeed;
+	track->EnablePhotoAbsorptionCrossSectionOutput();
+	
+	// Dummy geometry, component and sensor
+	Garfield::SolidBox* box = new Garfield::SolidBox(0,0,0,10,10,10);
+	Garfield::GeometrySimple* geo = new Garfield::GeometrySimple();
+	geo->AddSolid(box, gas);
+
+	Garfield::ComponentConstant* comp = new Garfield::ComponentConstant();
+	comp->SetGeometry(geo);
+	comp->SetElectricField(10,10,10);
+
+	Garfield::Sensor* sensor = new Garfield::Sensor();
+	sensor->AddComponent(comp);
+	
+	//Dummy track
+	track->SetSensor(sensor);
+	track->SetParticle("muon");
+	track->SetMomentum(5.e9);
+	track->NewTrack(0, 0, 0, 0, 1, 0, 0);	// <=== printing is done here!
+	
+	cout.clear();
+	
+	delete track;
+	delete sensor;
+	delete comp;
+	delete geo;
+	delete box;
+}
+
 void TDetector::setGasMixture() {
 	if (bGasLoaded){
 		cerr << "TDetector::setGasMixture -- Error, gas already set" << endl;

@@ -194,6 +194,16 @@ int main(int argc, char** argv) {
 	* */
 	
 	TDetector* detector = new TDetector(config);
+	
+	/* Here we define a Magboltz Gas in order to print its photo-absorption CS through HEED */
+	MediumMagboltz* gas = new MediumMagboltz();
+	gas->SetComposition("Ar", 100.);
+	gas->SetTemperature(293.15);
+	gas->SetPressure(760);
+	TDetector::printPACSData(gas);
+	delete gas;
+	
+	exit(0);
 	//detector->setGasMixture(gas);
 	//detector->setElectricField(HV,0.,0.);
 	//detector->initialiseDetector();
