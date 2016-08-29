@@ -14,10 +14,13 @@ TConfig::TConfig (string file) {
 	verbose = false;
 	verbosityLevel = 0;
 	snaps = false;
+	clusterDensity = false;
+	electronProduction = false;
+	noAvalanche = false;
 	
 	XMLDocument doc;
 	if ( doc.LoadFile( file.c_str() ) != XML_SUCCESS ){
-		cerr << "TConfig -- Error opening file" << endl;
+		cerr << "TConfig -- Error opening file " << file << endl;
 		exit(0);
 	}
 	
@@ -140,6 +143,11 @@ TConfig::TConfig (string file) {
 		EbarElem->QueryIntText( &EbarTableCalculationSteps );
 	else
 		EbarTableCalculationSteps = 0;
+	XMLElement* noAvalElem = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "NoAvalanche" ).ToElement();
+	if ( noAvalElem ){
+		noAvalElem->QueryBoolText( &noAvalanche );
+	}
+		//noAvalanche = true;
 	
 	//return config;
 }
@@ -183,6 +191,9 @@ void TConfig::print () {
 	}
 	if (singleCluster) {
 		cout << "\t single cluster at " << x0 << " containing " << n0 << " electrons" << endl; 
+	}
+	if (noAvalanche) {
+		cout << "\t No avalanche simulation" << endl; 
 	}
 	cout << "\t verbose: " << verbose << endl;
 	cout << "\t verbosity level: " << verbosityLevel << endl;

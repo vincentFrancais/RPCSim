@@ -119,7 +119,7 @@ void * WriteResults(void * Arg)
 
 int main(int argc, char** argv) {
 	/* Read config file */
-	TConfig config("config/calice.xml");
+	TConfig config("config/gas.xml");
     config.print();
      
     char outputFile[PATH_MAX];
@@ -197,13 +197,17 @@ int main(int argc, char** argv) {
 	
 	/* Here we define a Magboltz Gas in order to print its photo-absorption CS through HEED */
 	MediumMagboltz* gas = new MediumMagboltz();
-	gas->SetComposition("Ar", 100.);
-	gas->SetTemperature(293.15);
-	gas->SetPressure(760);
-	TDetector::printPACSData(gas);
+	//gas->SetComposition("Ar", 100.);
+	//gas->SetTemperature(293.15);
+	//gas->SetPressure(760);
+	//detector->setGasMixture(gas);
+	TAvalanche::computeClusterDensity(detector,"muon",6e7,1.5e10,600);
+	TAvalanche::computeElectronsProduction(detector,"muon",5.e9,6000);
+	//TDetector::printPACSData(gas);
 	delete gas;
 	
-	exit(0);
+	if (config.noAvalanche)
+		return 0;
 	//detector->setGasMixture(gas);
 	//detector->setElectricField(HV,0.,0.);
 	//detector->initialiseDetector();

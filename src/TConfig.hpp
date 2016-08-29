@@ -56,6 +56,11 @@ struct TConfig {
 	
 	bool singleCluster;
 	int n0;
+	
+	bool clusterDensity;
+	bool electronProduction;
+	bool noAvalanche;
+
 	//TConfig() : nResisLayers(0), nGases(0), outFile("out/"), generator("SFMT"), garfieldSeed(-1) { }
 };
 

@@ -42,8 +42,8 @@ class TAvalanche {
 	
 	~TAvalanche();
 	
-	static void computeElectronsProduction(const TDetector* det, const string& particleName, const double& P, const int& nTracks);
-	static void computeClusterDensity(const TDetector* det, const string& particleName, const double& Pmin, const double& Pmax, const int& steps);
+	static void computeElectronsProduction(const TDetector* det, const string& particleName="muon", const double& P=5e9, const int& nTracks=600);
+	static void computeClusterDensity(const TDetector* det, const string& particleName="muon", const double& Pmin=6e7, const double& Pmax=1.5e10, const int& steps=600);
 	static int getCount() {return count;}
 	
 	protected:

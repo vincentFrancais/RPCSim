@@ -64,7 +64,7 @@ class TDetector{
 	
 	public:
 	//TDetector(const DetectorGeometry& geometry, const TConfig& config, const int& nStep = 500);
-	TDetector(const TConfig& config);
+	TDetector(const TConfig& config, const bool basic=false);
 	
 	~TDetector();
 	
@@ -97,6 +97,7 @@ class TDetector{
 	//double getGapWidth(void) const	{return fGeometry.gapWidth;}
 	//const double* getResistiveLayersWidth(void) const {return fGeometry.resistiveLayersWidth;}
 	//DetectorGeometry getGeometry(void) const {return fGeometry;}
+	string getGasName() const;
 	double getTimeStep(void) const	{return fDt;}
 	double getSpaceStep(void) const	{return fDx;}
 	double getDiffL(void) const	{return fDiffL;}

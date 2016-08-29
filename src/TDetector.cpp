@@ -36,7 +36,7 @@ TDetector::TDetector(const DetectorGeometry& geometry, const TConfig& config, co
 }
 * */
 
-TDetector::TDetector(const TConfig& config){
+TDetector::TDetector(const TConfig& config, const bool basic){
 	fConfig = config;
 	iNstep = fConfig.nSteps;
 	//fGeometry = geometry;
@@ -52,7 +52,8 @@ TDetector::TDetector(const TConfig& config){
 	setGasMixture();
 	setElectricField(fConfig.ElectricField,0.,0.);
 	initialiseDetector();
-	makeEbarTable();
+	if(!basic)
+		makeEbarTable();
 }
 
 TDetector::~TDetector(){
@@ -101,6 +102,23 @@ void TDetector::printPACSData(Garfield::MediumMagboltz* gas) {
 	delete box;
 }
 
+string TDetector::getGasName() const {
+	string gasName = "";
+	int nComponents = mGas->GetNumberOfComponents();
+	vector< pair<string,double> > composition;
+	for(int i=0; i<nComponents; i++) {
+		double fraction;
+		string label;
+		mGas->GetComponent(i,label,fraction);
+		composition.push_back( make_pair(label,fraction) );
+	}
+
+	for(vector< pair<string,double> >::iterator it = composition.begin(); it != composition.end(); it++)	
+		gasName += it->first + "-" + toString(it->second) + "_";
+	
+	return gasName;
+}
+
 void TDetector::setGasMixture() {
 	if (bGasLoaded){
 		cerr << "TDetector::setGasMixture -- Error, gas already set" << endl;
@@ -132,17 +150,18 @@ void TDetector::setGasMixture() {
 	mGas->SetTemperature(fConfig.gasTemperature);
 	mGas->SetPressure(fConfig.gasPressure);
 	
-	int nComponents = mGas->GetNumberOfComponents();
-	vector< pair<string,double> > composition;
-	for(int i=0; i<nComponents; i++) {
-		double fraction;
-		string label;
-		mGas->GetComponent(i,label,fraction);
-		composition.push_back( make_pair(label,fraction) );
-	}
+//	int nComponents = mGas->GetNumberOfComponents();
+//	vector< pair<string,double> > composition;
+//	for(int i=0; i<nComponents; i++) {
+//		double fraction;
+//		string label;
+//		mGas->GetComponent(i,label,fraction);
+//		composition.push_back( make_pair(label,fraction) );
+//	}
 
-	for(vector< pair<string,double> >::iterator it = composition.begin(); it != composition.end(); it++)	
-		mGasTableName += it->first + "-" + toString(it->second) + "_";
+//	for(vector< pair<string,double> >::iterator it = composition.begin(); it != composition.end(); it++)	
+//		mGasTableName += it->first + "-" + toString(it->second) + "_";
+	mGasTableName = getGasName();
 	mGasTableName += "temp-" + toString(mGas->GetTemperature()) + "_pres-" + toString(mGas->GetPressure()) + ".gas";
 	
 	cout << "\tGas table file: " << mGasTableName << endl;
@@ -159,23 +178,24 @@ void TDetector::setGasMixture() {
 }
 
 void TDetector::setGasMixture(Garfield::MediumMagboltz* gas){
-	if (bGasLoaded){
-		cerr << "TDetector::setGasMixture -- Error, gas already set" << endl;
-		return;
-	}
+//	if (bGasLoaded){
+//		cerr << "TDetector::setGasMixture -- Error, gas already set" << endl;
+//		return;
+//	}
 	
 	mGas = gas;
-	int nComponents = mGas->GetNumberOfComponents();
-	vector< pair<string,double> > composition;
-	for(int i=0; i<nComponents; i++) {
-		double fraction;
-		string label;
-		mGas->GetComponent(i,label,fraction);
-		composition.push_back( make_pair(label,fraction) );
-	}
+//	int nComponents = mGas->GetNumberOfComponents();
+//	vector< pair<string,double> > composition;
+//	for(int i=0; i<nComponents; i++) {
+//		double fraction;
+//		string label;
+//		mGas->GetComponent(i,label,fraction);
+//		composition.push_back( make_pair(label,fraction) );
+//	}
 
-	for(vector< pair<string,double> >::iterator it = composition.begin(); it != composition.end(); it++)	
-		mGasTableName += it->first + "-" + toString(it->second) + "_";
+//	for(vector< pair<string,double> >::iterator it = composition.begin(); it != composition.end(); it++)	
+//		mGasTableName += it->first + "-" + toString(it->second) + "_";
+	mGasTableName = getGasName();
 	mGasTableName += "temp-" + toString(mGas->GetTemperature()) + "_pres-" + toString(mGas->GetPressure()) + ".gas";
 	
 	cout << "\tGas table file: " << mGasTableName << endl;
