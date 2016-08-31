@@ -268,8 +268,10 @@ void TDetector::initialiseDetector(){
 	k = fEta/fAlpha;
 
 	fDt = fDx/fVx; //ns
-
-	assert(  (fAlpha>0) and (fEta>0) );
+	
+	// If we simulate avalanche, check if alpha and eta are greater than 0 (otherwise no point in carrying on) ...
+	if (!fConfig.noAvalanche)
+		assert(  (fAlpha>0) and (fEta>0) );
 	
 	cout << endl;
 	cout << "Transport parameters:" << endl;
