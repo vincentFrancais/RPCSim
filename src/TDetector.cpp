@@ -36,7 +36,7 @@ TDetector::TDetector(const DetectorGeometry& geometry, const TConfig& config, co
 }
 * */
 
-TDetector::TDetector(const TConfig& config, const bool basic){
+TDetector::TDetector(const TConfig& config){
 	fConfig = config;
 	iNstep = fConfig.nSteps;
 	//fGeometry = geometry;
@@ -52,7 +52,9 @@ TDetector::TDetector(const TConfig& config, const bool basic){
 	setGasMixture();
 	setElectricField(fConfig.ElectricField,0.,0.);
 	initialiseDetector();
-	if(!basic)
+	
+	// if we do not simulate avalanche, no point in computing Ebar table.
+	if(!fConfig.noAvalanche)
 		makeEbarTable();
 }
 

@@ -64,7 +64,7 @@ class TDetector{
 	
 	public:
 	//TDetector(const DetectorGeometry& geometry, const TConfig& config, const int& nStep = 500);
-	TDetector(const TConfig& config, const bool basic=false);
+	TDetector(const TConfig& config);
 	
 	~TDetector();
 	
