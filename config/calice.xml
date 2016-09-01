@@ -41,6 +41,9 @@
 </Gas>
 
 <Simulation>
+	<NoAvalanche>0</NoAvalanche>
+	<Efficiency>1</Efficiency>
+	
 	<Particle>
 		<name>muon</name>
 		<momentum>5.e9</momentum>

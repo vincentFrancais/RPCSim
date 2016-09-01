@@ -17,6 +17,7 @@ TConfig::TConfig (string file) {
 	clusterDensity = false;
 	electronProduction = false;
 	noAvalanche = false;
+	computeEfficiency = false;
 	
 	XMLDocument doc;
 	if ( doc.LoadFile( file.c_str() ) != XML_SUCCESS ){
@@ -143,13 +144,15 @@ TConfig::TConfig (string file) {
 		EbarElem->QueryIntText( &EbarTableCalculationSteps );
 	else
 		EbarTableCalculationSteps = 0;
+		
 	XMLElement* noAvalElem = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "NoAvalanche" ).ToElement();
-	if ( noAvalElem ){
+	if ( noAvalElem )
 		noAvalElem->QueryBoolText( &noAvalanche );
-	}
-		//noAvalanche = true;
 	
-	//return config;
+	XMLElement* effElem = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "Efficiency" ).ToElement();
+	if ( effElem )
+		effElem->QueryBoolText( &computeEfficiency );
+	
 }
 
 void TConfig::print () {
@@ -194,6 +197,9 @@ void TConfig::print () {
 	}
 	if (noAvalanche) {
 		cout << "\t No avalanche simulation" << endl; 
+	}
+	if (computeEfficiency) {
+		cout << "\t Efficiency runs" << endl; 
 	}
 	cout << "\t verbose: " << verbose << endl;
 	cout << "\t verbosity level: " << verbosityLevel << endl;

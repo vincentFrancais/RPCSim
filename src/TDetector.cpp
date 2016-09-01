@@ -51,11 +51,10 @@ TDetector::TDetector(const TConfig& config){
 	
 	setGasMixture();
 	setElectricField(fConfig.ElectricField,0.,0.);
-	initialiseDetector();
+	//initialiseDetector();
 	
 	// if we do not simulate avalanche, no point in computing Ebar table.
-	if(!fConfig.noAvalanche)
-		makeEbarTable();
+	
 }
 
 TDetector::~TDetector(){
@@ -291,6 +290,9 @@ void TDetector::initialiseDetector(){
 	delete comp;*/
 	
 	bDetectorInitialised = true;
+	
+	if(!fConfig.noAvalanche)
+		makeEbarTable();
 }
 
 double* TDetector::getTransportParameters(double Ex, double Ey, double Ez){
