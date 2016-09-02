@@ -118,7 +118,7 @@ void * WriteResults(void * Arg)
 int main(int argc, char** argv) {
 	/* Read config file */
 	TConfig config;
-	if (argc > 0)
+	if (argc > 1)
 		config = TConfig( argv[1] );
 	else
 		config = TConfig("config/gas.xml");
@@ -126,124 +126,119 @@ int main(int argc, char** argv) {
     
     char outputFile[PATH_MAX];
     
-    int N = 1;
-    if (config.computeEfficiency)
-		N = 25;
-    
     pthread_t writingThread;
     void * ret;
-
-    for (int k=0; k<N; k++)	{
-		if (config.computeEfficiency)
-			strncpy(outputFile, ("out/eff-"+toString(40+k)).c_str(), PATH_MAX - 1);
-		else
-			strncpy(outputFile, config.outFile.c_str(), PATH_MAX - 1);
-		outputFile[PATH_MAX - 1] = '\0';
-		
-		
-	    unsigned int nThreads = config.nThreads;
-	    unsigned long nEvents = config.nEvents;
-		
-		/* Init the SFMT status */
-		sfmt_t SFMT;
-		sfmt_init_gen_rand(&SFMT, 4321);
-	    
-	    /* Initialize our pipe lock */
-	    pthread_mutex_init(&gPipeLock, 0);
-	    pthread_mutex_init(&gTrackLock, 0);
 	
-	
-	    /* Start our threads factory */
-	    TThreadsFactory::GetInstance()->SetMaxThreads(nThreads);
-	    
-	    
-	    /* Init our null event */
-	    memset(&gNullResult, 0, sizeof(TResult));
-	    
-	    
-	    /* Init our detector */
-		/*
-		DetectorGeometry geom;
-		geom.gapWidth = 0.12;	//0.2; cm	//CALICE 0.12
-		geom.resistiveLayersWidth[0] = 0.11;	//0.2;	//CALICE 0.11
-		geom.resistiveLayersWidth[1] = 0.07;	//0.2;	//CALICE 0.07
-		geom.relativePermittivity[0] = 7.;	//10.;	//CALICE 7
-		geom.relativePermittivity[1] = 7.;	//10.;	//CALICE 7
-		* */
-		
-		TDetector* detector = new TDetector(config);
-		if (config.computeEfficiency){
-			detector->setElectricField( (40+k)*1e3, 0, 0 );
-			cout << "====== Efficiency simulation run, HV at " << 40+k << " ======" << endl;
-		}
-		detector->initialiseDetector();
-		
-		
-		// Functions to produce data on primary inisation
-		//TAvalanche::computeClusterDensity(detector,"muon",6e7,1.5e10,600);
-		//TAvalanche::computeElectronsProduction(detector,"muon",5.e9,6000);
-		
-		/* Here we define a Magboltz Gas in order to print its photo-absorption CS through HEED */
-		//MediumMagboltz* gas = new MediumMagboltz();
-		//gas->SetComposition("Ar", 100.);
-		//gas->SetTemperature(293.15);
-		//gas->SetPressure(760);
-		//detector->setGasMixture(gas);
-		//TDetector::printPACSData(gas);
-		//delete gas;
-		
-		if (config.noAvalanche)
-			continue;
-	
-		
-		
-		/* Init struct of simulation parameters */
-		ThreadData* data = new ThreadData(detector, config, SFMT, 0);
-		
-		
-	    /* Open the communication pipe */
-	    if (pipe(gPipe) == -1){
-			goto end;
-	    }
-	
-	
-	    /* Start our background writing thread */
-	    if (pthread_create(&writingThread, 0, WriteResults, outputFile) != 0){
-			goto end2;
-	    }
-	
-	
-	    /* Hot loop, the simulation happens here */
-	    for (unsigned long i = 0; i < nEvents; ++i){
-			/* the SFMT status is given to the thread and then jump-ahead by 10^20 numbers (ensure independant and large enough streams) */
-			data->sfmt = SFMT;
-			data->id = i;
-			TThreadsFactory::GetInstance()->CreateThread(wrapperFunction, data);
-			SFMT_jump(&SFMT, jump10_20);
-	    }
-	
-	
-	    /* Wait for all the propagations to finish */
-	    TThreadsFactory::GetInstance()->WaitForAllThreads();
-	
-	
-	    /* Send the end signal to writer */
-	    write(gPipe[1], &gNullResult, sizeof(TResult));
-	
-	
-	    /* Wait for the end of the writer */
-	    pthread_join(writingThread, &ret);
-	
-	
-	end2:
-	    close(gPipe[0]);
-	    close(gPipe[1]);
-	end:
-	    pthread_mutex_destroy(&gPipeLock);
-	    pthread_mutex_destroy(&gTrackLock);
-	    delete detector;
-	    delete data;
+	if (config.computeEfficiency and argc > 2) {
+		string hv = argv[2];
+		strncpy(outputFile, ("out/eff-"+hv).c_str(), PATH_MAX - 1);
 	}
+	else
+		strncpy(outputFile, config.outFile.c_str(), PATH_MAX - 1);
+	outputFile[PATH_MAX - 1] = '\0';
+	
+    unsigned int nThreads = config.nThreads;
+    unsigned long nEvents = config.nEvents;
+	
+	/* Init the SFMT status */
+	sfmt_t SFMT;
+	sfmt_init_gen_rand(&SFMT, 4321);
+    
+    /* Initialize our pipe lock */
+    pthread_mutex_init(&gPipeLock, 0);
+    pthread_mutex_init(&gTrackLock, 0);
+
+
+    /* Start our threads factory */
+    TThreadsFactory::GetInstance()->SetMaxThreads(nThreads);
+    
+    
+    /* Init our null event */
+    memset(&gNullResult, 0, sizeof(TResult));
+    
+    
+    /* Init our detector */
+	/*
+	DetectorGeometry geom;
+	geom.gapWidth = 0.12;	//0.2; cm	//CALICE 0.12
+	geom.resistiveLayersWidth[0] = 0.11;	//0.2;	//CALICE 0.11
+	geom.resistiveLayersWidth[1] = 0.07;	//0.2;	//CALICE 0.07
+	geom.relativePermittivity[0] = 7.;	//10.;	//CALICE 7
+	geom.relativePermittivity[1] = 7.;	//10.;	//CALICE 7
+	* */
+	
+	TDetector* detector = new TDetector(config);
+	if (config.computeEfficiency and argc > 2){
+		detector->setElectricField( atof(argv[2])*1e3, 0, 0 );
+		cout << "====== Efficiency simulation run, HV at " << argv[2] << " ======" << endl;
+	}
+	detector->initialiseDetector();
+	
+	
+	// Functions to produce data on primary inisation
+	//TAvalanche::computeClusterDensity(detector,"muon",6e7,1.5e10,600);
+	//TAvalanche::computeElectronsProduction(detector,"muon",5.e9,6000);
+	
+	/* Here we define a Magboltz Gas in order to print its photo-absorption CS through HEED */
+	//MediumMagboltz* gas = new MediumMagboltz();
+	//gas->SetComposition("Ar", 100.);
+	//gas->SetTemperature(293.15);
+	//gas->SetPressure(760);
+	//detector->setGasMixture(gas);
+	//TDetector::printPACSData(gas);
+	//delete gas;
+	
+	if (config.noAvalanche)
+		return 0;
+
+	
+	
+	/* Init struct of simulation parameters */
+	ThreadData* data = new ThreadData(detector, config, SFMT, 0);
+	
+	
+    /* Open the communication pipe */
+    if (pipe(gPipe) == -1){
+		goto end;
+    }
+
+
+    /* Start our background writing thread */
+    if (pthread_create(&writingThread, 0, WriteResults, outputFile) != 0){
+		goto end2;
+    }
+
+
+    /* Hot loop, the simulation happens here */
+    for (unsigned long i = 0; i < nEvents; ++i){
+		/* the SFMT status is given to the thread and then jump-ahead by 10^20 numbers (ensure independant and large enough streams) */
+		data->sfmt = SFMT;
+		data->id = i;
+		TThreadsFactory::GetInstance()->CreateThread(wrapperFunction, data);
+		SFMT_jump(&SFMT, jump10_20);
+    }
+
+
+    /* Wait for all the propagations to finish */
+    TThreadsFactory::GetInstance()->WaitForAllThreads();
+
+
+    /* Send the end signal to writer */
+    write(gPipe[1], &gNullResult, sizeof(TResult));
+
+
+    /* Wait for the end of the writer */
+    pthread_join(writingThread, &ret);
+
+
+end2:
+    close(gPipe[0]);
+    close(gPipe[1]);
+end:
+    pthread_mutex_destroy(&gPipeLock);
+    pthread_mutex_destroy(&gTrackLock);
+    delete detector;
+    delete data;
 
     return 0;
 }
