@@ -90,6 +90,7 @@ class TAvalanche1D : public TAvalanche {
 	bool checkForExplosiveBehavior();
 	bool propagate();
 	void computeLongitudinalDiffusion();
+	void computeLongitudinalSCEffect();
 	bool avalanche();
 	inline double n_moy(const double& x);
 	double multiplicationRiegler(const double& x, const double& s);
@@ -165,7 +166,7 @@ class TAvalanche1D : public TAvalanche {
 	vector<double> fAlpha;
 	vector<double> fEta;
 	vector<double> fE;
-	double fEini;
+	double fEini, fVini;
 	
 	double fClusterDensity;
 	map<double,int> fClustersX, fClustersY, fClustersZ;

@@ -116,3 +116,5 @@ T sumVec(std::vector<T> vec){
 bool checkTimerExceededLimit(TTimer timer, double const& limit);
 
 void testRNG(std::string const& rng);
+
+bool almostEquals(double a, double b, double epsilon=0.001);

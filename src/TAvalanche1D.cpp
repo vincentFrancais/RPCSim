@@ -123,6 +123,7 @@ void TAvalanche1D::init() {
 		fE.at(i) = fDet->getElectricField()[0];
 	}
 	fEini = fE.at(0);
+	fVini = fVx.at(0);
 	
 	fThrCLT = 1.5e4;
 	fSpaceChargeLimit = 5.e7;
@@ -319,13 +320,13 @@ void TAvalanche1D::makeResultFile() {
 }
 
 void TAvalanche1D::simulateEvent(){
-	// check if avalanche has been initialised
+	/* check if avalanche has been initialised */
 	if ( !bAvalancheInitialised ){
 		cerr << "Error -- TAvalanche1D::simulateEvent -- Avalanche has not been initialised. Aborting" << endl<< endl;
 		exit(0);
 	}
 	
-	// if Space Charge Effect is enabled check if Ebar table has been computed
+	/* if Space Charge Effect is enabled check if Ebar table has been computed */
 	if ( bComputeSpaceChargeEffet && !bEbarComputed ){
 		cerr << "Error -- TAvalanche1D::simulateEvent -- No Ebar table found. Aborting simulation." << endl<< endl;
 		exit(0); 
@@ -589,7 +590,7 @@ void TAvalanche1D::computeLongitudinalDiffusion() {
 	fLongiDiffTimer.start();
 	
 	for(int iz=0; iz<iNstep; iz++){
-		if ( checkTimerExceededLimit(fTimer,fLongiDiffTimeLimit) or eAvalStatus == AVAL_LONGI_DIFF_TIME_LIMIT_EXCEEDED ) {
+		if ( checkTimerExceededLimit(fLongiDiffTimer,fLongiDiffTimeLimit) or eAvalStatus == AVAL_LONGI_DIFF_TIME_LIMIT_EXCEEDED ) {
 			eAvalStatus = AVAL_LONGI_DIFF_TIME_LIMIT_EXCEEDED;
 			break;
 		}
@@ -598,7 +599,7 @@ void TAvalanche1D::computeLongitudinalDiffusion() {
 		double sigma = fDet->getDiffusionCoefficients(fE.at(iz), 0, 0)[0] * sqrtDx;
 		fRandomNumberGenerated += fElecDetectorGrid.at(iz);
 		for(int n=0; n<fElecDetectorGrid.at(iz); n++){
-			if ( checkTimerExceededLimit(fTimer,fLongiDiffTimeLimit) ) {
+			if ( checkTimerExceededLimit(fLongiDiffTimer,fLongiDiffTimeLimit) ) {
 				eAvalStatus = AVAL_LONGI_DIFF_TIME_LIMIT_EXCEEDED;
 				break;
 			}
@@ -624,6 +625,46 @@ void TAvalanche1D::computeLongitudinalDiffusion() {
 	}
 
 	fElecDetectorGrid = newDetectorGrid;
+}
+
+void TAvalanche1D::computeLongitudinalSCEffect() {
+	vector<double> newDetectorGrid (iNstep,0);
+	bool modified = false;
+	double n, xsi, p_xsi;
+	
+	for (int z=0; z<iNstep; z++) {
+		n = fElecDetectorGrid.at(z);
+		if (n <= 1)
+			continue;
+		xsi = fVx.at(z)/fVini;
+		p_xsi = xsi - trunc(xsi);
+		/*	We use the almost equals function as comparison with floating point leads to errors du rounding-up */
+		if ( almostEquals(xsi, 1.) )
+			continue;
+			
+		/* if we reach this point, the electron grid will be modified.
+		 * So we put the flag modified to true.
+		*/
+		modified = true;
+		cout << z << " " << n << " " << xsi << " " << p_xsi << " " << z+trunc(xsi) << " " << z+1+trunc(xsi) <<  " " << trunc(p_xsi * n) << " " << n-trunc(p_xsi * n) << endl;
+		
+		/* The electrons have all drifted further than the anode, so we put it in the last bin
+		 * and will be added in the anode back in the avalanche() function. */
+		if (z+trunc(xsi) >= iNstep) 
+			newDetectorGrid.at(iNstep-1) += n;
+		 
+		else {
+			if ( z+1+trunc(xsi) >= iNstep )
+				newDetectorGrid.at(iNstep-1) += trunc(p_xsi * n);
+			else
+				newDetectorGrid.at(z+1+trunc(xsi)) += trunc(p_xsi * n);
+			
+			newDetectorGrid.at(z+trunc(xsi)) += n - trunc(p_xsi * n);
+		}
+	}
+	
+	if (modified)
+		fElecDetectorGrid = newDetectorGrid;
 }
 
 bool TAvalanche1D::checkForExplosiveBehavior() {
@@ -679,7 +720,7 @@ bool TAvalanche1D::avalanche() {
 		if ( !propagate() )
 			return false;
 		
-		// Empty the first bin after the first multplication procedure to avoid infinite elec creation
+		/* Empty the first bin after the first multplication procedure to avoid infinite elec creation */
 		if (iTimeStep == 1)
 			fElecDetectorGrid.at(0) = 0;
 		
@@ -691,12 +732,13 @@ bool TAvalanche1D::avalanche() {
 		}
 		
 		computeLongitudinalDiffusion();
+		//computeLongitudinalSCEffect();
 		if (eAvalStatus != AVAL_NO_ERROR)
 			return false;
 		
 		computeInducedSignal2();
 		
-		// Elecs in last bin has reached the anode, so we empty it
+		/*	Elecs in last bin has reached the anode, so we empty it */
 		if (fElecDetectorGrid.at(iNstep-1) > 0){
 			fNelecAnode += fElecDetectorGrid.at(iNstep-1);
 			fElecOnAnode.push_back( make_pair(fElecDetectorGrid.at(iNstep-1),iTimeStep*fDx) );

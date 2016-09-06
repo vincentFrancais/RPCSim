@@ -341,3 +341,7 @@ void testRNG(string const& rng) {
 		sfmt_out.close();
 	}
 }
+
+bool almostEquals(double a, double b, double epsilon) {
+    return std::abs(a - b) < epsilon;
+}
