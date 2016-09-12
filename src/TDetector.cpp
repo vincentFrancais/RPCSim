@@ -295,19 +295,19 @@ void TDetector::initialiseDetector(){
 		makeEbarTable();
 }
 
-double* TDetector::getTransportParameters(double Ex, double Ey, double Ez){
+vector<double> TDetector::getTransportParameters(double Ex, double Ey, double Ez){
 	//double alpha, eta, vx, vy, vz;
-	double* parameters = new double[5];
-	mGas->ElectronTownsend(Ex,Ey,Ez,0.,0.,0., parameters[0]);
-	mGas->ElectronAttachment(Ex,Ey,Ez,0.,0.,0., parameters[1]);
-	mGas->ElectronVelocity(Ex,Ey,Ez,0.,0.,0., parameters[2], parameters[3], parameters[4]);
+	vector<double> parameters (5,-1);
+	mGas->ElectronTownsend(Ex,Ey,Ez,0.,0.,0., parameters.at(0));
+	mGas->ElectronAttachment(Ex,Ey,Ez,0.,0.,0., parameters.at(1));
+	mGas->ElectronVelocity(Ex,Ey,Ez,0.,0.,0., parameters.at(2), parameters.at(3), parameters.at(4));
 
 	return parameters;
 
 }
 
-double* TDetector::getDiffusionCoefficients( double const& Ex, double const& Ey, double const& Ez ) {
-	double* coeff = new double[2];
+vector<double> TDetector::getDiffusionCoefficients( double const& Ex, double const& Ey, double const& Ez ) {
+	vector<double> coeff (2,-1);
 	mGas->ElectronDiffusion(Ex,Ey,Ez,0.,0.,0.,coeff[0],coeff[1]);
 	return coeff;
 }

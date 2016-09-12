@@ -117,8 +117,8 @@ class TDetector{
 	vector<double> getEbarVecTable(void) const {return fEbarVecTable;}
 	int getNstep(void) const	{return iNstep;}
 	double* getElectricField(void) {return fElectricField;}
-	double* getTransportParameters(double Ex, double Ey, double Ez);
-	double* getDiffusionCoefficients( double const& Ex, double const& Ey, double const& Ez );
+	vector<double> getTransportParameters(double Ex, double Ey, double Ez);
+	vector<double> getDiffusionCoefficients( double const& Ex, double const& Ey, double const& Ez );
 	Garfield::Sensor* getSensor(void) const	{return mSensor;}
 
 	vector<double> getEbarZarray(void) {return fEbarZarray;}

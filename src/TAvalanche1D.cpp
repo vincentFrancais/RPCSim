@@ -87,7 +87,7 @@ TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, int id) : TAvalanche
 TAvalanche1D::~TAvalanche1D() {
 	delete fRandRng;
 	delete fRandRngCLT;
-	delete fRandRngLongiDiff;
+	//delete fRandRngLongiDiff;
 	delete fRNG;
 }
 
@@ -791,10 +791,10 @@ void TAvalanche1D::computeSCEffect() {
 	
 	for(int z=0; z<iNstep; z++){
 		fE.at(z) = fEini + SCEField[z];
-		double* transportParams = fDet->getTransportParameters(fE[z],0.,0.);
-		fAlpha.at(z) = transportParams[0];
-		fEta.at(z) = transportParams[1];
-		fVx.at(z) = -1. * transportParams[2];
+		vector<double> transportParams = fDet->getTransportParameters(fE[z],0.,0.);
+		fAlpha.at(z) = transportParams.at(0);
+		fEta.at(z) = transportParams.at(1);
+		fVx.at(z) = -1. * transportParams.at(2);
 	}
 }
 
@@ -847,19 +847,52 @@ double TAvalanche1D::interpolateEbar(const double& z, const double& zp, const do
 	size_t izp1 = izp0+1;
 	size_t il1 = il0+1;
 	
-	double z0 = fEbarZarray[iz0], zp0 = fEbarZparray[izp0], l0 = fEbarLarray[il0];
-	double z1 = fEbarZarray[iz1], zp1 = fEbarZparray[izp1], l1 = fEbarLarray[il1];
+	double z0,z1,zp0,zp1,l0,l1;
+	
+	/* FIXME: the index can be greater than the size of fEbarLarray.
+	 * To avoid crash we decrement the index if necessary.
+	 * This is bad, ugly and bady-bad .... but temporary ....... I guess */
+	
+	if (il1 >= fEbarLarray.size())
+		il1--;
+	z0 = fEbarZarray.at(iz0); zp0 = fEbarZparray.at(izp0); l0 = fEbarLarray.at(il0);
+	z1 = fEbarZarray.at(iz1); zp1 = fEbarZparray.at(izp1); l1 = fEbarLarray.at(il1);
+	
 	
 	double zd = (z - z0)/(z1 - z0);
 	double zpd = (zp - zp0)/(zp1 - zp0);
 	double ld = (l - l0)/(l1 - l0);
+	double c00, c10, c01, c11;
+	size_t index;
 	
+	/* FIXME: the index3D can be greater than the size of EbarTable.
+	 * To avoid crash we use the index variable and decrement if necessary
+	 * This is bad, ugly and bady-bad .... but temporary ....... I guess */
+	 
 	//interpolate along z
-	double c00 = fEbarTable[getIndex3D(iz0,izp0,il0)]*(1-zd) + fEbarTable[getIndex3D(iz1,izp0,il0)]*zd;
-	double c10 = fEbarTable[getIndex3D(iz0,izp1,il0)]*(1-zd) + fEbarTable[getIndex3D(iz1,izp1,il0)]*zd;
-	double c01 = fEbarTable[getIndex3D(iz0,izp0,il1)]*(1-zd) + fEbarTable[getIndex3D(iz1,izp0,il1)]*zd;
-	double c11 = fEbarTable[getIndex3D(iz0,izp1,il1)]*(1-zd) + fEbarTable[getIndex3D(iz1,izp1,il1)]*zd;
-	
+	index = getIndex3D(iz1,izp1,il1);
+	if ( index >= fEbarTable.size())
+		index--;
+	c00 = fEbarTable.at(getIndex3D(iz0,izp0,il0))*(1-zd) + fEbarTable.at(getIndex3D(iz1,izp0,il0))*zd;
+	c10 = fEbarTable.at(getIndex3D(iz0,izp1,il0))*(1-zd) + fEbarTable.at(getIndex3D(iz1,izp1,il0))*zd;
+	c01 = fEbarTable.at(getIndex3D(iz0,izp0,il1))*(1-zd) + fEbarTable.at(getIndex3D(iz1,izp0,il1))*zd;
+	c11 = fEbarTable.at(getIndex3D(iz0,izp1,il1))*(1-zd) + fEbarTable.at(index)*zd;
+
+	/*
+	catch (const std::out_of_range& oor) {
+		std::cerr << "Out of Range error: " << oor.what() << '\n';
+		cerr << getIndex3D(iz0,izp0,il0) << endl;
+		cerr << getIndex3D(iz0,izp1,il0) << endl;
+		cerr << getIndex3D(iz0,izp0,il1) << endl;
+		cerr << getIndex3D(iz0,izp1,il1) << endl;
+		cerr << getIndex3D(iz1,izp0,il0) << endl;
+		cerr << getIndex3D(iz1,izp1,il0) << endl;
+		cerr << getIndex3D(iz1,izp0,il1) << endl;
+		cerr << getIndex3D(iz1,izp1,il1) << endl;
+		cerr << fEbarTable.size() << endl;
+		exit(0);
+	}
+	*/
 	//interpolate along zp
 	double c0 = c00*(1-zpd) + c10*zpd;
 	double c1 = c01*(1-zpd) + c11*zpd;
