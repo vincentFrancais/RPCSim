@@ -19,10 +19,6 @@
 
 using namespace std;
 
-//double cm = 0.01;
-extern double cm;
-
-
 TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, sfmt_t sfmt, const int& id) : TAvalanche() {
 	fDet = det;
 	fConfig = config;
@@ -638,13 +634,12 @@ void TAvalanche1D::computeLongitudinalSCEffect() {
 			continue;
 		xsi = fVx.at(z)/fVini;
 		p_xsi = xsi - trunc(xsi);
-		/*	We use the almost equals function as comparison with floating point leads to errors du rounding-up */
+		/*	We use the almost equals function as comparison with floating point leads to rounding-up errors */
 		if ( almostEquals(xsi, 1.) )
 			continue;
 			
 		/* if we reach this point, the electron grid will be modified.
-		 * So we put the flag modified to true.
-		*/
+		 * So we put the flag modified to true. */
 		modified = true;
 		cout << z << " " << n << " " << xsi << " " << p_xsi << " " << z+trunc(xsi) << " " << z+1+trunc(xsi) <<  " " << trunc(p_xsi * n) << " " << n-trunc(p_xsi * n) << endl;
 		
@@ -782,10 +777,10 @@ void TAvalanche1D::computeSCEffect() {
 	for(int z=0; z<iNstep; z++){
 		tmp = 0;
 		for(int zp=0; zp<iNstep; zp++){
-			tmp += -(-fElecDetectorGrid[zp] -fNegIonDetectorGrid[zp] +fPosIonDetectorGrid[zp]) * interpolateEbar((z)*fDx*cm, (zp)*fDx*cm, iTimeStep*fDx);
+			tmp += -(-fElecDetectorGrid[zp] -fNegIonDetectorGrid[zp] +fPosIonDetectorGrid[zp]) * interpolateEbar((z)*fDx*Constants::cm, (zp)*fDx*Constants::cm, iTimeStep*fDx);
 		}
 		for(uint i=0; i<fElecOnAnode.size(); i++)
-			tmp += (fElecOnAnode[i].first) * interpolateEbar((z)*fDx*cm, fGapWidth*cm, fElecOnAnode[i].second);
+			tmp += (fElecOnAnode[i].first) * interpolateEbar((z)*fDx*Constants::cm, fGapWidth*Constants::cm, fElecOnAnode[i].second);
 		SCEField[z] = tmp;
 	}
 	
