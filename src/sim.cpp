@@ -168,6 +168,7 @@ int main(int argc, char** argv) {
 	* */
 	
 	TDetector* detector = new TDetector(config);
+	detector->writeGasTransportParameters();
 	if (config.computeEfficiency and argc > 2){
 		detector->setElectricField( atof(argv[2])*1e3, 0, 0 );
 		cout << "====== Efficiency simulation run, HV at " << argv[2] << " ======" << endl;
@@ -176,8 +177,8 @@ int main(int argc, char** argv) {
 	
 	
 	// Functions to produce data on primary inisation
-	//TAvalanche::computeClusterDensity(detector,"muon",6e7,1.5e10,600);
-	//TAvalanche::computeElectronsProduction(detector,"muon",5.e9,6000);
+	TAvalanche::computeClusterDensity(detector,"muon",6e7,1.5e10,600);
+	TAvalanche::computeElectronsProduction(detector,"muon",5.e9,60000);
 	
 	/* Here we define a Magboltz Gas in order to print its photo-absorption CS through HEED */
 	//MediumMagboltz* gas = new MediumMagboltz();
@@ -188,8 +189,10 @@ int main(int argc, char** argv) {
 	//TDetector::printPACSData(gas);
 	//delete gas;
 	
-	if (config.noAvalanche)
+	if (config.noAvalanche){
+		delete detector;
 		return 0;
+	}
 
 	
 	
