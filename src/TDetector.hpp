@@ -51,19 +51,9 @@ using namespace std;
 double integrand(double x, void * params);
 double Ebar(double x, void * params);
 
-/*
-struct DetectorGeometry{
-	double gapWidth;
-	double resistiveLayersWidth[2];
-	double anodeWidth, anodePermittivity, cathodeWidth, cathodePermittivity;
-	double relativePermittivity[2];
-};
-*/
-
 class TDetector{
 	
 	public:
-	//TDetector(const DetectorGeometry& geometry, const TConfig& config, const int& nStep = 500);
 	TDetector(const TConfig& config);
 	
 	~TDetector();
@@ -133,7 +123,6 @@ class TDetector{
 	int iNstep;
 	TConfig fConfig;
 	
-	//DetectorGeometry fGeometry;
 	double fDt;
 	double fDx;
 	

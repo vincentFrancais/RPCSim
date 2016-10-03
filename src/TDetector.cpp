@@ -21,20 +21,6 @@
 using namespace std;
 static TDetector* tgsl = 0;
 
-//extern double cm;
-
-/*
-TDetector::TDetector(const DetectorGeometry& geometry, const TConfig& config, const int& nStep){
-	fConfig = config;
-	iNstep = nStep;
-	fGeometry = geometry;
-	iEbarTableSize = 15;
-
-	bHasEbarTable = false;
-	bGasLoaded = false;
-	bDetectorInitialised = false;
-}
-* */
 
 TDetector::TDetector(const TConfig& config){
 	fConfig = config;
@@ -151,17 +137,6 @@ void TDetector::setGasMixture() {
 	mGas->SetTemperature(fConfig.gasTemperature);
 	mGas->SetPressure(fConfig.gasPressure);
 	
-//	int nComponents = mGas->GetNumberOfComponents();
-//	vector< pair<string,double> > composition;
-//	for(int i=0; i<nComponents; i++) {
-//		double fraction;
-//		string label;
-//		mGas->GetComponent(i,label,fraction);
-//		composition.push_back( make_pair(label,fraction) );
-//	}
-
-//	for(vector< pair<string,double> >::iterator it = composition.begin(); it != composition.end(); it++)	
-//		mGasTableName += it->first + "-" + toString(it->second) + "_";
 	mGasTableName = getGasName();
 	mGasTableName += "temp-" + toString(mGas->GetTemperature()) + "_pres-" + toString(mGas->GetPressure()) + ".gas";
 	
@@ -185,17 +160,6 @@ void TDetector::setGasMixture(Garfield::MediumMagboltz* gas){
 //	}
 	
 	mGas = gas;
-//	int nComponents = mGas->GetNumberOfComponents();
-//	vector< pair<string,double> > composition;
-//	for(int i=0; i<nComponents; i++) {
-//		double fraction;
-//		string label;
-//		mGas->GetComponent(i,label,fraction);
-//		composition.push_back( make_pair(label,fraction) );
-//	}
-
-//	for(vector< pair<string,double> >::iterator it = composition.begin(); it != composition.end(); it++)	
-//		mGasTableName += it->first + "-" + toString(it->second) + "_";
 	mGasTableName = getGasName();
 	mGasTableName += "temp-" + toString(mGas->GetTemperature()) + "_pres-" + toString(mGas->GetPressure()) + ".gas";
 	
@@ -366,10 +330,7 @@ double TDetector::R(const double& k, const double& z, const double& zp){
 }
 
 double TDetector::D(const double& k){
-	/*double q = fGeometry.resistiveLayersWidth[0] * Constants::cm;	// cathode
-	double g = fGeometry.gapWidth * Constants::cm;
-	double p = (g + fGeometry.resistiveLayersWidth[1]) * Constants::cm;	// anode
-*/
+
 	double q = fConfig.cathodeWidth * Constants::cm; //cathode
 	double g = fConfig.gapWidth * Constants::cm;
 	double p = (g + fConfig.anodeWidth) * Constants::cm; //anode
