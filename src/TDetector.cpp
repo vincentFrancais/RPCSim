@@ -89,6 +89,29 @@ void TDetector::printPACSData(Garfield::MediumMagboltz* gas) {
 	delete box;
 }
 
+void TDetector::printPACSData() {
+	/* Print PhotoAbsorption Cross Section data to txt file heed_pacs.txt (the file name is 
+	 * hardcoded in heed and cannot be changed). 
+	 * Use the gas defined in the config file (initialised with TDetecor) 
+	 */
+	 
+	cout << "Printing PACS data to file heed_pacs.txt" << endl;
+	cout.setstate(ios_base::failbit);	// To avoid unecessary Garfield printing. 
+	
+	Garfield::TrackHeed* track = new Garfield::TrackHeed;
+	track->EnablePhotoAbsorptionCrossSectionOutput(); // <=== enable the printing of PACS data
+	
+	//Dummy track
+	track->SetSensor(mSensor);
+	track->SetParticle("muon");
+	track->SetMomentum(5.e9);
+	track->NewTrack(0, 0, 0, 0, 1, 0, 0);	// <=== printing is done here!
+	
+	cout.clear();
+	
+	delete track;
+}
+
 string TDetector::getGasName() const {
 	string gasName = "";
 	int nComponents = mGas->GetNumberOfComponents();
@@ -149,6 +172,8 @@ void TDetector::setGasMixture() {
 
 	fTemperature = mGas->GetTemperature();
 	fPressure = mGas->GetPressure();
+	
+	writeGasTransportParameters();
 	
 	bGasLoaded = true;
 }
@@ -255,7 +280,8 @@ void TDetector::initialiseDetector(){
 	
 	bDetectorInitialised = true;
 	
-	if(!fConfig.noAvalanche)
+	//cout << (1 or 0) << endl;
+	if( !(fConfig.noAvalanche or fConfig.onlyMult) )
 		makeEbarTable();
 }
 

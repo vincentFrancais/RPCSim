@@ -18,6 +18,8 @@ TConfig::TConfig (string file) {
 	electronProduction = false;
 	noAvalanche = false;
 	computeEfficiency = false;
+	useUUIDSeed = false;
+	onlyMult = false;
 	
 	XMLDocument doc;
 	if ( doc.LoadFile( file.c_str() ) != XML_SUCCESS ){
@@ -152,7 +154,14 @@ TConfig::TConfig (string file) {
 	XMLElement* effElem = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "Efficiency" ).ToElement();
 	if ( effElem )
 		effElem->QueryBoolText( &computeEfficiency );
-	
+		
+	XMLElement* UUIDElement = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "UUIDSeed" ).ToElement();
+	if ( UUIDElement )
+		UUIDElement->QueryBoolText( &useUUIDSeed );
+		
+	XMLElement* OnlyMultElement = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "OnlyMultiplication" ).ToElement();
+	if ( OnlyMultElement )
+		OnlyMultElement->QueryBoolText( &onlyMult );
 }
 
 void TConfig::print () {
@@ -192,11 +201,16 @@ void TConfig::print () {
 			cout << seeds.at(i) << "  ";
 		cout << endl;  
 	}
+	if (useUUIDSeed)
+		cout << "\t Random seed" << endl;
 	if (singleCluster) {
 		cout << "\t single cluster at " << x0 << " containing " << n0 << " electrons" << endl; 
 	}
 	if (noAvalanche) {
 		cout << "\t No avalanche simulation" << endl; 
+	}
+	if (onlyMult) {
+		cout << "\t Only multiplication is simulated. Every other processes are deactivated." << endl; 
 	}
 	if (computeEfficiency) {
 		cout << "\t Efficiency runs" << endl; 

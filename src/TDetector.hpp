@@ -67,6 +67,7 @@ class TDetector{
 	void writeGasTransportParameters();
 	
 	static void printPACSData(Garfield::MediumMagboltz* gas);
+	void printPACSData();
 	
 	void setGarfieldSeed( const int& s );
 	

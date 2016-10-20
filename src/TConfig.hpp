@@ -61,6 +61,8 @@ struct TConfig {
 	bool electronProduction;
 	bool noAvalanche;
 	bool computeEfficiency;
+	bool useUUIDSeed;
+	bool onlyMult;
 
 	//TConfig() : nResisLayers(0), nGases(0), outFile("out/"), generator("SFMT"), garfieldSeed(-1) { }
 };

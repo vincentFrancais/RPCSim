@@ -285,7 +285,7 @@ double Gaus(double mean, double sigma, TRandomEngine* stream){
    return mean + sigma * result;
 }
 
-size_t getUUID() {
+uint getUUID() {
 	uint t = 0;
 	
 	ifstream f;

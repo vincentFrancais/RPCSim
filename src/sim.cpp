@@ -142,7 +142,15 @@ int main(int argc, char** argv) {
 	
 	/* Init the SFMT status */
 	sfmt_t SFMT;
-	sfmt_init_gen_rand(&SFMT, 4321);
+	if (config.seeds.size() > 0 and !config.useUUIDSeed) {		
+		cout << "Init SFMT generator with seed: " << config.seeds.at(0) << endl;
+		sfmt_init_gen_rand(&SFMT, config.seeds.at(0));
+	}
+	else {
+		uint seed = getUUID();
+		cout << "Init SFMT generator with random seed: " << seed << endl;
+		sfmt_init_gen_rand(&SFMT, seed);
+	}
     
     /* Initialize our pipe lock */
     pthread_mutex_init(&gPipeLock, 0);
@@ -158,14 +166,6 @@ int main(int argc, char** argv) {
     
     
     /* Init our detector */
-	/*
-	DetectorGeometry geom;
-	geom.gapWidth = 0.12;	//0.2; cm	//CALICE 0.12
-	geom.resistiveLayersWidth[0] = 0.11;	//0.2;	//CALICE 0.11
-	geom.resistiveLayersWidth[1] = 0.07;	//0.2;	//CALICE 0.07
-	geom.relativePermittivity[0] = 7.;	//10.;	//CALICE 7
-	geom.relativePermittivity[1] = 7.;	//10.;	//CALICE 7
-	* */
 	
 	TDetector* detector = new TDetector(config);
 	detector->writeGasTransportParameters();
@@ -187,6 +187,7 @@ int main(int argc, char** argv) {
 	//gas->SetPressure(760);
 	//detector->setGasMixture(gas);
 	//TDetector::printPACSData(gas);
+	//detector->printPACSData();
 	//delete gas;
 	
 	if (config.noAvalanche){

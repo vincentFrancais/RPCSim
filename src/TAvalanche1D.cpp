@@ -23,13 +23,16 @@ TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, sfmt_t sfmt, const i
 	fDet = det;
 	fConfig = config;
 	
-	/* Initialise RNGs */
-	if (fConfig.generator == "SFMT") {
+	/* Initialise RNGs
+	 * The generator used for longitudinal diffusion is defined in the config file.
+	 * For avalanche procedure we use RNGStreams has it is very handy to handle in multithreaded env. */
+	 
+	/* TODO: Change that so one can choose the generator and its initialisation for each component of the sim! */
+	fRandRng = new TRandomEngineMT(getUUID());
+	fRandRngCLT = new TRandomEngineMT(getUUID());
+		
+	if (fConfig.generator == "SFMT") 
 		fRNG = new TRandomEngineSFMT(sfmt);
-		fRandRng = new TRandomEngineMRG();
-		fRandRngCLT = new TRandomEngineMRG();
-	}
-	
 	else if (fConfig.generator == "MT") {
 		int MTstatus = (id*100/config.nEvents)+1;
 		string filename;
@@ -43,21 +46,17 @@ TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, sfmt_t sfmt, const i
 		cout << id << " " << filename << endl;
 		
 		fRNG = new TRandomEngineMT(filename);
-		fRandRng = new TRandomEngineMRG();
-		fRandRngCLT = new TRandomEngineMRG();
 	}
-	
-	else if (fConfig.generator == "MRG") {
+	else if (fConfig.generator == "MRG") 
 		fRNG = new TRandomEngineMRG();
-		fRandRng = new TRandomEngineMRG();
-		fRandRngCLT = new TRandomEngineMRG();
-	}
-	
-	else {
+	else 
 		fRNG = new TRandomEngineMRG();
-		fRandRng = new TRandomEngineMRG();
-		fRandRngCLT = new TRandomEngineMRG();
-	}
+	
+	
+	cout << "Avalanche multiplication generator: " << fRandRng->Generator() << endl;
+	cout << "Avalanche multiplication CLT generator: " << fRandRngCLT->Generator() << endl;
+	cout << "Longitudinal diffusion generator: " << fRNG->Generator() << endl;
+	cout << endl;
 	
 	/* Call to initialisation function */
 	init();
@@ -147,6 +146,7 @@ void TAvalanche1D::init() {
 	iVerbosityLevel = fConfig.verbosityLevel;
 	
 	bDummyRun = false;
+	bOnlyMultiplicationAvalanche = fConfig.onlyMult;
 	
 	fLongiDiffTimeLimit = 1400;
 	
@@ -323,7 +323,7 @@ void TAvalanche1D::simulateEvent(){
 	}
 	
 	/* if Space Charge Effect is enabled check if Ebar table has been computed */
-	if ( bComputeSpaceChargeEffet && !bEbarComputed ){
+	if ( bComputeSpaceChargeEffet && !bEbarComputed && !bOnlyMultiplicationAvalanche ){
 		cerr << "Error -- TAvalanche1D::simulateEvent -- No Ebar table found. Aborting simulation." << endl<< endl;
 		exit(0); 
 	}
@@ -709,7 +709,7 @@ bool TAvalanche1D::avalanche() {
 	
 	while(true){
 		
-		if ( bComputeSpaceChargeEffet )
+		if ( bComputeSpaceChargeEffet and !bOnlyMultiplicationAvalanche )
 			computeSCEffect();
 			
 		if ( !propagate() )
@@ -726,8 +726,11 @@ bool TAvalanche1D::avalanche() {
 			}
 		}
 		
-		computeLongitudinalDiffusion();
-		//computeLongitudinalSCEffect();
+		if ( !bOnlyMultiplicationAvalanche ) {
+			computeLongitudinalDiffusion();
+			//computeLongitudinalSCEffect();
+		}
+		
 		if (eAvalStatus != AVAL_NO_ERROR)
 			return false;
 		
@@ -740,7 +743,7 @@ bool TAvalanche1D::avalanche() {
 			fElecDetectorGrid.at(iNstep-1) = 0;
 		}
 		
-		if (fNElectrons[iTimeStep] == 0)
+		if (fNElectrons.at(iTimeStep) == 0)
 			break;
 		
 		if (bSnapshots)

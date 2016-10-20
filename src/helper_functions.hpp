@@ -70,7 +70,7 @@ std::string currentDateTime();
 
 uint64_t gettid();
 
-size_t getUUID();
+uint getUUID();
 
 #if defined(PYTHON)
 	int call_python_fun(std::string funName, std::vector<double> args, double& result);
