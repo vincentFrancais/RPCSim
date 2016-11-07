@@ -36,6 +36,10 @@
 #include "Sensor.hh"
 #include "TrackHeed.hh"
 #include "Random.hh"
+#include "integration.hpp"
+
+#include "gsl/gsl_sf_bessel.h"
+#include "gsl/gsl_math.h"
 
 #if defined( _PYTHON ) || defined( PYTHON ) || defined (__PYTHON__)
 #   ifndef PYTHON
@@ -75,6 +79,7 @@ class TDetector{
 	double D(const double& k);
 	double SCPotential(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp);
 	double SCFieldSimplified(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp);
+	double SCFieldSimplified2(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp);
 	double SCField(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp);
 	
 	inline double RadialChargeDistribution(const double& r, const double& l);
@@ -83,6 +88,7 @@ class TDetector{
 		double computeEbar_Python(const double& z, const double& l, const double& zp);
 	#endif
 	void makeEbarTable( bool const& binary=true );
+	void printEbarTable();
 	
 	//TConfig getConfig(void) const {return fConfig;}
 	//double getGapWidth(void) const	{return fGeometry.gapWidth;}
@@ -101,7 +107,6 @@ class TDetector{
 	double getK(void) const	{return k;}
 	int getEbarTableSize(void) const {return iEbarTableSize;}
 	string getEbarTableHexName(void) const {return fEbarTableHexName;}
-	
 	
 	bool hasEBarTable(void) const {return bHasEbarTable;}
 

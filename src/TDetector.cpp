@@ -13,9 +13,10 @@
 #include "integration.hpp"
 #include "TConstants.hpp"
 
-#include "gsl/gsl_sf_bessel.h"
+
+//#include "gsl/gsl_sf_bessel.h"
 #include <gsl/gsl_integration.h>
-#include "gsl/gsl_math.h"
+//#include "gsl/gsl_math.h"
 
 
 using namespace std;
@@ -279,7 +280,7 @@ void TDetector::initialiseDetector(){
 	delete comp;*/
 	
 	bDetectorInitialised = true;
-	
+	plotSC();
 	//cout << (1 or 0) << endl;
 	if( !(fConfig.noAvalanche or fConfig.onlyMult) )
 		makeEbarTable();
@@ -335,10 +336,12 @@ void TDetector::setGarfieldSeed( const int& s ) {
 }
 
 double TDetector::R(const double& k, const double& z, const double& zp){
+	/*	q,g and p have to be in mm in order to have correct values (From C. Lippmann, PhD Thesis, 2003, figure 2.11)
+	*	everything is defined in cm in the config */
 	//double q = fGeometry.resistiveLayersWidth[0] * Constants::cm; //cathode
-	double q = fConfig.cathodeWidth * Constants::cm; //cathode
-	double g = fConfig.gapWidth * Constants::cm;
-	double p = (g + fConfig.anodeWidth) * Constants::cm; //anode
+	double q = fConfig.cathodeWidth *10; //cathode
+	double g = fConfig.gapWidth *10;
+	double p = g + fConfig.anodeWidth *10; //anode
 	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
 	double eps1 = fConfig.cathodePermittivity * eps0; //cathode
 	double eps3 = fConfig.anodePermittivity * eps0;
@@ -356,11 +359,12 @@ double TDetector::R(const double& k, const double& z, const double& zp){
 }
 
 double TDetector::D(const double& k){
-
-	double q = fConfig.cathodeWidth * Constants::cm; //cathode
-	double g = fConfig.gapWidth * Constants::cm;
-	double p = (g + fConfig.anodeWidth) * Constants::cm; //anode
-	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
+	/*	q,g and p have to be in mm in order to have correct values (From C. Lippmann, PhD Thesis, 2003, figure 2.11) 
+	*	everything is defined in cm in the config */
+	double q = fConfig.cathodeWidth	*10; //cathode
+	double g = fConfig.gapWidth *10;
+	double p = g + fConfig.anodeWidth *10; //anode
+	double eps0 = Constants::VacuumPermittivity;
 	double eps1 = fConfig.cathodePermittivity * eps0; //cathode
 	double eps3 = fConfig.anodePermittivity * eps0;
 	double eps2 = eps0;
@@ -372,9 +376,12 @@ double TDetector::D(const double& k){
 }
 
 double integrand(double x, void * params){
-	//x == k
+	//x == kappa
+	/* Everything here has to be in mm ! */ /* So it seems ... */
 	double* param = reinterpret_cast<double*> (params); //[P,z,zp]
-	return gsl_sf_bessel_J0(x*param[0]) * tgsl->R(x,param[1],param[2])/tgsl->D(x);
+	//cout << param[0] << " " << param[1] << " " << param[2] << endl;
+	//return gsl_sf_bessel_J0(x*param[0]) * tgsl->R(x,param[1],param[2])/tgsl->D(x);
+	return bessel_J0(x*param[0]) * tgsl->R(x,param[1],param[2])/tgsl->D(x);
 }
 
 double TDetector::SCFieldSimplified(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
@@ -391,44 +398,80 @@ double TDetector::SCFieldSimplified(const double& r, const double& phi, const do
 
 }
 
-double TDetector::SCField(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
-	double h = 0.001 * Constants::cm;
+double TDetector::SCFieldSimplified2(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
+	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
+	double g = fConfig.gapWidth * Constants::cm;
+	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
+	double eps1 = fConfig.cathodePermittivity * eps0; //cathode
+	double eps3 = fConfig.anodePermittivity * eps0;
+	double eps2 = eps0;
 
-	double m1 = ( SCPotential(r,phi,z+h,rp,phip,zp) - SCPotential(r,phi,z-h,rp,phip,zp) ) / (2*h);
+	double P2 = r*r - 2*r*rp*cos(phi-phip) + rp*rp;
+
+	return ( e0/(4*Constants::Pi*eps2) ) * (   ( (z-zp)/(pow(P2 + (z-zp)*(z-zp),1.5)) )  -  ( ((eps2-eps3)/(eps2+eps3))*(2*g-z-zp)/(pow(P2+(2*g-z-zp)*(2*g-z-zp),1.5)) ) - ( ((eps1-eps2)/(eps1+eps2))*(z+zp)/(pow(P2+(z+zp)*(z+zp),1.5)) )     );
+
+}
+
+double TDetector::SCField(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
+	double h = 0.00001 * Constants::mm;
+	return -1. * (SCPotential(r,phi,z+h,rp,phip,zp)-SCPotential(r,phi,z,rp,phip,zp))/h;
+	
+	//return -1. * ( SCPotential(r,phi,z+h,rp,phip,zp) - SCPotential(r,phi,z-h,rp,phip,zp) ) / (2*h);
+	/*double m1 = ( SCPotential(r,phi,z+h,rp,phip,zp) - SCPotential(r,phi,z-h,rp,phip,zp) ) / (2*h);
 	double m2 = ( SCPotential(r,phi,z+2*h,rp,phip,zp) - SCPotential(r,phi,z-2*h,rp,phip,zp) ) / (4*h);
 	double m3 = ( SCPotential(r,phi,z+3*h,rp,phip,zp) - SCPotential(r,phi,z-3*h,rp,phip,zp) ) / (6*h);
 
-	double deriv = (1.5*m1 - (3./5.)*m2 + 0.1*m3);
+	double deriv = (1.5*m1 - 0.6*m2 + 0.1*m3);
 
-	return -1. * deriv;
+	return -1. * deriv;*/
 }
 
 double TDetector::SCPotential(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp){
+	/*	Ok! So in order to have a proper result, the parameters has to be parsed in m !	
+	 *	Then P, z and zp are parsed to the integrand function for correction term in mm! */
 	if( tgsl != this )
 		tgsl = this;
 
     double P = sqrt(r*r - 2*r*rp*cos(phi-phip) + rp*rp);
 
-    gsl_integration_workspace * w = gsl_integration_workspace_alloc (4000);
-    double result, error;
-    double funParams[3] = {P,z,zp};
-    gsl_function F;
+  //  gsl_integration_workspace * w = gsl_integration_workspace_alloc (4000);
+   // double result, error;
+   
+   /*	Parameters have to be converted in mm	*/
+    double funParams[3] = {P*1000,z*1000,zp*1000};
+   /* gsl_function F;
 	F.function = &integrand;
 	F.params = &funParams;
 	gsl_integration_qagiu (&F, 0., 1.e-2, 1e-7, 4000, w, &result, &error);
-	gsl_integration_workspace_free (w);
+	gsl_integration_workspace_free (w);*/
+	
+	Rosetta::GaussLegendreQuadrature<5> gl5;
+	double corr = gl5.integrate_iu(0, integrand, funParams);
+	double corrTerm = 0.;
+	
+	//ofstream data("out/corrTerm.dat", ios::out | std::ios::app);
 
-    double Q = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
-	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
+    double Q = Constants::ElectronCharge;
+	double eps0 = Constants::VacuumPermittivity;
     double eps1 = fConfig.cathodePermittivity * eps0; //cathode
 	double eps3 = fConfig.anodePermittivity * eps0;
 	double eps2 = eps0;
 	double g = fConfig.gapWidth * Constants::cm;
-
-    double pot = ( Q/(4*Constants::Pi*eps2) ) * ( (1./(sqrt(P*P+(z-zp)*(z-zp)))) - ((eps1-eps2)/((eps1+eps2)*sqrt(P*P+(z+zp)*(z+zp)))) - ((eps3-eps2)/((eps3+eps2)*sqrt(P*P+(2*g-z-zp)*(2*g-z-zp)))) +
-                                  (1./((eps1+eps2)*(eps2+eps3))) * result );
-
-    return pot;
+	corrTerm = ( Q/(4*Constants::Pi*eps2) ) *  (1./((eps1+eps2)*(eps2+eps3))) * corr;
+	
+	double pot1,pot2,pot3 = 0.;
+	pot1 = ( Q/(4*Constants::Pi*eps2) ) * (1./(sqrt(P*P+(z-zp)*(z-zp))));	/* Free charge term */
+	pot2 = ( Q/(4*Constants::Pi*eps2) ) * ((eps1-eps2)/((eps1+eps2)*sqrt(P*P+(z+zp)*(z+zp))));	/* Mirror charge (-z') term */
+	pot3 = ( Q/(4*Constants::Pi*eps2) ) * ((eps3-eps2)/((eps3+eps2)*sqrt(P*P+(2*g-z-zp)*(2*g-z-zp))));	/* Mirror charge (g-z') term */
+    //double pot = ( Q/(4*Constants::Pi*eps2) ) * ( (1./(sqrt(P*P+(z-zp)*(z-zp)))) - ((eps1-eps2)/((eps1+eps2)*sqrt(P*P+(z+zp)*(z+zp)))) - ((eps3-eps2)/((eps3+eps2)*sqrt(P*P+(2*g-z-zp)*(2*g-z-zp)))) +
+                                //  (1./((eps1+eps2)*(eps2+eps3))) * 0. );
+	
+	//cout << corrTerm << endl;
+	
+	/*	The correction term needs to be multplied by 1e3 to output correct value ... Why ? that's a mystery ...	*/
+	//data << pot1 << "\t" << -pot2 << "\t" << -pot3 << "\t" << corrTerm*1000. << endl;
+	//data.close();
+    return pot1 - pot2 - pot3 + corrTerm*1000.;
 }
 
 inline double TDetector::RadialChargeDistribution(const double& r, const double& l){
@@ -439,28 +482,41 @@ double Ebar(double x, void * params){
 	// x == rp
 
 	double* param = reinterpret_cast<double*> (params); //[z,l,zp]
-	// RadialDistrib en cm-2, rp*drp en cm2, SCField en V/cm. rp doit etre en m dans les params de SCField
-	double res =  tgsl->RadialChargeDistribution(x,param[1]) * tgsl->SCField(0.,0.,param[0],x*Constants::cm,0.,param[2])*0.01 * x;
+	//cout << x << "\t" << param[0] << "\t" << param[1] << "\t" << param[2] << endl;
+	/*	RadialChargeDistribution return a value in cm^2. SCField a value in V/m.	*/
+	double res =  tgsl->RadialChargeDistribution(x,param[1]) * tgsl->SCFieldSimplified2(0.,0.,param[0],x,0.,param[2])*0.01 * x;
 	return res;
 }
 
 double TDetector::computeEbar(const double& z, const double& l, const double& zp){
+	/*	Z and Zp in m. L in cm.	*/
 	if( tgsl != this )
 		tgsl = this;
+	
+	bool gl = false;
+	
+	if (gl) {
+		double funParams[3] = {z,l,zp};
+		Rosetta::GaussLegendreQuadrature<90> gl5;
+		//cout << z << "\t" << zp << "\t" << l << endl;
+		return gl5.integrate_iu(0., Ebar, funParams);
+	}
+	
+	else {
+		gsl_integration_workspace * w = gsl_integration_workspace_alloc (10000);
+		double result, error;
+		double funParams[3] = {z,l,zp};
+		gsl_function F;
+		F.function = &Ebar;
+		F.params = &funParams;
 
-	gsl_integration_workspace * w = gsl_integration_workspace_alloc (3000);
-    double result, error;
-    double funParams[3] = {z,l,zp};
-    gsl_function F;
-	F.function = &Ebar;
-	F.params = &funParams;
+		//gsl_integration_qag (&F, 0., 5*sqrt(sigma2), 1e-10, 1e-7, 3000, 3, w, &result, &error);
 
-	//gsl_integration_qag (&F, 0., 5*sqrt(sigma2), 1e-10, 1e-7, 3000, 3, w, &result, &error);
+		gsl_integration_qagiu (&F, 0., 1.e-4, 1e-7, 10000, w, &result, &error);
+		gsl_integration_workspace_free (w);
 
-	gsl_integration_qagiu (&F, 0., 1.e-1, 1e-7, 3000, w, &result, &error);
-	gsl_integration_workspace_free (w);
-
-	return result;
+		return result;
+	}
 }
 
 #if defined(PYTHON)
@@ -503,6 +559,7 @@ void TDetector::makeEbarTable( bool const& binary ){
 	string hexFileName = toString( hash(fileName) );
 	cout << "Hash representation: " << hexFileName << endl;
 	
+	/*	z and zp in m, l in cm.	*/
 	double zStep = fConfig.gapWidth * Constants::cm / (n-1), zpStep = fConfig.gapWidth * Constants::cm / (n-1), lStep = iNstep*fDx / (n);
 	fEbarLarray = vector<double>(n,0.);
 	fEbarZarray = vector<double>(n,0.);
@@ -532,7 +589,7 @@ void TDetector::makeEbarTable( bool const& binary ){
 				i++;
 			}
 		}
-		inf.read(reinterpret_cast<char*>(&fEbarVecTable[0]), fEbarVecTable.size() * sizeof(fEbarVecTable[0]));
+		//inf.read(reinterpret_cast<char*>(&fEbarVecTable[0]), fEbarVecTable.size() * sizeof(fEbarVecTable[0]));
 		
 		if ( std::accumulate(fEbarVecTable.begin(),fEbarVecTable.end(),0.) == 0 ) {
 			cerr << "Error while loading Ebar table." << endl;
@@ -541,6 +598,7 @@ void TDetector::makeEbarTable( bool const& binary ){
 		
 		fEbarTableHexName = hexFileName;
 		bHasEbarTable = true;
+		printEbarTable();
 		return;
 	}
 
@@ -549,11 +607,12 @@ void TDetector::makeEbarTable( bool const& binary ){
 	ofstream data("out/Ebar.dat", ios::out | ios::trunc);
 
 	int i,j,k;
-	#pragma omp parallel for private(j,k) collapse(3)
+	//#pragma omp parallel for private(j,k) collapse(3)
 	for(i=0; i<n; i++){	//z
 		for(j=0; j<n; j++){	//zp
 			for(k=0; k<n; k++){	//l
 				double Ebar = computeEbar( fEbarZarray[i], fEbarLarray[k], fEbarZparray[j] );
+				cout << fEbarZarray[i] << "\t" << fEbarZparray[j] << "\t" << fEbarLarray[k] << "\t" << Ebar << endl;
 				fEbarVecTable[ (long)i*(long)n*(long)n + (long)j*(long)n + (long)k ] = Ebar;
 			}
 		}
@@ -584,24 +643,69 @@ void TDetector::makeEbarTable( bool const& binary ){
 	bHasEbarTable = true;
 }
 
+void TDetector::printEbarTable() {
+	if (!bHasEbarTable) {
+		cerr << "Error TDetector::printEbarTable -- No Ebar table found" << endl;
+		return;
+	}
+	
+	int n = iEbarTableSize+1;
+	int size = n*n*n;
+	ofstream data("out/Ebar.dat", ios::out | ios::trunc);
+	
+	for(int i=0; i<n; i++){
+		for(int j=0; j<n; j++){
+			for(int k=0; k<n; k++){
+				data << fEbarZarray[i] << "\t" << fEbarZparray[j] << "\t" << fEbarLarray[k] << "\t" << fEbarVecTable[ (long)i*(long)n*(long)n + (long)j*(long)n + (long)k ] << endl;
+			}
+		}
+	}
+	data.close();
+}
+
 void TDetector::plotSC(){
+	if( tgsl != this )
+		tgsl = this;
+		
+	//cout << gsl_sf_bessel_J0(0) << " " << gsl_sf_bessel_J0(1) << " " << gsl_sf_bessel_J0(2) << endl;
+	//cout << BESSJ0(0) << " " << BESSJ0(1) << " " << BESSJ0(2) << endl;
+	//exit(0);
 	cout << "plot" << endl;
 	//double mm = 0.001;
-
-	double min = -1, max = 1;
-	double h = 0.05;
+	cout << fConfig.gapWidth << endl;
+	double min = -1*Constants::mm, max = 1*Constants::mm;
+	double h = 0.01*Constants::mm;
 	vector<double> r(1,min);
 	vector<double> z(1,0);
 	while(r.back() <= max)	r.push_back( r.back()+h );
 	while(z.back() <= fConfig.gapWidth)	z.push_back( z.back() + h );
 	ofstream data("out/plotSC.dat", ios::out | ios::trunc);
+	ofstream data2("out/plotI.dat", ios::out | ios::trunc);
+	ofstream data3("out/plotSC2d.dat", ios::out | ios::trunc);
 
-	for(uint i=0; i<r.size(); i++){
-		for(uint j=0; j<z.size(); j++) {
-				data << r[i] << "\t" << z[j] << "\t" << SCField(r[i]*Constants::mm,0,z[j],0,0,0.5*Constants::mm) << endl;
-		}
+//	for(uint i=0; i<r.size(); i++){
+//		for(uint j=0; j<z.size(); j++) {
+//				data << r[i]*1e3 << "\t" << z[j]*1e3 << "\t" << SCPotential(r[i],0,z[j],0,0,6*Constants::cm) << endl;
+//		}
+//	}
+
+/*	
+	double k = 0;
+	double pars[3] = {0.,0.6*0.001,0.3*0.001};
+	while(k<3){
+		data2 << k << "\t" << integrand(k,pars) << endl;
+		k+=0.01;
 	}
+
+	for(uint i=0; i<z.size(); i++)
+		data3 << z[i] << "\t" << SCField(0.,0,z[i]*0.01,0,0,0.4*0.001) << "\t" << SCFieldSimplified2(0.,0,z[i]*0.01,0,0,0.4*0.001) << "\t" << SCFieldSimplified(0.,0,z[i]*0.01,0,0,0.4*0.001) << endl;
+	
 	data.close();
+	data2.close();
+	data3.close();
+	*/
+	//cout << computeEbar(0.00056,	0.06,	0.0012) << endl;
+	makeEbarTable();
 }
 
 string TDetector::getUniqueTableName(){

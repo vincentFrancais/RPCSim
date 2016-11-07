@@ -36,6 +36,7 @@ namespace Constants {
 	
 	static const double ElectronCharge = 1.602176487e-19; /* Coulomb */
 	
+	/* Conversions to m */
 	static const double cm = 1.e-2;
 	static const double mm = 1.e-3;
 	

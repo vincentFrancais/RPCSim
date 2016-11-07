@@ -115,6 +115,10 @@ void * WriteResults(void * Arg)
     return 0;
 }
 
+double RosettaExp(double x) {
+    return exp(-2*x);
+}
+
 int main(int argc, char** argv) {
 	/* Read config file */
 	TConfig config;
