@@ -120,9 +120,8 @@ void testRNG(std::string const& rng);
 bool almostEquals(double a, double b, double epsilon=0.001);
 
 // from http://stackoverflow.com/questions/27028226/python-linspace-in-c
-template<typename T>
-std::vector<double> linspace(T start_in, T end_in, int num_in)
-{
+std::vector<double> linspace(double start, double end, int num);
+/*{
   double start = static_cast<double>(start_in);
   double end = static_cast<double>(end_in);
   double num = static_cast<double>(num_in);
@@ -135,6 +134,6 @@ std::vector<double> linspace(T start_in, T end_in, int num_in)
     }
   linspaced.push_back(end);
   return linspaced;
-}
+}*/
 
 double bessel_J0 (double X);

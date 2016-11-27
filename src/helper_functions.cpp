@@ -393,3 +393,13 @@ double bessel_J0 (double X) {
 	return TMP;
 }
 
+std::vector<double> linspace(double start, double end, int num){
+	double delta = (end - start) / (num - 1);
+	
+	std::vector<double> linspaced(num-1);
+	for(int i=0; i < num-1; ++i)
+		linspaced.at(i) = start + delta * i;
+	
+	linspaced.push_back(end);
+	return linspaced;
+}

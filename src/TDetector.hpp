@@ -80,6 +80,12 @@ class TDetector{
 	double SCPotential(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp);
 	double SCFieldSimplified(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp);
 	double SCFieldSimplified2(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp);
+	/* SCFieldSimplfied3,4,5 and 6 are used to output the terms of the equation in an easy-plotting structure
+	 * I guess they need better names ... But I'm lazy right now ...... */
+	double SCFieldSimplified3(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp);
+	double SCFieldSimplified4(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp);
+	double SCFieldSimplified5(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp);
+	double SCFieldSimplified6(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp);
 	double SCField(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp);
 	
 	inline double RadialChargeDistribution(const double& r, const double& l);

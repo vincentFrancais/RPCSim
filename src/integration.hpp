@@ -18,7 +18,8 @@ double integrate(F f, void* par, Float a, Float b, int steps, Method m){
 	return h*s;
 }
 
-// Doe not work apparently ...
+// Does not work apparently ...
+// ... No, it definetly does not work !
 template<typename F, typename Float>
 class iu_transform{
 	public:

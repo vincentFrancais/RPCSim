@@ -385,6 +385,7 @@ double integrand(double x, void * params){
 }
 
 double TDetector::SCFieldSimplified(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
+	/* Free charge + mirror at 2g-z' */
 	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
 	double g = fConfig.gapWidth * Constants::cm;
 	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
@@ -399,6 +400,7 @@ double TDetector::SCFieldSimplified(const double& r, const double& phi, const do
 }
 
 double TDetector::SCFieldSimplified2(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
+	/* Free charge and mirrors at -z' and 2g-z' */
 	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
 	double g = fConfig.gapWidth * Constants::cm;
 	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
@@ -408,7 +410,67 @@ double TDetector::SCFieldSimplified2(const double& r, const double& phi, const d
 
 	double P2 = r*r - 2*r*rp*cos(phi-phip) + rp*rp;
 
-	return ( e0/(4*Constants::Pi*eps2) ) * (   ( (z-zp)/(pow(P2 + (z-zp)*(z-zp),1.5)) )  -  ( ((eps2-eps3)/(eps2+eps3))*(2*g-z-zp)/(pow(P2+(2*g-z-zp)*(2*g-z-zp),1.5)) ) - ( ((eps1-eps2)/(eps1+eps2))*(z+zp)/(pow(P2+(z+zp)*(z+zp),1.5)) )     );
+	return ( e0/(4*Constants::Pi*eps2) ) * (   ( (z-zp)/(pow(P2 + (z-zp)*(z-zp),1.5)) )  -  ( ((eps2-eps3)/(eps2+eps3))*(2*g-z-zp)/(pow(P2+(2*g-z-zp)*(2*g-z-zp),1.5)) ) + ( ((eps1-eps2)/(eps1+eps2))*(z+zp)/(pow(P2+(z+zp)*(z+zp),1.5)) )     );
+
+}
+
+double TDetector::SCFieldSimplified3(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
+	/* Free charge + mirror at -z' */
+	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
+	double g = fConfig.gapWidth * Constants::cm;
+	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
+	double eps1 = fConfig.cathodePermittivity * eps0; //cathode
+	double eps3 = fConfig.anodePermittivity * eps0;
+	double eps2 = eps0;
+
+	double P2 = r*r - 2*r*rp*cos(phi-phip) + rp*rp;
+
+	return ( e0/(4*Constants::Pi*eps2) ) * (   ( (z-zp)/(pow(P2 + (z-zp)*(z-zp),1.5)) )  + ( ((eps1-eps2)/(eps1+eps2))*(z+zp)/(pow(P2+(z+zp)*(z+zp),1.5)) )     );
+
+}
+
+double TDetector::SCFieldSimplified4(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
+	/* Free charge */
+	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
+	double g = fConfig.gapWidth * Constants::cm;
+	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
+	double eps1 = fConfig.cathodePermittivity * eps0; //cathode
+	double eps3 = fConfig.anodePermittivity * eps0;
+	double eps2 = eps0;
+
+	double P2 = r*r - 2*r*rp*cos(phi-phip) + rp*rp;
+
+	return ( e0/(4*Constants::Pi*eps2) ) * (   ( (z-zp)/(pow(P2 + (z-zp)*(z-zp),1.5)) )     );
+
+}
+
+double TDetector::SCFieldSimplified5(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
+	/* Mirror at 2g-z' */
+	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
+	double g = fConfig.gapWidth * Constants::cm;
+	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
+	double eps1 = fConfig.cathodePermittivity * eps0; //cathode
+	double eps3 = fConfig.anodePermittivity * eps0;
+	double eps2 = eps0;
+
+	double P2 = r*r - 2*r*rp*cos(phi-phip) + rp*rp;
+
+	return ( e0/(4*Constants::Pi*eps2) ) * (   -( ((eps2-eps3)/(eps2+eps3))*(2*g-z-zp)/(pow(P2+(2*g-z-zp)*(2*g-z-zp),1.5)) )     );
+
+}
+
+double TDetector::SCFieldSimplified6(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
+	/* Mirror at -z' */
+	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
+	double g = fConfig.gapWidth * Constants::cm;
+	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
+	double eps1 = fConfig.cathodePermittivity * eps0; //cathode
+	double eps3 = fConfig.anodePermittivity * eps0;
+	double eps2 = eps0;
+
+	double P2 = r*r - 2*r*rp*cos(phi-phip) + rp*rp;
+
+	return ( e0/(4*Constants::Pi*eps2) ) * (   ( ((eps1-eps2)/(eps1+eps2))*(z+zp)/(pow(P2+(z+zp)*(z+zp),1.5)) )     );
 
 }
 
@@ -469,7 +531,7 @@ double TDetector::SCPotential(const double& r, const double& phi, const double& 
 	//cout << corrTerm << endl;
 	
 	/*	The correction term needs to be multplied by 1e3 to output correct value ... Why ? that's a mystery ...	*/
-	//data << pot1 << "\t" << -pot2 << "\t" << -pot3 << "\t" << corrTerm*1000. << endl;
+	//data << z << "\t" << pot1 << "\t" << -pot2 << "\t" << -pot3 << "\t" << corrTerm*1000. << endl;
 	//data.close();
     return pot1 - pot2 - pot3 + corrTerm*1000.;
 }
@@ -674,22 +736,29 @@ void TDetector::plotSC(){
 	//double mm = 0.001;
 	cout << fConfig.gapWidth << endl;
 	double min = -1*Constants::mm, max = 1*Constants::mm;
-	double h = 0.01*Constants::mm;
-	vector<double> r(1,min);
-	vector<double> z(1,0);
-	while(r.back() <= max)	r.push_back( r.back()+h );
-	while(z.back() <= fConfig.gapWidth)	z.push_back( z.back() + h );
+	double h = 0.1*Constants::mm;
+
+	vector<double> r = linspace(-1*Constants::mm,1*Constants::mm,130);//1,min);
+	vector<double> z = linspace(0,fConfig.gapWidth,500);//1,0);
+	//while(r.back() <= max)	r.push_back( r.back()+0.1*Constants::mm );
+	//while(z.back() <= fConfig.gapWidth)	z.push_back( z.back() + h );
 	ofstream data("out/plotSC.dat", ios::out | ios::trunc);
 	ofstream data2("out/plotI.dat", ios::out | ios::trunc);
 	ofstream data3("out/plotSC2d.dat", ios::out | ios::trunc);
+	ofstream data4("out/plotSCE1.dat", ios::out | ios::trunc);
+	ofstream data5("out/plotSCE2.dat", ios::out | ios::trunc);
+	ofstream data6("out/plotSCE3.dat", ios::out | ios::trunc);
+	ofstream data7("out/plotSCE4.dat", ios::out | ios::trunc);
+	ofstream data8("out/plotSCE5.dat", ios::out | ios::trunc);
+	ofstream data9("out/plotSCE6.dat", ios::out | ios::trunc);
 
-//	for(uint i=0; i<r.size(); i++){
-//		for(uint j=0; j<z.size(); j++) {
-//				data << r[i]*1e3 << "\t" << z[j]*1e3 << "\t" << SCPotential(r[i],0,z[j],0,0,6*Constants::cm) << endl;
-//		}
-//	}
+	for(uint i=0; i<r.size(); i++){
+		for(uint j=0; j<z.size(); j++) {
+				data << r[i] << "\t" << z[j] << "\t" << SCPotential(r[i],0,z[j]*0.01,0,0,0.4*0.001) << endl;
+		}
+	}
 
-/*	
+	
 	double k = 0;
 	double pars[3] = {0.,0.6*0.001,0.3*0.001};
 	while(k<3){
@@ -697,15 +766,28 @@ void TDetector::plotSC(){
 		k+=0.01;
 	}
 
-	for(uint i=0; i<z.size(); i++)
-		data3 << z[i] << "\t" << SCField(0.,0,z[i]*0.01,0,0,0.4*0.001) << "\t" << SCFieldSimplified2(0.,0,z[i]*0.01,0,0,0.4*0.001) << "\t" << SCFieldSimplified(0.,0,z[i]*0.01,0,0,0.4*0.001) << endl;
+	for(uint i=0; i<z.size(); i++){
+		data4 << z[i] << "\t" << SCField(0.,0,z[i]*0.01,0,0,0.2*0.001) << "\t" << SCFieldSimplified2(0.,0,z[i]*0.01,0,0,0.2*0.001) << "\t" << SCFieldSimplified(0.,0,z[i]*0.01,0,0,0.2*0.001) << "\t" << SCFieldSimplified3(0.,0,z[i]*0.01,0,0,0.2*0.001) << "\t" << SCFieldSimplified4(0.,0,z[i]*0.01,0,0,0.2*0.001) << "\t" << SCFieldSimplified5(0.,0,z[i]*0.01,0,0,0.2*0.001) << "\t" << SCFieldSimplified6(0.,0,z[i]*0.01,0,0,0.2*0.001) << endl;
+		data5 << z[i] << "\t" << SCField(0.,0,z[i]*0.01,0,0,0.4*0.001) << "\t" << SCFieldSimplified2(0.,0,z[i]*0.01,0,0,0.4*0.001) << "\t" << SCFieldSimplified(0.,0,z[i]*0.01,0,0,0.4*0.001) << "\t" << SCFieldSimplified3(0.,0,z[i]*0.01,0,0,0.4*0.001) << "\t" << SCFieldSimplified4(0.,0,z[i]*0.01,0,0,0.4*0.001) << "\t" << SCFieldSimplified5(0.,0,z[i]*0.01,0,0,0.4*0.001) << "\t" << SCFieldSimplified6(0.,0,z[i]*0.01,0,0,0.4*0.001) << endl;
+		data6 << z[i] << "\t" << SCField(0.,0,z[i]*0.01,0,0,0.6*0.001) << "\t" << SCFieldSimplified2(0.,0,z[i]*0.01,0,0,0.6*0.001) << "\t" << SCFieldSimplified(0.,0,z[i]*0.01,0,0,0.6*0.001) << "\t" << SCFieldSimplified3(0.,0,z[i]*0.01,0,0,0.6*0.001) << "\t" << SCFieldSimplified4(0.,0,z[i]*0.01,0,0,0.6*0.001) << "\t" << SCFieldSimplified5(0.,0,z[i]*0.01,0,0,0.6*0.001) << "\t" << SCFieldSimplified6(0.,0,z[i]*0.01,0,0,0.6*0.001) << endl;
+		data7 << z[i] << "\t" << SCField(0.,0,z[i]*0.01,0,0,0.8*0.001) << "\t" << SCFieldSimplified2(0.,0,z[i]*0.01,0,0,0.8*0.001) << "\t" << SCFieldSimplified(0.,0,z[i]*0.01,0,0,0.8*0.001) << "\t" << SCFieldSimplified3(0.,0,z[i]*0.01,0,0,0.8*0.001) << "\t" << SCFieldSimplified4(0.,0,z[i]*0.01,0,0,0.8*0.001) << "\t" << SCFieldSimplified5(0.,0,z[i]*0.01,0,0,0.8*0.001) << "\t" << SCFieldSimplified6(0.,0,z[i]*0.01,0,0,0.8*0.001) << endl;
+		data8 << z[i] << "\t" << SCField(0.,0,z[i]*0.01,0,0,1.*0.001) << "\t" << SCFieldSimplified2(0.,0,z[i]*0.01,0,0,1.*0.001) << "\t" << SCFieldSimplified(0.,0,z[i]*0.01,0,0,1.*0.001) << "\t" << SCFieldSimplified3(0.,0,z[i]*0.01,0,0,1.*0.001) << "\t" << SCFieldSimplified4(0.,0,z[i]*0.01,0,0,1.*0.001) << "\t" << SCFieldSimplified5(0.,0,z[i]*0.01,0,0,1.*0.001) << "\t" << SCFieldSimplified6(0.,0,z[i]*0.01,0,0,1.*0.001) << endl;
+		data9 << z[i] << "\t" << SCField(0.,0,z[i]*0.01,0,0,1.1*0.001) << "\t" << SCFieldSimplified2(0.,0,z[i]*0.01,0,0,1.1*0.001) << "\t" << SCFieldSimplified(0.,0,z[i]*0.01,0,0,1.1*0.001) << "\t" << SCFieldSimplified3(0.,0,z[i]*0.01,0,0,1.1*0.001) << "\t" << SCFieldSimplified4(0.,0,z[i]*0.01,0,0,1.1*0.001) << "\t" << SCFieldSimplified5(0.,0,z[i]*0.01,0,0,1.1*0.001) << "\t" << SCFieldSimplified6(0.,0,z[i]*0.01,0,0,1.1*0.001) << endl;
+		//data3 << z[i] << "\t" << SCPotential(0.,0,z[i]*0.01,0,0,0.4*0.001) << "\t" << SCPotential(0.,0,z[i]*0.01,0,0,0.6*0.001) << endl;
+	}
 	
 	data.close();
 	data2.close();
 	data3.close();
-	*/
+	data4.close();
+	data5.close();
+	data6.close();
+	data7.close();
+	data8.close();
+	data9.close();
+	
 	//cout << computeEbar(0.00056,	0.06,	0.0012) << endl;
-	makeEbarTable();
+	//makeEbarTable();
 }
 
 string TDetector::getUniqueTableName(){
