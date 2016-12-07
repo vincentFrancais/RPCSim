@@ -7,6 +7,8 @@
 #include <fcntl.h>
 #include <cassert>
 
+#include "dc.h"
+
 #include "MediumMagboltz.hh"
 #include "SolidBox.hh"
 #include "GeometrySimple.hh"
@@ -83,7 +85,7 @@ void * wrapperFunction(void * Arg){
 }
 
 void * WriteResults(void * Arg)
-{
+{	
     TResult result;
     char * outputFile = reinterpret_cast<char *>(Arg);
 
@@ -119,7 +121,7 @@ double RosettaExp(double x) {
     return exp(-2*x);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv) {	
 	/* Read config file */
 	TConfig config;
 	if (argc > 1)

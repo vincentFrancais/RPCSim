@@ -59,24 +59,25 @@
 # The pre-processor and compiler options.
 INCDIRGAR = $(GARFIELD_HOME)/Include
 HEEDDIR = $(GARFIELD_HOME)/Heed
-GSLDIR = $(GSL_HOME)
+GSLDIR = $(GSL_HOME)/lib
 LIBDIR = $(GARFIELD_HOME)/Library
-PYTHON = yes
-PYCFLAGS = -I/usr/include/python2.7 -I/usr/include/x86_64-linux-gnu/python2.7  -fno-strict-aliasing -D_FORTIFY_SOURCE=2 -fstack-protector-strong -Wformat -Werror=format-security  -DNDEBUG -fwrapv
-PYLFLAGS = -L/usr/lib/python2.7/config-x86_64-linux-gnu -L/usr/lib -lpython2.7 -lpthread -ldl  -lutil -lm  -Xlinker -export-dynamic -Wl,-O1 -Wl,-Bsymbolic-functions
+DCLIB = /home/vincent/work/DCMT/lib
+#PYTHON = yes
+#PYCFLAGS = -I/usr/include/python2.7 -I/usr/include/x86_64-linux-gnu/python2.7  -fno-strict-aliasing -D_FORTIFY_SOURCE=2 -fstack-protector-strong -Wformat -Werror=format-security  -DNDEBUG -fwrapv
+#PYLFLAGS = -L/usr/lib/python2.7/config-x86_64-linux-gnu -L/usr/lib -lpython2.7 -lpthread -ldl  -lutil -lm  -Xlinker -export-dynamic -Wl,-O1 -Wl,-Bsymbolic-functions
 
-MY_CFLAGS =  `root-config --cflags` -I$(INCDIRGAR) -I$(HEEDDIR) -I$(GSLDIR)/include
+MY_CFLAGS =  `root-config --cflags` -fopenmp -Wall -Wno-unused-result -msse2 -DHAVE_SSE2 -I$(INCDIRGAR) -I$(HEEDDIR) -I$(GSLDIR)/include 
 
 # The linker options.
-MY_LIBS   = -lGarfield  `root-config --glibs` -L$(LIBDIR) -L$(GSLDIR)/lib -lGeom -lm -lMathCore -lGraf3d -lgfortran -lgsl -lgslcblas -lssl -lcrypto
+MY_LIBS   =  -L$(DCLIB) -L$(LIBDIR) -L$(GSLDIR) -lGarfield `root-config --glibs` -lgfortran -lgsl -lgslcblas -lssl -lcrypto -ldcmt
 
-ifeq ( $(PYTHON),yes )
-	MY_CFLAGS += $(PYCFLAGS)
-	MY_LIBS += $(PYLFLAGS)
-endif
+#ifeq ( $(PYTHON),yes )
+#	MY_CFLAGS += $(PYCFLAGS)
+#	MY_LIBS += $(PYLFLAGS)
+#endif
 
 # The pre-processor options used by the cpp (man cpp for more).
-CPPFLAGS  = -fopenmp -W -Wall -Wno-unused-result -msse2 -DHAVE_SSE2
+CPPFLAGS  = 
 
 # The options used in linking as well as in any direct use of ld.
 LDFLAGS   = 
@@ -106,13 +107,13 @@ CFLAGS  = -g -O2
 CXXFLAGS= -g -O2
 
 # The C program compiler.
-#CC     = gcc
+CC     = gcc
 
 # The C++ program compiler.
-#CXX    = g++
+CXX    = g++
 
 # Un-comment the following line to compile C programs as C++ ones.
-#CC     = $(CXX)
+CC     = $(CXX)
 
 # The command used to delete file.
 #RM     = rm -f

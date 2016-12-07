@@ -72,9 +72,9 @@ uint64_t gettid();
 
 uint getUUID();
 
-#if defined(PYTHON)
-	int call_python_fun(std::string funName, std::vector<double> args, double& result);
-#endif
+//#if defined(PYTHON)
+//	int call_python_fun(std::string funName, std::vector<double> args, double& result);
+//#endif
 
 std::string GetHexRepresentation(const unsigned char * Bytes, size_t Length);
 

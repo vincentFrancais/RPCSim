@@ -28,6 +28,7 @@
 #include <utility>
 
 #include "TConfig.hpp"
+#include "integration.hpp"
 
 #include "MediumMagboltz.hh"
 #include "SolidBox.hh"
@@ -36,10 +37,6 @@
 #include "Sensor.hh"
 #include "TrackHeed.hh"
 #include "Random.hh"
-#include "integration.hpp"
-
-#include "gsl/gsl_sf_bessel.h"
-#include "gsl/gsl_math.h"
 
 #if defined( _PYTHON ) || defined( PYTHON ) || defined (__PYTHON__)
 #   ifndef PYTHON
@@ -90,9 +87,9 @@ class TDetector{
 	
 	inline double RadialChargeDistribution(const double& r, const double& l);
 	double computeEbar(const double& z, const double& l, const double& zp);
-	#if defined(PYTHON)
-		double computeEbar_Python(const double& z, const double& l, const double& zp);
-	#endif
+//	#if defined(PYTHON)
+//		double computeEbar_Python(const double& z, const double& l, const double& zp);
+//	#endif
 	void makeEbarTable( bool const& binary=true );
 	void printEbarTable();
 	

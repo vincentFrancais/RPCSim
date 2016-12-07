@@ -13,10 +13,8 @@
 #include "integration.hpp"
 #include "TConstants.hpp"
 
-
-//#include "gsl/gsl_sf_bessel.h"
 #include <gsl/gsl_integration.h>
-//#include "gsl/gsl_math.h"
+
 
 
 using namespace std;
@@ -581,24 +579,24 @@ double TDetector::computeEbar(const double& z, const double& l, const double& zp
 	}
 }
 
-#if defined(PYTHON)
-	double TDetector::computeEbar_Python(const double& z, const double& l, const double& zp){
-		// Very slow !!!!
-		//double mm = 1.e-3;
+//#if defined(PYTHON)
+//	double TDetector::computeEbar_Python(const double& z, const double& l, const double& zp){
+//		// Very slow !!!!
+//		//double mm = 1.e-3;
 		
-		double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
-	    double eps1 = fConfig.cathodePermittivity * eps0; //cathode
-		double eps3 = fConfig.anodePermittivity * eps0;
-		double eps2 = eps0;
+//		double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
+//	    double eps1 = fConfig.cathodePermittivity * eps0; //cathode
+//		double eps3 = fConfig.anodePermittivity * eps0;
+//		double eps2 = eps0;
 		
-		double values[10] = {z, l, zp, fDiffT, eps1,eps2,eps3,4.*Constants::mm,2.*Constants::mm,2.*Constants::mm};
-		vector<double> args (values, values + sizeof(values) / sizeof(values[0]) );
-		double Ebar;
-		call_python_fun("compute_Ebar", args, Ebar);
+//		double values[10] = {z, l, zp, fDiffT, eps1,eps2,eps3,4.*Constants::mm,2.*Constants::mm,2.*Constants::mm};
+//		vector<double> args (values, values + sizeof(values) / sizeof(values[0]) );
+//		double Ebar;
+//		call_python_fun("compute_Ebar", args, Ebar);
 		
-		return Ebar;
-	}
-#endif
+//		return Ebar;
+//	}
+//#endif
 
 void TDetector::makeEbarTable( bool const& binary ){
 	// WARNING if table was written in plain text, the loading from binary format will be incorrect!!!!
