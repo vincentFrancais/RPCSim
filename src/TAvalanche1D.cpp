@@ -9,6 +9,7 @@
 #include <limits>
 #include <iterator>
 #include <random>
+#include <algorithm>
 
 #include "TAvalanche1D.hpp"
 #include "helper_functions.hpp"
@@ -28,8 +29,10 @@ TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, sfmt_t sfmt, const i
 	 * For avalanche procedure we use RNGStreams has it is very handy to handle in multithreaded env. */
 	 
 	/* TODO: Change that so one can choose the generator and its initialisation for each component of the sim! */
-	fRandRng = new TRandomEngineMT(getUUID());
-	fRandRngCLT = new TRandomEngineMT(getUUID());
+	//fRandRng = new TRandomEngineMT(getUUID());
+	//fRandRngCLT = new TRandomEngineMT(getUUID());
+	fRandRng = new TRandomEngineMRG();
+	fRandRngCLT = new TRandomEngineMRG();
 		
 	if (fConfig.generator == "SFMT") 
 		fRNG = new TRandomEngineSFMT(sfmt);
@@ -594,6 +597,7 @@ void TAvalanche1D::computeLongitudinalDiffusion() {
 		pos = (iz) * fDx;
 		double sigma = fDet->getDiffusionCoefficients(fE.at(iz), 0, 0)[0] * sqrtDx;
 		fRandomNumberGenerated += fElecDetectorGrid.at(iz);
+		
 		for(int n=0; n<fElecDetectorGrid.at(iz); n++){
 			if ( checkTimerExceededLimit(fLongiDiffTimer,fLongiDiffTimeLimit) ) {
 				eAvalStatus = AVAL_LONGI_DIFF_TIME_LIMIT_EXCEEDED;
@@ -705,7 +709,6 @@ bool TAvalanche1D::propagate() {
 
 bool TAvalanche1D::avalanche() {
 	iTimeStep = 1;
-	//ofstream debugOut("out/debugOut/outDebug"+toString(Id), ios::out | ios::trunc);
 	
 	while(true){
 		
@@ -714,6 +717,7 @@ bool TAvalanche1D::avalanche() {
 			
 		if ( !propagate() )
 			return false;
+		
 		
 		/* Empty the first bin after the first multplication procedure to avoid infinite elec creation */
 		if (iTimeStep == 1)
@@ -753,9 +757,7 @@ bool TAvalanche1D::avalanche() {
 			cout << "time step: " << iTimeStep << "\t Nelec: " << fNElectrons[iTimeStep] << "\t" << "NelecLastBin: " << fNelecAnode;
 			cout << " " << -sumVec(fPosIonDetectorGrid)+sumVec(fElecDetectorGrid)+sumVec(fNegIonDetectorGrid) << endl;
 		}
-		
-		//debugOut << fNElectrons[iTimeStep] << endl;
-		
+
 		if ( iTimeStep > iNElectronsSize ) {
 				eAvalStatus = AVAL_ERROR_TIMESTEP_EXCEEDING_LIMIT;
 				return false;
@@ -782,11 +784,14 @@ void TAvalanche1D::computeSCEffect() {
 		for(int zp=0; zp<iNstep; zp++){
 			tmp += -(-fElecDetectorGrid[zp] -fNegIonDetectorGrid[zp] +fPosIonDetectorGrid[zp]) * interpolateEbar((z)*fDx*Constants::cm, (zp)*fDx*Constants::cm, iTimeStep*fDx);
 		}
+		
 		for(uint i=0; i<fElecOnAnode.size(); i++)
 			tmp += (fElecOnAnode[i].first) * interpolateEbar((z)*fDx*Constants::cm, fGapWidth*Constants::cm, fElecOnAnode[i].second);
 		SCEField[z] = tmp;
 	}
 	
+	cout << iTimeStep << "\t" << *std::max_element(SCEField,SCEField+iNstep) << endl;
+
 	for(int z=0; z<iNstep; z++){
 		fE.at(z) = fEini + SCEField[z];
 		vector<double> transportParams = fDet->getTransportParameters(fE[z],0.,0.);

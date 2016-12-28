@@ -117,11 +117,12 @@ void * WriteResults(void * Arg)
     return 0;
 }
 
-double RosettaExp(double x) {
-    return exp(-2*x);
-}
-
 int main(int argc, char** argv) {	
+	
+	//mt_struct *mts = get_mt_parameter_st(32,521,4172);
+	//exit(0);
+	
+	
 	/* Read config file */
 	TConfig config;
 	if (argc > 1)

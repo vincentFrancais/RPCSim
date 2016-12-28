@@ -281,7 +281,7 @@ void TDetector::initialiseDetector(){
 	plotSC();
 	//cout << (1 or 0) << endl;
 	if( !(fConfig.noAvalanche or fConfig.onlyMult) )
-		makeEbarTable();
+		makeEbarTable(false);
 }
 
 vector<double> TDetector::getTransportParameters(double Ex, double Ey, double Ez){
@@ -387,7 +387,7 @@ double TDetector::SCFieldSimplified(const double& r, const double& phi, const do
 	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
 	double g = fConfig.gapWidth * Constants::cm;
 	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
-	double eps1 = fConfig.cathodePermittivity * eps0; //cathode
+	//double eps1 = fConfig.cathodePermittivity * eps0; //cathode
 	double eps3 = fConfig.anodePermittivity * eps0;
 	double eps2 = eps0;
 
@@ -415,10 +415,10 @@ double TDetector::SCFieldSimplified2(const double& r, const double& phi, const d
 double TDetector::SCFieldSimplified3(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
 	/* Free charge + mirror at -z' */
 	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
-	double g = fConfig.gapWidth * Constants::cm;
+	//double g = fConfig.gapWidth * Constants::cm;
 	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
 	double eps1 = fConfig.cathodePermittivity * eps0; //cathode
-	double eps3 = fConfig.anodePermittivity * eps0;
+	//double eps3 = fConfig.anodePermittivity * eps0;
 	double eps2 = eps0;
 
 	double P2 = r*r - 2*r*rp*cos(phi-phip) + rp*rp;
@@ -430,10 +430,10 @@ double TDetector::SCFieldSimplified3(const double& r, const double& phi, const d
 double TDetector::SCFieldSimplified4(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
 	/* Free charge */
 	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
-	double g = fConfig.gapWidth * Constants::cm;
+	//double g = fConfig.gapWidth * Constants::cm;
 	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
-	double eps1 = fConfig.cathodePermittivity * eps0; //cathode
-	double eps3 = fConfig.anodePermittivity * eps0;
+	//double eps1 = fConfig.cathodePermittivity * eps0; //cathode
+	//double eps3 = fConfig.anodePermittivity * eps0;
 	double eps2 = eps0;
 
 	double P2 = r*r - 2*r*rp*cos(phi-phip) + rp*rp;
@@ -447,7 +447,7 @@ double TDetector::SCFieldSimplified5(const double& r, const double& phi, const d
 	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
 	double g = fConfig.gapWidth * Constants::cm;
 	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
-	double eps1 = fConfig.cathodePermittivity * eps0; //cathode
+	//double eps1 = fConfig.cathodePermittivity * eps0; //cathode
 	double eps3 = fConfig.anodePermittivity * eps0;
 	double eps2 = eps0;
 
@@ -460,10 +460,10 @@ double TDetector::SCFieldSimplified5(const double& r, const double& phi, const d
 double TDetector::SCFieldSimplified6(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
 	/* Mirror at -z' */
 	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
-	double g = fConfig.gapWidth * Constants::cm;
+	//double g = fConfig.gapWidth * Constants::cm;
 	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
 	double eps1 = fConfig.cathodePermittivity * eps0; //cathode
-	double eps3 = fConfig.anodePermittivity * eps0;
+	//double eps3 = fConfig.anodePermittivity * eps0;
 	double eps2 = eps0;
 
 	double P2 = r*r - 2*r*rp*cos(phi-phip) + rp*rp;
@@ -476,14 +476,16 @@ double TDetector::SCField(const double& r, const double& phi, const double& z, c
 	double h = 0.00001 * Constants::mm;
 	return -1. * (SCPotential(r,phi,z+h,rp,phip,zp)-SCPotential(r,phi,z,rp,phip,zp))/h;
 	
-	//return -1. * ( SCPotential(r,phi,z+h,rp,phip,zp) - SCPotential(r,phi,z-h,rp,phip,zp) ) / (2*h);
-	/*double m1 = ( SCPotential(r,phi,z+h,rp,phip,zp) - SCPotential(r,phi,z-h,rp,phip,zp) ) / (2*h);
+	/*
+	return -1. * ( SCPotential(r,phi,z+h,rp,phip,zp) - SCPotential(r,phi,z-h,rp,phip,zp) ) / (2*h);
+	double m1 = ( SCPotential(r,phi,z+h,rp,phip,zp) - SCPotential(r,phi,z-h,rp,phip,zp) ) / (2*h);
 	double m2 = ( SCPotential(r,phi,z+2*h,rp,phip,zp) - SCPotential(r,phi,z-2*h,rp,phip,zp) ) / (4*h);
 	double m3 = ( SCPotential(r,phi,z+3*h,rp,phip,zp) - SCPotential(r,phi,z-3*h,rp,phip,zp) ) / (6*h);
 
 	double deriv = (1.5*m1 - 0.6*m2 + 0.1*m3);
 
-	return -1. * deriv;*/
+	return -1. * deriv;
+	*/
 }
 
 double TDetector::SCPotential(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp){
@@ -505,8 +507,8 @@ double TDetector::SCPotential(const double& r, const double& phi, const double& 
 	gsl_integration_qagiu (&F, 0., 1.e-2, 1e-7, 4000, w, &result, &error);
 	gsl_integration_workspace_free (w);*/
 	
-	Rosetta::GaussLegendreQuadrature<5> gl5;
-	double corr = gl5.integrate_iu(0, integrand, funParams);
+	Rosetta::GaussLegendreQuadrature<15> gl;
+	double corr = gl.integrate_iu(0, integrand, funParams);
 	double corrTerm = 0.;
 	
 	//ofstream data("out/corrTerm.dat", ios::out | std::ios::app);
@@ -526,38 +528,38 @@ double TDetector::SCPotential(const double& r, const double& phi, const double& 
     //double pot = ( Q/(4*Constants::Pi*eps2) ) * ( (1./(sqrt(P*P+(z-zp)*(z-zp)))) - ((eps1-eps2)/((eps1+eps2)*sqrt(P*P+(z+zp)*(z+zp)))) - ((eps3-eps2)/((eps3+eps2)*sqrt(P*P+(2*g-z-zp)*(2*g-z-zp)))) +
                                 //  (1./((eps1+eps2)*(eps2+eps3))) * 0. );
 	
-	//cout << corrTerm << endl;
 	
 	/*	The correction term needs to be multplied by 1e3 to output correct value ... Why ? that's a mystery ...	*/
-	//data << z << "\t" << pot1 << "\t" << -pot2 << "\t" << -pot3 << "\t" << corrTerm*1000. << endl;
-	//data.close();
+
     return pot1 - pot2 - pot3 + corrTerm*1000.;
 }
 
 inline double TDetector::RadialChargeDistribution(const double& r, const double& l){
-	return ( 1./(fDiffT*fDiffT * l) ) * exp( -(r*r)/(2*fDiffT*fDiffT * l) ) ;
+	return ( 1./(fDiffT*fDiffT*0.01 * l*0.01) ) * exp( -(r*r)/(2*fDiffT*fDiffT*0.01 * l*0.01) ) ; /* Everything is converted to m */
 }
 
 double Ebar(double x, void * params){
 	// x == rp
 
 	double* param = reinterpret_cast<double*> (params); //[z,l,zp]
-	//cout << x << "\t" << param[0] << "\t" << param[1] << "\t" << param[2] << endl;
-	/*	RadialChargeDistribution return a value in cm^2. SCField a value in V/m.	*/
-	double res =  tgsl->RadialChargeDistribution(x,param[1]) * tgsl->SCFieldSimplified2(0.,0.,param[0],x,0.,param[2])*0.01 * x;
-	return res;
+	
+	/*	RadialChargeDistribution return a value in m^-2. SCField a value in V/m.	*/
+	double ebar =  tgsl->RadialChargeDistribution(x,param[1]) * tgsl->SCFieldSimplified(0.,0.,param[0],x,0.,param[2]) * x; //dx
+	return ebar*0.01; //	V/cm 
 }
 
 double TDetector::computeEbar(const double& z, const double& l, const double& zp){
 	/*	Z and Zp in m. L in cm.	*/
+	/* Oddly the GSL return only 0s for these parameters, without any error of convergence. 
+	 * The Gauss-Legendre quadrature needs a lot of points to converge though ... */
 	if( tgsl != this )
 		tgsl = this;
 	
-	bool gl = false;
+	bool gl = true;
 	
 	if (gl) {
 		double funParams[3] = {z,l,zp};
-		Rosetta::GaussLegendreQuadrature<90> gl5;
+		Rosetta::GaussLegendreQuadrature<250> gl5;
 		//cout << z << "\t" << zp << "\t" << l << endl;
 		return gl5.integrate_iu(0., Ebar, funParams);
 	}
@@ -672,7 +674,7 @@ void TDetector::makeEbarTable( bool const& binary ){
 		for(j=0; j<n; j++){	//zp
 			for(k=0; k<n; k++){	//l
 				double Ebar = computeEbar( fEbarZarray[i], fEbarLarray[k], fEbarZparray[j] );
-				cout << fEbarZarray[i] << "\t" << fEbarZparray[j] << "\t" << fEbarLarray[k] << "\t" << Ebar << endl;
+				//cout << fEbarZarray[i] << "\t" << fEbarZparray[j] << "\t" << fEbarLarray[k] << "\t" << Ebar << endl;
 				fEbarVecTable[ (long)i*(long)n*(long)n + (long)j*(long)n + (long)k ] = Ebar;
 			}
 		}
@@ -710,7 +712,7 @@ void TDetector::printEbarTable() {
 	}
 	
 	int n = iEbarTableSize+1;
-	int size = n*n*n;
+	//int size = n*n*n;
 	ofstream data("out/Ebar.dat", ios::out | ios::trunc);
 	
 	for(int i=0; i<n; i++){
@@ -733,8 +735,8 @@ void TDetector::plotSC(){
 	cout << "plot" << endl;
 	//double mm = 0.001;
 	cout << fConfig.gapWidth << endl;
-	double min = -1*Constants::mm, max = 1*Constants::mm;
-	double h = 0.1*Constants::mm;
+	//double min = -1*Constants::mm, max = 1*Constants::mm;
+	//double h = 0.1*Constants::mm;
 
 	vector<double> r = linspace(-1*Constants::mm,1*Constants::mm,130);//1,min);
 	vector<double> z = linspace(0,fConfig.gapWidth,500);//1,0);
@@ -769,7 +771,7 @@ void TDetector::plotSC(){
 		data5 << z[i] << "\t" << SCField(0.,0,z[i]*0.01,0,0,0.4*0.001) << "\t" << SCFieldSimplified2(0.,0,z[i]*0.01,0,0,0.4*0.001) << "\t" << SCFieldSimplified(0.,0,z[i]*0.01,0,0,0.4*0.001) << "\t" << SCFieldSimplified3(0.,0,z[i]*0.01,0,0,0.4*0.001) << "\t" << SCFieldSimplified4(0.,0,z[i]*0.01,0,0,0.4*0.001) << "\t" << SCFieldSimplified5(0.,0,z[i]*0.01,0,0,0.4*0.001) << "\t" << SCFieldSimplified6(0.,0,z[i]*0.01,0,0,0.4*0.001) << endl;
 		data6 << z[i] << "\t" << SCField(0.,0,z[i]*0.01,0,0,0.6*0.001) << "\t" << SCFieldSimplified2(0.,0,z[i]*0.01,0,0,0.6*0.001) << "\t" << SCFieldSimplified(0.,0,z[i]*0.01,0,0,0.6*0.001) << "\t" << SCFieldSimplified3(0.,0,z[i]*0.01,0,0,0.6*0.001) << "\t" << SCFieldSimplified4(0.,0,z[i]*0.01,0,0,0.6*0.001) << "\t" << SCFieldSimplified5(0.,0,z[i]*0.01,0,0,0.6*0.001) << "\t" << SCFieldSimplified6(0.,0,z[i]*0.01,0,0,0.6*0.001) << endl;
 		data7 << z[i] << "\t" << SCField(0.,0,z[i]*0.01,0,0,0.8*0.001) << "\t" << SCFieldSimplified2(0.,0,z[i]*0.01,0,0,0.8*0.001) << "\t" << SCFieldSimplified(0.,0,z[i]*0.01,0,0,0.8*0.001) << "\t" << SCFieldSimplified3(0.,0,z[i]*0.01,0,0,0.8*0.001) << "\t" << SCFieldSimplified4(0.,0,z[i]*0.01,0,0,0.8*0.001) << "\t" << SCFieldSimplified5(0.,0,z[i]*0.01,0,0,0.8*0.001) << "\t" << SCFieldSimplified6(0.,0,z[i]*0.01,0,0,0.8*0.001) << endl;
-		data8 << z[i] << "\t" << SCField(0.,0,z[i]*0.01,0,0,1.*0.001) << "\t" << SCFieldSimplified2(0.,0,z[i]*0.01,0,0,1.*0.001) << "\t" << SCFieldSimplified(0.,0,z[i]*0.01,0,0,1.*0.001) << "\t" << SCFieldSimplified3(0.,0,z[i]*0.01,0,0,1.*0.001) << "\t" << SCFieldSimplified4(0.,0,z[i]*0.01,0,0,1.*0.001) << "\t" << SCFieldSimplified5(0.,0,z[i]*0.01,0,0,1.*0.001) << "\t" << SCFieldSimplified6(0.,0,z[i]*0.01,0,0,1.*0.001) << endl;
+		data8 << z[i] << "\t" << SCField(0.,0,z[i]*0.01,0,0,1.0*0.001) << "\t" << SCFieldSimplified2(0.,0,z[i]*0.01,0,0,1.0*0.001) << "\t" << SCFieldSimplified(0.,0,z[i]*0.01,0,0,1.0*0.001) << "\t" << SCFieldSimplified3(0.,0,z[i]*0.01,0,0,1.0*0.001) << "\t" << SCFieldSimplified4(0.,0,z[i]*0.01,0,0,1.0*0.001) << "\t" << SCFieldSimplified5(0.,0,z[i]*0.01,0,0,1.0*0.001) << "\t" << SCFieldSimplified6(0.,0,z[i]*0.01,0,0,1.0*0.001) << endl;
 		data9 << z[i] << "\t" << SCField(0.,0,z[i]*0.01,0,0,1.1*0.001) << "\t" << SCFieldSimplified2(0.,0,z[i]*0.01,0,0,1.1*0.001) << "\t" << SCFieldSimplified(0.,0,z[i]*0.01,0,0,1.1*0.001) << "\t" << SCFieldSimplified3(0.,0,z[i]*0.01,0,0,1.1*0.001) << "\t" << SCFieldSimplified4(0.,0,z[i]*0.01,0,0,1.1*0.001) << "\t" << SCFieldSimplified5(0.,0,z[i]*0.01,0,0,1.1*0.001) << "\t" << SCFieldSimplified6(0.,0,z[i]*0.01,0,0,1.1*0.001) << endl;
 		//data3 << z[i] << "\t" << SCPotential(0.,0,z[i]*0.01,0,0,0.4*0.001) << "\t" << SCPotential(0.,0,z[i]*0.01,0,0,0.6*0.001) << endl;
 	}

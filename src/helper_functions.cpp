@@ -3,7 +3,7 @@
 #define PI 3.14159265
 
 using namespace std;
-
+/* Python wrapper for SCE computation. Used for debugging purpose but very */
 //#if defined(PYTHON)
 //	int call_python_fun(std::string funName, std::vector<double> args, double& result){
 //	    //double result = 0.;
@@ -104,6 +104,7 @@ string currentDateTime() {
     return buf;
 }
 
+/* Return thread id (use with caution, those are not PID). */
 uint64_t gettid() {
     pthread_t ptid = pthread_self();
     uint64_t threadId = 0;
@@ -111,15 +112,14 @@ uint64_t gettid() {
     return threadId;
 }
 
-
 bool file_exist (const std::string& name) {
   struct stat buffer;
   return (stat (name.c_str(), &buffer) == 0);
 }
 
-std::string GetHexRepresentation(const unsigned char * Bytes, size_t Length)
-{
-    std::ostringstream os;
+/* return the hexadeximal representation of an array of char. */
+std::string GetHexRepresentation(const unsigned char * Bytes, size_t Length){
+	std::ostringstream os;
     os.fill('0');
     os<<std::hex;
     for(const unsigned char * ptr=Bytes;ptr<Bytes+Length;ptr++)
@@ -146,6 +146,7 @@ double gauss(double x, double mean, double sigma){
 	//1/(sigma * np.sqrt(2 * np.pi)) * np.exp( - (x - mu)**2 / (2 * sigma**2) )
 }
 
+/* Doesn't work */
 double gaussIntegral(int steps, double min, double max, double mean, double sigma){
 	double val[steps];
 	val[0] = min;
@@ -285,11 +286,12 @@ double Gaus(double mean, double sigma, TRandomEngine* stream){
    return mean + sigma * result;
 }
 
+/* Return an Universal Unique Id, hashed from random bits from /dev/random. */
 uint getUUID() {
 	uint t = 0;
 	
 	ifstream f;
-	f.open("/dev/urandom", std::ios::binary | std::ios::in);
+	f.open("/dev/random", std::ios::binary | std::ios::in);
 	
 	if (!f.good()) {
 		cerr << "Error reading /dev/urandom" << endl;
@@ -303,6 +305,8 @@ uint getUUID() {
 	return uinthash(t);
 }
 
+/* Check if timer as exceeded the limit. Used to control that some functions doesn't
+ * too long to compute, otherwise it could mean we hit a singularity. */
 bool checkTimerExceededLimit(TTimer timer, double const& limit) {
 	auto elapsed = timer.time_elapsed();
 	if ( static_cast<double>( duration_cast<seconds>(elapsed).count() ) >= limit)
@@ -311,6 +315,8 @@ bool checkTimerExceededLimit(TTimer timer, double const& limit) {
 		return false;
 }
 
+
+/* Create file of outputs for the different RNGs for repeatability checks. */
 void testRNG(string const& rng) {
 	if (rng == "MT" or rng == "Mersenne-Twister" or rng == "mt") {
 		ofstream mt_out("out/testRNG/mt.out", ios::out | ios::trunc);
@@ -342,6 +348,8 @@ void testRNG(string const& rng) {
 	}
 }
 
+/* Equality checks for floating point numbers, classic == could give errors due to
+ * rounding-up errors. */
 bool almostEquals(double a, double b, double epsilon) {
     return std::abs(a - b) < epsilon;
 }
@@ -393,6 +401,8 @@ double bessel_J0 (double X) {
 	return TMP;
 }
 
+/* Return a lineary spaced vector from start to end with num items.
+ * Similar to numpy's linspace. */
 std::vector<double> linspace(double start, double end, int num){
 	double delta = (end - start) / (num - 1);
 	
