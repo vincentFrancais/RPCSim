@@ -559,8 +559,8 @@ double TDetector::computeEbar(const double& z, const double& l, const double& zp
 	
 	if (gl) {
 		double funParams[3] = {z,l,zp};
-		Rosetta::GaussLegendreQuadrature<250> gl5;
-		//cout << z << "\t" << zp << "\t" << l << endl;
+		Rosetta::GaussLegendreQuadrature<300> gl5;
+		//cout << z << "\t" << zp << "\t" << l;
 		return gl5.integrate_iu(0., Ebar, funParams);
 	}
 	
@@ -574,7 +574,7 @@ double TDetector::computeEbar(const double& z, const double& l, const double& zp
 
 		//gsl_integration_qag (&F, 0., 5*sqrt(sigma2), 1e-10, 1e-7, 3000, 3, w, &result, &error);
 
-		gsl_integration_qagiu (&F, 0., 1.e-4, 1e-7, 10000, w, &result, &error);
+		gsl_integration_qagiu (&F, 0., 1.e-3, 1e-6, 10000, w, &result, &error);
 		gsl_integration_workspace_free (w);
 
 		return result;
@@ -622,7 +622,7 @@ void TDetector::makeEbarTable( bool const& binary ){
 	cout << "Hash representation: " << hexFileName << endl;
 	
 	/*	z and zp in m, l in cm.	*/
-	double zStep = fConfig.gapWidth * Constants::cm / (n-1), zpStep = fConfig.gapWidth * Constants::cm / (n-1), lStep = iNstep*fDx / (n);
+	double zStep = fConfig.gapWidth * Constants::cm / (n-1), zpStep = fConfig.gapWidth * Constants::cm / (n-1), lStep = 4.*iNstep*fDx / (n);
 	fEbarLarray = vector<double>(n,0.);
 	fEbarZarray = vector<double>(n,0.);
 	fEbarZparray = vector<double>(n,0.);

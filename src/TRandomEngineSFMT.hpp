@@ -26,7 +26,7 @@
 #define SFMT_MEXP 19937
 
 #include "TRandomEngine.hpp"
-#include "SFMT.h"
+#include "SFMT/SFMT.h"
 
 
 

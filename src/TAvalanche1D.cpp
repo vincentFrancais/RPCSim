@@ -295,7 +295,7 @@ void TAvalanche1D::initialiseSingleCluster(){
 	fNElectrons = vector<double> (iNElectronsSize,0);
 	
 	fNElectrons[0] = fConfig.n0;
-	fElecDetectorGrid[ int(trunc(fConfig.x0/fDx)) ] = fConfig.n0;
+	fElecDetectorGrid[ int(trunc(fConfig.x0)) ] = fConfig.n0;
 	
 	bAvalancheInitialised = true;
 }
@@ -365,8 +365,9 @@ void TAvalanche1D::simulateEvent(){
 		if (fConfig.verbose)
 			cout << currentDateTime() << " - Avalanche simulation id " << Id << " (" << countSim << "nth simulation) terminated with error: " << eAvalStatus << " (" << duration_cast<seconds>(elapsed).count() << " seconds)." << endl<< endl;
 	}
-	
+	cout << "1" << endl;
 	countSim++;
+	cout << "2" << endl;
 }
 
 void TAvalanche1D::checkDetectorGrid(){
@@ -711,9 +712,6 @@ bool TAvalanche1D::avalanche() {
 	iTimeStep = 1;
 	
 	while(true){
-		
-		if ( bComputeSpaceChargeEffet and !bOnlyMultiplicationAvalanche )
-			computeSCEffect();
 			
 		if ( !propagate() )
 			return false;
@@ -723,6 +721,7 @@ bool TAvalanche1D::avalanche() {
 		if (iTimeStep == 1)
 			fElecDetectorGrid.at(0) = 0;
 		
+		/* Check for explosive avalanche */
 		if (iTimeStep > 400) {
 			if( checkForExplosiveBehavior() ){
 				eAvalStatus = AVAL_POTENTIAL_EXPLOSIVE_BEHAVIOR;
@@ -749,6 +748,10 @@ bool TAvalanche1D::avalanche() {
 		
 		if (fNElectrons.at(iTimeStep) == 0)
 			break;
+		
+		/* compute the space charge electric field and update parameters */
+		if ( bComputeSpaceChargeEffet and !bOnlyMultiplicationAvalanche )
+			computeSCEffect();
 		
 		if (bSnapshots)
 			makeSnapshot();
@@ -782,11 +785,12 @@ void TAvalanche1D::computeSCEffect() {
 	for(int z=0; z<iNstep; z++){
 		tmp = 0;
 		for(int zp=0; zp<iNstep; zp++){
-			tmp += -(-fElecDetectorGrid[zp] -fNegIonDetectorGrid[zp] +fPosIonDetectorGrid[zp]) * interpolateEbar((z)*fDx*Constants::cm, (zp)*fDx*Constants::cm, iTimeStep*fDx);
+			tmp += (fElecDetectorGrid[zp] +fNegIonDetectorGrid[zp] -fPosIonDetectorGrid[zp]) *  interpolateEbar((z)*fDx*Constants::cm, (zp)*fDx*Constants::cm, iTimeStep*fDx);  //fDet->computeEbar((z)*fDx*Constants::cm, iTimeStep*fDx, (zp)*fDx*Constants::cm);
 		}
 		
 		for(uint i=0; i<fElecOnAnode.size(); i++)
 			tmp += (fElecOnAnode[i].first) * interpolateEbar((z)*fDx*Constants::cm, fGapWidth*Constants::cm, fElecOnAnode[i].second);
+			
 		SCEField[z] = tmp;
 	}
 	
@@ -805,8 +809,10 @@ void TAvalanche1D::makeSnapshot() {
 	cout << "Snapshot at: " << iTimeStep*fDt << endl;
 	string fileName;
 	if (iTimeStep<10)
-		fileName = "out/snaps/snap-00"+toString(iTimeStep)+".dat";
+		fileName = "out/snaps/snap-000"+toString(iTimeStep)+".dat";
 	else if (iTimeStep<100 and iTimeStep>9) 
+		fileName = "out/snaps/snap-00"+toString(iTimeStep)+".dat";
+	else if (iTimeStep<1000 and iTimeStep>99) 
 		fileName = "out/snaps/snap-0"+toString(iTimeStep)+".dat";
 	else
 		fileName = "out/snaps/snap-"+toString(iTimeStep)+".dat";

@@ -23,7 +23,7 @@
 
 #include "TDetector.hpp"
 #include "TConfig.hpp"
-#include "SFMT.h"
+#include "SFMT/SFMT.h"
 
 /* Simple structure for passing simulation parameters to the wrapping function */
 struct ThreadData{
