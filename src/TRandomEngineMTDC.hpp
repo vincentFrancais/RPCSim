@@ -26,34 +26,22 @@
 
 #include "TRandomEngine.hpp"
 #include "TGenMT.hpp"
+#include "MT/dc.h"
 
 
-class TRandomEngineMT : public TRandomEngine {
+class TRandomEngineMTDC : public TRandomEngine {
 	public:
-		TRandomEngineMT() : TRandomEngine() {
-			rand = TGenMT();
-		}
-		TRandomEngineMT(ulong init[], ulong length) : TRandomEngine() {
-			rand = TGenMT(init, length);
-		}
-		TRandomEngineMT(std::string filename): TRandomEngine() {
-			rand = TGenMT(filename);
-		}
+		TRandomEngineMTDC(uint16_t id, int stateSeed, int globalSeed);
+		~TRandomEngineMTDC();
 		
-		TRandomEngineMT(ulong s): TRandomEngine() {
-			rand = TGenMT(s);
-		}
-		
-		double RandU01() { 
-			return rand.mtRand(); 
-		}
+		double RandU01();
 		
 		std::string Generator() { 
-			return "Mersenne-Twister"; 
+			return "Mersenne-Twister with Dynamic Creator"; 
 		}
 		
 	private:
-	TGenMT rand;
+	mt_struct *fMTStruct;
 };
 
 

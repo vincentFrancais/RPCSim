@@ -24,9 +24,11 @@ TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, sfmt_t sfmt, const i
 	fDet = det;
 	fConfig = config;
 	
-	/* Initialise RNGs
+	/* 
+	 * Initialise RNGs
 	 * The generator used for longitudinal diffusion is defined in the config file.
-	 * For avalanche procedure we use RNGStreams has it is very handy to handle in multithreaded env. */
+	 * For avalanche procedure we use RNGStreams has it is very handy to handle in multithreaded env. 
+	 */
 	 
 	/* TODO: Change that so one can choose the generator and its initialisation for each component of the sim! */
 	//fRandRng = new TRandomEngineMT(getUUID());
@@ -668,9 +670,11 @@ void TAvalanche1D::computeLongitudinalSCEffect() {
 }
 
 bool TAvalanche1D::checkForExplosiveBehavior() {
-	/* Check if a large number of elec has been created between two steps (typically meaning
+	/* 
+	 * Check if a large number of elec has been created between two steps (typically meaning
 	 * that the avalanche shows explosive behavior). If there is a production superior than 
-	 * 30% between two steps, the avalanche simulation is aborted */
+	 * 30% between two steps, the avalanche simulation is aborted 
+	 */
 	 
 	double n0 = fNElectrons.at(iTimeStep-1);
 	double n1 = fNElectrons.at(iTimeStep);

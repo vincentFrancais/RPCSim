@@ -29,6 +29,8 @@
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+extern "C" {
+
 #ifndef DYNAMIC_CREATION
 #define DYNAMIC_CREATION
 
@@ -62,3 +64,4 @@ void sgenrand_mt(uint32_t seed, mt_struct *mts);
 uint32_t genrand_mt(mt_struct *mts);
 
 #endif
+}
