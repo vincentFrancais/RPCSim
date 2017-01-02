@@ -69,7 +69,7 @@ DCLIB = /home/vincent/work/DCMT/lib
 MY_CFLAGS =  `root-config --cflags` -fopenmp -Wall -Wno-unused-result -msse2 -DHAVE_SSE2 -I$(INCDIRGAR) -I$(HEEDDIR) -I$(GSLDIR)/include 
 
 # The linker options.
-MY_LIBS   =  -L$(DCLIB) -L$(LIBDIR) -L$(GSLDIR) -lGarfield `root-config --glibs` -lgfortran -lgsl -lgslcblas -lssl -lcrypto -ldcmt
+MY_LIBS   =  -L$(DCLIB) -L$(LIBDIR) -L$(GSLDIR) -ldcmt -lGarfield `root-config --glibs` -lgfortran -lgsl -lgslcblas -lssl -lcrypto
 
 #ifeq ( $(PYTHON),yes )
 #	MY_CFLAGS += $(PYCFLAGS)
@@ -84,7 +84,7 @@ LDFLAGS   =
 
 # The directories in which source files reside.
 # If not specified, only the current directory will be serached.
-SRCDIRS   = src
+SRCDIRS   = src src/MT src/SFMT
 INCDIR = include
 
 # The executable file name.
