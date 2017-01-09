@@ -129,10 +129,10 @@ string TDetector::getGasName() const {
 }
 
 void TDetector::setGasMixture() {
-	if (bGasLoaded){
-		cerr << "TDetector::setGasMixture -- Error, gas already set" << endl;
-		return;
-	}
+//	if (bGasLoaded){
+//		cerr << "TDetector::setGasMixture -- Error, gas already set" << endl;
+//		return;
+//	}
 	
 	mGas = new Garfield::MediumMagboltz();
 	
@@ -278,7 +278,7 @@ void TDetector::initialiseDetector(){
 	delete comp;*/
 	
 	bDetectorInitialised = true;
-	plotSC();
+	//plotSC();
 	//cout << (1 or 0) << endl;
 	if( !(fConfig.noAvalanche or fConfig.onlyMult) )
 		makeEbarTable(false);
@@ -581,24 +581,26 @@ double TDetector::computeEbar(const double& z, const double& l, const double& zp
 	}
 }
 
-//#if defined(PYTHON)
-//	double TDetector::computeEbar_Python(const double& z, const double& l, const double& zp){
-//		// Very slow !!!!
-//		//double mm = 1.e-3;
+/*
+#if defined(PYTHON)
+	double TDetector::computeEbar_Python(const double& z, const double& l, const double& zp){
+		// Very slow !!!!
+		//double mm = 1.e-3;
 		
-//		double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
-//	    double eps1 = fConfig.cathodePermittivity * eps0; //cathode
-//		double eps3 = fConfig.anodePermittivity * eps0;
-//		double eps2 = eps0;
+		double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
+	    double eps1 = fConfig.cathodePermittivity * eps0; //cathode
+		double eps3 = fConfig.anodePermittivity * eps0;
+		double eps2 = eps0;
 		
-//		double values[10] = {z, l, zp, fDiffT, eps1,eps2,eps3,4.*Constants::mm,2.*Constants::mm,2.*Constants::mm};
-//		vector<double> args (values, values + sizeof(values) / sizeof(values[0]) );
-//		double Ebar;
-//		call_python_fun("compute_Ebar", args, Ebar);
+		double values[10] = {z, l, zp, fDiffT, eps1,eps2,eps3,4.*Constants::mm,2.*Constants::mm,2.*Constants::mm};
+		vector<double> args (values, values + sizeof(values) / sizeof(values[0]) );
+		double Ebar;
+		call_python_fun("compute_Ebar", args, Ebar);
 		
-//		return Ebar;
-//	}
-//#endif
+		return Ebar;
+	}
+#endif
+*/
 
 void TDetector::makeEbarTable( bool const& binary ){
 	// WARNING if table was written in plain text, the loading from binary format will be incorrect!!!!
@@ -729,19 +731,16 @@ void TDetector::plotSC(){
 	if( tgsl != this )
 		tgsl = this;
 		
-	//cout << gsl_sf_bessel_J0(0) << " " << gsl_sf_bessel_J0(1) << " " << gsl_sf_bessel_J0(2) << endl;
-	//cout << BESSJ0(0) << " " << BESSJ0(1) << " " << BESSJ0(2) << endl;
-	//exit(0);
 	cout << "plot" << endl;
 	//double mm = 0.001;
 	cout << fConfig.gapWidth << endl;
 	//double min = -1*Constants::mm, max = 1*Constants::mm;
 	//double h = 0.1*Constants::mm;
 
-	vector<double> r = linspace(-1*Constants::mm,1*Constants::mm,130);//1,min);
-	vector<double> z = linspace(0,fConfig.gapWidth,500);//1,0);
-	//while(r.back() <= max)	r.push_back( r.back()+0.1*Constants::mm );
-	//while(z.back() <= fConfig.gapWidth)	z.push_back( z.back() + h );
+	vector<double> r = linspace(-1*Constants::mm,1*Constants::mm,130);
+	//vector<double> z = linspace(0,fConfig.gapWidth,500);
+	
+	/*
 	ofstream data("out/plotSC.dat", ios::out | ios::trunc);
 	ofstream data2("out/plotI.dat", ios::out | ios::trunc);
 	ofstream data3("out/plotSC2d.dat", ios::out | ios::trunc);
@@ -785,8 +784,32 @@ void TDetector::plotSC(){
 	data7.close();
 	data8.close();
 	data9.close();
+*/	
 	
-	//cout << computeEbar(0.00056,	0.06,	0.0012) << endl;
+	/*
+	double zp = 0.8*0.001;
+	double l = 0.19; 
+	ofstream data("out/plotEbar1.dat", ios::out | ios::trunc);
+	for (uint i=0; i<z.size();i++)
+		data << z[i] << "\t" << computeEbar(z[i]*0.01,	l,	zp) << "\t" << computeEbar(z[i]*0.01,	1.96*l,	zp) << endl;
+	data.close();
+	*/
+	
+	double zp = 0.8*0.001;
+	double z = 0.8*0.001;
+	ofstream data("out/ebarTot.dat", ios::out | ios::trunc);
+	vector<double> l = linspace(0,0.14,200);
+	
+	
+	for(double& val : l) {
+		//cout << i << endl;
+		//l = i * 0.2/20;
+		data << val << "\t" << computeEbar(z, val, zp) << endl;
+	}
+	
+	data.close();
+	
+	exit(0);
 	//makeEbarTable();
 }
 

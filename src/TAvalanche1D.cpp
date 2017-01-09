@@ -33,8 +33,14 @@ TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, sfmt_t sfmt, const i
 	/* TODO: Change that so one can choose the generator and its initialisation for each component of the sim! */
 	//fRandRng = new TRandomEngineMT(getUUID());
 	//fRandRngCLT = new TRandomEngineMT(getUUID());
-	fRandRng = new TRandomEngineMRG();
-	fRandRngCLT = new TRandomEngineMRG();
+	
+	
+	fRngMult = new TRandomEngineMTDC(id,1234,4321);
+	fRngCLT = new TRandomEngineMTDC(id+1,1234,4321);
+	fRngLongiDiff = new TRandomEngineMTDC(id+2,1234,4321);
+	
+	//fRandRng = new TRandomEngineMRG();
+	//fRandRngCLT = new TRandomEngineMRG();
 		
 	if (fConfig.generator == "SFMT") 
 		fRNG = new TRandomEngineSFMT(sfmt);
@@ -58,8 +64,8 @@ TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, sfmt_t sfmt, const i
 		fRNG = new TRandomEngineMRG();
 	
 	
-	cout << "Avalanche multiplication generator: " << fRandRng->Generator() << endl;
-	cout << "Avalanche multiplication CLT generator: " << fRandRngCLT->Generator() << endl;
+	//cout << "Avalanche multiplication generator: " << fRandRng->Generator() << endl;
+	//cout << "Avalanche multiplication CLT generator: " << fRandRngCLT->Generator() << endl;
 	cout << "Longitudinal diffusion generator: " << fRNG->Generator() << endl;
 	cout << endl;
 	
@@ -85,10 +91,13 @@ TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, int id) : TAvalanche
 */
 
 TAvalanche1D::~TAvalanche1D() {
-	delete fRandRng;
-	delete fRandRngCLT;
+	//delete fRandRng;
+	//delete fRandRngCLT;
 	//delete fRandRngLongiDiff;
 	delete fRNG;
+	delete fRngLongiDiff;
+	delete fRngMult;
+	delete fRngCLT;
 }
 
 void TAvalanche1D::init() {
@@ -174,6 +183,9 @@ void TAvalanche1D::init() {
 	fCharges.clear();
 	
 	eAvalStatus = AVAL_NO_ERROR; //Avalanche status to NO_ERROR at begining
+	
+	testInterpolation();
+	exit(0);
 }
 
 void TAvalanche1D::computeClusterDensity(const string& particleName, const double& Pmin, const double& Pmax, const int& steps){
@@ -501,14 +513,15 @@ double TAvalanche1D::multiplicationRiegler(const double& x, const double& s){
 
 double TAvalanche1D::electronMultiplication(const double& n){
 	double nProduced = 0;
+	double s;
 	
 	if(n > fThrCLT){
 		double c = multiplicationCLT(fDx,n);
 		if( eAvalStatus  == AVAL_CLT_FAIL ){
 			/* CLT has failed to return an acceptable value. Try with classic multiplication */
 			for(int i=0; i<n; i++){
-				double s = fRandRng->RandU01();
-				if (s==1)	s = fRandRng->RandU01();
+				s = fRngMult->RandU01();
+				if (s==1)	s = fRngMult->RandU01();
 				nProduced += multiplicationRiegler(fDx,s);
 			}
 			if( eAvalStatus == AVAL_CLT_FAIL )
@@ -519,8 +532,8 @@ double TAvalanche1D::electronMultiplication(const double& n){
 	}
 	
 	for(int i=0; i<n; i++){
-		double s = fRandRng->RandU01();
-		if (s==1)	s = fRandRng->RandU01();
+		double s = fRngMult->RandU01();
+		if (s==1)	s = fRngMult->RandU01();
 		nProduced += multiplicationRiegler(fDx,s);
 	}
 	return nProduced;
@@ -538,7 +551,7 @@ double TAvalanche1D::multiplicationCLT(const double& x, const double& n){
 	else if (alpha < 0.01)	sigma = sqrt(n) * sqrt( exp(-2*eta*x)*(exp(eta*x)-1) ); // alpha << 0
 	else	sigma = sqrt(n) * sqrt( ((1+k)/(1-k)) * nm * (nm-1) ); // alpha, eta > 0
 	
-	double c = Gaus(m, sigma, fRandRngCLT);
+	double c = Gaus(m, sigma, fRngCLT);
 	
 	if (c > 1e10){
 		if ( bVerbose ){
@@ -585,7 +598,7 @@ double TAvalanche1D::multiplicationCLT(const double& x, const double& n){
 
 void TAvalanche1D::computeLongitudinalDiffusion() {	
 	vector<double> newDetectorGrid (iNstep,0);
-	double pos, newPos;
+	double pos, newPos, sigma;
 	int newPosIndex;
 	double sqrtDx = sqrt(fDx);
 	
@@ -598,7 +611,7 @@ void TAvalanche1D::computeLongitudinalDiffusion() {
 		}
 		
 		pos = (iz) * fDx;
-		double sigma = fDet->getDiffusionCoefficients(fE.at(iz), 0, 0)[0] * sqrtDx;
+		sigma = fDet->getDiffusionCoefficients(fE.at(iz), 0, 0)[0] * sqrtDx;
 		fRandomNumberGenerated += fElecDetectorGrid.at(iz);
 		
 		for(int n=0; n<fElecDetectorGrid.at(iz); n++){
@@ -607,7 +620,7 @@ void TAvalanche1D::computeLongitudinalDiffusion() {
 				break;
 			}
 			
-			newPos = Gaus(pos, sigma, fRNG);
+			newPos = Gaus(pos, sigma, fRngLongiDiff);
 			newPosIndex = (int)trunc(newPos/fDx);
 			
 			if ( newPosIndex >= iNstep)
@@ -789,6 +802,8 @@ void TAvalanche1D::computeSCEffect() {
 	for(int z=0; z<iNstep; z++){
 		tmp = 0;
 		for(int zp=0; zp<iNstep; zp++){
+			if (fElecDetectorGrid[zp]==0 and fNegIonDetectorGrid[zp]==0 and fPosIonDetectorGrid[zp]==0)
+				continue;
 			tmp += (fElecDetectorGrid[zp] +fNegIonDetectorGrid[zp] -fPosIonDetectorGrid[zp]) *  interpolateEbar((z)*fDx*Constants::cm, (zp)*fDx*Constants::cm, iTimeStep*fDx);  //fDet->computeEbar((z)*fDx*Constants::cm, iTimeStep*fDx, (zp)*fDx*Constants::cm);
 		}
 		
@@ -829,17 +844,21 @@ void TAvalanche1D::makeSnapshot() {
 }
 
 void TAvalanche1D::testInterpolation() {
-	ofstream data("out/interp.dat", ios::out | ios::trunc);
+	ofstream data("out/interp30.dat", ios::out | ios::trunc);
 	
-	double z = 0.001;
-	double zp = 0.001;
-	double l;
+	//double z = 0.001;
+	double z = 0.8*0.001;
+	//double zp = 0.001;
+	double zp = 0.8*0.001;
+	//double l;
+	
+	vector<double> l = linspace(0,0.14,200);
 	
 	
-	
-	for(int i=0; i<20; i++){
-		l = i * 0.2/20;
-		data << l << "\t" << interpolateEbar(z, zp, l) << endl;
+	for(double& val : l) {
+		//cout << i << endl;
+		//l = i * 0.2/20;
+		data << val << "\t" << interpolateEbar(z, zp, val) << endl;
 	}
 	
 	data.close();

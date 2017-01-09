@@ -27,10 +27,10 @@
 #include <map>
 #include <chrono>
 
-#include "RngStream.hpp"
 #include "TRandomEngineSFMT.hpp"
 #include "TRandomEngineMRG.hpp"
 #include "TRandomEngineMT.hpp"
+#include "TRandomEngineMTDC.hpp"
 #include "TRandomEngine.hpp"
 
 #include "MediumMagboltz.hh"
@@ -52,17 +52,41 @@ class TAvalanche2D : public TAvalanche {
 	public:
 	TAvalanche2D(TDetector* det, TConfig& config, const sfmt_t sfmt, const int& id);
 	
-	double n_moy(const double& x);
-	double electron_multiplication(const double& x, const double& s);
-	double multiplication(const double& n);
-	double CLT(const double& x, const double& n);
+	inline double indexDetectorGrid(const int& r, const int& z);
+	double electricFieldStrength (const int& r, const int&z);
+	void init();
+	
+	inline double n_moy(const double& x);
+	double multiplicationRiegler(const double& x, const double& s);
+	double electronMultiplication(const double& n);
+	double multiplicationCLT(const double& x, const double& n);
 	
 	void updateParameters();
 	bool propagate();
+	bool avalanche();
 	
 	private:
 	TDetector* fDetector;
 	TConfig fConfig;
 	//DetectorGeometry fGeometry;
-
+	
+	int fNstepz, fNstepr, fGridSize;
+	double fDz, fDr;
+	double fCurrentStepR,fCurrentStepZ,fCurrentStep;
+	double fCurrentEta, fCurrentAlpha, fCurrentVel;
+	int fTimeStep;
+	
+	vector<double> fElecDetectorGrid, fPosIonDetectorGrid, fNegIonDetectorGrid;
+	vector<double> fVelocity, fAlpha, fEta;
+	vector<double> fEz, fEr;
+	
+	double fThrCLT;
+	
+	EAvalancheStatus fAvalStatus;
+	
+	TRandomEngine* fRngMult;
+	TRandomEngine* fRngCLT;
+	TRandomEngine* fRngLongiDiff;
+	
+	bool fVerbose;
 };

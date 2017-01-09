@@ -118,12 +118,12 @@ void * WriteResults(void * Arg)
 }
 
 int main(int argc, char** argv) {	
-	
+	/*
 	mt_struct *mts0, *mts1, *mts3;
 	
-	TRandomEngineMTDC mtdc(1,4172,3241);
+	TRandomEngineMTDC* mtdc =  new TRandomEngineMTDC(1,4172,3241);
 	
-    /* This trys to find a small Mersenne Twister with period 2^521-1. */
+    /* This trys to find a small Mersenne Twister with period 2^521-1. 
     mts0 = get_mt_parameter_id_st(32,521,0,4172);
     mts1 = get_mt_parameter_id_st(32,521,1,4172);
     mts3 = get_mt_parameter_id_st(32,521,0,4172);
@@ -134,10 +134,13 @@ int main(int argc, char** argv) {
     //for (int i=0; i<100; i++)
 		cout << genrand_mt(mts0)*(1.0/4294967296.0) << endl;
 		cout << genrand_mt(mts1)*(1.0/4294967296.0) << endl;
+		cout << genrand_mt(mts1)*(1.0/4294967296.0) << endl;
 		cout << genrand_mt(mts3)*(1.0/4294967296.0) << endl;
-		cout << mtdc.RandU01() << endl;
+		cout << mtdc->RandU01() << endl;
+		cout << mtdc->RandU01() << endl;
+	delete mtdc;
 	exit(0);
-	
+	*/
 	
 	/* Read config file */
 	TConfig config;
@@ -191,13 +194,12 @@ int main(int argc, char** argv) {
     /* Init our detector */
 	
 	TDetector* detector = new TDetector(config);
-	detector->writeGasTransportParameters();
 	if (config.computeEfficiency and argc > 2){
 		detector->setElectricField( atof(argv[2])*1e3, 0, 0 );
 		cout << "====== Efficiency simulation run, HV at " << argv[2] << " ======" << endl;
 	}
 	detector->initialiseDetector();
-	
+	detector->writeGasTransportParameters();
 	
 	// Functions to produce data on primary inisation
 	//TAvalanche::computeClusterDensity(detector,"muon",6e7,1.5e10,600);
@@ -237,10 +239,10 @@ int main(int argc, char** argv) {
 
 
     /* Hot loop, the simulation happens here */
-    for (unsigned long i = 0; i < nEvents; ++i){
+    for (unsigned long i = 0; i < nEvents; i++){
 		/* the SFMT status is given to the thread and then jump-ahead by 10^20 numbers (ensure independant and large enough streams) */
 		data->sfmt = SFMT;
-		data->id = i;
+		data->id = i+2;
 		TThreadsFactory::GetInstance()->CreateThread(wrapperFunction, data);
 		cout << "5.1" << endl;
 		SFMT_jump(&SFMT, jump10_20);

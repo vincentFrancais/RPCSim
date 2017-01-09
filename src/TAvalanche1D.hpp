@@ -33,6 +33,7 @@
 #include "TRandomEngineSFMT.hpp"
 #include "TRandomEngineMRG.hpp"
 #include "TRandomEngineMT.hpp"
+#include "TRandomEngineMTDC.hpp"
 #include "TRandomEngine.hpp"
 
 #include "MediumMagboltz.hh"
@@ -189,10 +190,12 @@ class TAvalanche1D : public TAvalanche {
 	
 	EAvalancheStatus eAvalStatus;
 	
-	TRandomEngine* fRandRng;
-	TRandomEngine* fRandRngCLT;
+	//TRandomEngine* fRandRng;
+	//TRandomEngine* fRandRngCLT;
 	RngStream* fRandRngLongiDiff;
-
+	TRandomEngine* fRngCLT; 
+	TRandomEngine* fRngMult;
+	TRandomEngine* fRngLongiDiff;
 	TRandomEngine* fRNG;
 	
 	long double fRandomNumberGenerated;
