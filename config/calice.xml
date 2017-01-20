@@ -19,8 +19,8 @@
 			<resistivity>10</resistivity>
 		</layer>
     </ResistiveLayers>
-    <ElectricField>56000</ElectricField>
-    <EbarTableCalculationSteps>30</EbarTableCalculationSteps>
+    <ElectricField>55500</ElectricField>
+    <EbarTableCalculationSteps>140</EbarTableCalculationSteps>
 </Detector>
 
 <Gas>
@@ -64,12 +64,12 @@
 		<seed>3</seed>
 	</Seeds>
 	<UUIDSeed>0</UUIDSeed>
-	<GarfieldSeed>56123</GarfieldSeed>
+	<GarfieldSeed>-394188927</GarfieldSeed>
 	
 	
 <!--	<SingleCluster>
 		<n0>1</n0>
-		<x0>130</x0>
+		<x0>0</x0>
 	</SingleCluster> -->
 	
 	<Verbose>1</Verbose>

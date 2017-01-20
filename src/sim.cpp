@@ -74,13 +74,13 @@ void * wrapperFunction(void * Arg){
 	
 	//avalanche.disableSpaceChargeEffect();
 	avalanche.simulateEvent();
-	cout << "3" << endl;
+
 	result = avalanche.getResultFile();
-	cout << "4" << endl;
+
 	pthread_mutex_lock(&gPipeLock);
     write(gPipe[1], &result, sizeof(result));
     pthread_mutex_unlock(&gPipeLock);
-	cout << "5" << endl;
+
 	return 0;
 }
 
@@ -244,23 +244,19 @@ int main(int argc, char** argv) {
 		data->sfmt = SFMT;
 		data->id = i+2;
 		TThreadsFactory::GetInstance()->CreateThread(wrapperFunction, data);
-		cout << "5.1" << endl;
 		SFMT_jump(&SFMT, jump10_20);
-		cout << "6" << endl;
     }
 
 
     /* Wait for all the propagations to finish */
     TThreadsFactory::GetInstance()->WaitForAllThreads();
-cout << "7" << endl;
 
     /* Send the end signal to writer */
     write(gPipe[1], &gNullResult, sizeof(TResult));
-cout << "8" << endl;
 
     /* Wait for the end of the writer */
     pthread_join(writingThread, &ret);
-cout << "9" << endl;
+
 
 end2:
     close(gPipe[0]);
@@ -270,6 +266,6 @@ end:
     pthread_mutex_destroy(&gTrackLock);
     delete detector;
     delete data;
-cout << "10" << endl;
+
     return 0;
 }

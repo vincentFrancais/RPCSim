@@ -35,9 +35,9 @@ TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, sfmt_t sfmt, const i
 	//fRandRngCLT = new TRandomEngineMT(getUUID());
 	
 	
-	fRngMult = new TRandomEngineMTDC(id,1234,4321);
-	fRngCLT = new TRandomEngineMTDC(id+1,1234,4321);
-	fRngLongiDiff = new TRandomEngineMTDC(id+2,1234,4321);
+	fRngMult = new TRandomEngineMTDC(id,1234,43216);
+	fRngCLT = new TRandomEngineMTDC(id+1,1234,43216);
+	fRngLongiDiff = new TRandomEngineMTDC(id+2,1234,43216);
 	
 	//fRandRng = new TRandomEngineMRG();
 	//fRandRngCLT = new TRandomEngineMRG();
@@ -159,6 +159,9 @@ void TAvalanche1D::init() {
 	bSnapshots = fConfig.snaps;
 	iVerbosityLevel = fConfig.verbosityLevel;
 	
+	bStreamer = false;
+	fStreamerThr = 4.85e8;
+	
 	bDummyRun = false;
 	bOnlyMultiplicationAvalanche = fConfig.onlyMult;
 	
@@ -184,8 +187,10 @@ void TAvalanche1D::init() {
 	
 	eAvalStatus = AVAL_NO_ERROR; //Avalanche status to NO_ERROR at begining
 	
-	testInterpolation();
-	exit(0);
+	fDebug.open("out/debug.dat", ios::out | ios::trunc);
+	
+	//testInterpolation();
+	//exit(0);
 }
 
 void TAvalanche1D::computeClusterDensity(const string& particleName, const double& Pmin, const double& Pmax, const int& steps){
@@ -344,7 +349,9 @@ void TAvalanche1D::simulateEvent(){
 		cerr << "Error -- TAvalanche1D::simulateEvent -- No Ebar table found. Aborting simulation." << endl<< endl;
 		exit(0); 
 	}
-		
+	
+	cout.clear();
+	
 	if( avalanche() ){
 		const auto elapsed = fTimer.time_elapsed();
 		fElapsed = static_cast<double>( duration_cast<seconds>(elapsed).count() );
@@ -354,10 +361,12 @@ void TAvalanche1D::simulateEvent(){
 		ofstream sigData("out/signal.dat", ios::out | ios::trunc);
 		ofstream chargesData("out/charges.dat", ios::out | ios::trunc);
 		ofstream chargesTotData("out/chargesTot.dat", ios::out | ios::trunc);
+		ofstream sigTotData("out/signalTot.dat", ios::out | ios::trunc);
 		for(int i=0; i<iNElectronsSize; i++) data << fNElectrons[i] << endl;
 		for(uint i=0; i<fSignal.size(); i++)	sigData << fSignal[i] << endl;
 		for(uint i=0; i<fCharges.size(); i++)	chargesData << fCharges[i] << endl;
 		for(uint i=0; i<fTotalCharges.size(); i++)	chargesTotData << fTotalCharges[i] << endl;
+		for(uint i=0; i<fTotalSignal.size(); i++)	sigTotData << fTotalSignal[i] << endl;
 		data.close();
 		sigData.close();
 		chargesData.close();
@@ -379,9 +388,7 @@ void TAvalanche1D::simulateEvent(){
 		if (fConfig.verbose)
 			cout << currentDateTime() << " - Avalanche simulation id " << Id << " (" << countSim << "nth simulation) terminated with error: " << eAvalStatus << " (" << duration_cast<seconds>(elapsed).count() << " seconds)." << endl<< endl;
 	}
-	cout << "1" << endl;
 	countSim++;
-	cout << "2" << endl;
 }
 
 void TAvalanche1D::checkDetectorGrid(){
@@ -430,10 +437,16 @@ void TAvalanche1D::computeInducedSignal2(){
 	fSignal.push_back(sig);
 	fCharges.push_back(charges);
 	
-	if (fTotalCharges.size() == 0)	
+	if (fTotalCharges.size() == 0)	{
 		fTotalCharges.push_back(charges);
-	else
+		fTotalSignal.push_back(sig);
+		fDebug << charges << endl;
+	}
+	else {
 		fTotalCharges.push_back(fTotalCharges.back() + charges);
+		fTotalSignal.push_back(fTotalSignal.back() + sig);
+		fDebug << fTotalCharges.back() << endl;
+	}
 	
 	if (fTotalCharges.back() >= fChargeThres and !bThrCrossTime ){
 		iThrCrossTimeStep = iTimeStep;
@@ -517,14 +530,14 @@ double TAvalanche1D::electronMultiplication(const double& n){
 	
 	if(n > fThrCLT){
 		double c = multiplicationCLT(fDx,n);
-		if( eAvalStatus  == AVAL_CLT_FAIL ){
+		if( eAvalStatus  == AVAL_CLT_FAIL or eAvalStatus == AVAL_EXPLOSIVE_BEHAVIOR_CLT ) {
 			/* CLT has failed to return an acceptable value. Try with classic multiplication */
 			for(int i=0; i<n; i++){
 				s = fRngMult->RandU01();
 				if (s==1)	s = fRngMult->RandU01();
 				nProduced += multiplicationRiegler(fDx,s);
 			}
-			if( eAvalStatus == AVAL_CLT_FAIL )
+			if( eAvalStatus  == AVAL_CLT_FAIL or eAvalStatus == AVAL_EXPLOSIVE_BEHAVIOR_CLT )
 				eAvalStatus = AVAL_NO_ERROR;
 			return nProduced;
 		}
@@ -644,42 +657,53 @@ void TAvalanche1D::computeLongitudinalDiffusion() {
 }
 
 void TAvalanche1D::computeLongitudinalSCEffect() {
-	vector<double> newDetectorGrid (iNstep,0);
+	vector<double> copy (fElecDetectorGrid);
+	vector<double> newGrid (iNstep,0.);
+	double n;
+	double x,trx,Px;
 	bool modified = false;
-	double n, xsi, p_xsi;
 	
 	for (int z=0; z<iNstep; z++) {
-		n = fElecDetectorGrid.at(z);
-		if (n <= 1)
-			continue;
-		xsi = fVx.at(z)/fVini;
-		p_xsi = xsi - trunc(xsi);
-		/*	We use the almost equals function as comparison with floating point leads to rounding-up errors */
-		if ( almostEquals(xsi, 1.) )
+		n = copy.at(z);
+		if (n == 0)
 			continue;
 			
-		/* if we reach this point, the electron grid will be modified.
-		 * So we put the flag modified to true. */
-		modified = true;
-		cout << z << " " << n << " " << xsi << " " << p_xsi << " " << z+trunc(xsi) << " " << z+1+trunc(xsi) <<  " " << trunc(p_xsi * n) << " " << n-trunc(p_xsi * n) << endl;
 		
-		/* The electrons have all drifted further than the anode, so we put it in the last bin
-		 * and will be added in the anode back in the avalanche() function. */
-		if (z+trunc(xsi) >= iNstep) 
-			newDetectorGrid.at(iNstep-1) += n;
-		 
+		x = fVx.at(z)/fVini;
+		trx = trunc(x);
+		Px = x - trx;
+		if (Px < 0.01 or Px>0.99) {
+			newGrid.at(z) = n;
+			continue;
+		}
+		
+		cout << z << "\t" << x  << "\t" << n << "\t" << Px << "\t" << z+trx << ":" << n-trunc(Px*n) << "\t" << z+1+trx << ":" << trunc(Px*n) << endl;
+		
+		modified = true;
+		
+		if (z+trx >= iNstep-1) {
+			newGrid.at(iNstep-1) += n;
+			//continue;
+		}		
+		else if (z+1+trx >= iNstep-1) {
+			newGrid.at(iNstep-1) += trunc(Px * n);
+			newGrid.at(z+trx) += n - trunc(Px * n);
+			//continue;
+		}
 		else {
-			if ( z+1+trunc(xsi) >= iNstep )
-				newDetectorGrid.at(iNstep-1) += trunc(p_xsi * n);
-			else
-				newDetectorGrid.at(z+1+trunc(xsi)) += trunc(p_xsi * n);
-			
-			newDetectorGrid.at(z+trunc(xsi)) += n - trunc(p_xsi * n);
+			cout << 1 << endl;
+		//if (z+1+trx < iNstep-1 and z+trx < iNstep-1) {
+			newGrid.at(z+trx) += n - trunc(Px * n);
+			newGrid.at(z+1+trx) += trunc(Px * n);
 		}
 	}
 	
-	if (modified)
-		fElecDetectorGrid = newDetectorGrid;
+	if (modified) {
+		cout << sumVec(newGrid) << " " << sumVec(fElecDetectorGrid) << endl;
+		assert (sumVec(newGrid) == sumVec(fElecDetectorGrid));
+		fElecDetectorGrid = newGrid;
+	}
+	
 }
 
 bool TAvalanche1D::checkForExplosiveBehavior() {
@@ -729,31 +753,38 @@ bool TAvalanche1D::avalanche() {
 	iTimeStep = 1;
 	
 	while(true){
+		if (bSnapshots)
+			makeSnapshot();
+		
+		/* First we compute the space charge electric field and update parameters */
+		if ( bComputeSpaceChargeEffet and !bOnlyMultiplicationAvalanche )
+			computeSCEffect();
 			
 		if ( !propagate() )
 			return false;
-		
+			
+		//computeLongitudinalSCEffect();
 		
 		/* Empty the first bin after the first multplication procedure to avoid infinite elec creation */
 		if (iTimeStep == 1)
 			fElecDetectorGrid.at(0) = 0;
 		
 		/* Check for explosive avalanche */
-		if (iTimeStep > 400) {
+		/*if (iTimeStep > 400) {
 			if( checkForExplosiveBehavior() ){
 				eAvalStatus = AVAL_POTENTIAL_EXPLOSIVE_BEHAVIOR;
 				return false;
 			}
-		}
+		}*/
 		
-		if ( !bOnlyMultiplicationAvalanche ) {
+		if ( !bOnlyMultiplicationAvalanche )
 			computeLongitudinalDiffusion();
-			//computeLongitudinalSCEffect();
-		}
 		
 		if (eAvalStatus != AVAL_NO_ERROR)
 			return false;
 		
+		if (!bStreamer and fNElectrons[iTimeStep] >= fStreamerThr)
+			bStreamer = true;
 		computeInducedSignal2();
 		
 		/*	Elecs in last bin has reached the anode, so we empty it */
@@ -765,13 +796,6 @@ bool TAvalanche1D::avalanche() {
 		
 		if (fNElectrons.at(iTimeStep) == 0)
 			break;
-		
-		/* compute the space charge electric field and update parameters */
-		if ( bComputeSpaceChargeEffet and !bOnlyMultiplicationAvalanche )
-			computeSCEffect();
-		
-		if (bSnapshots)
-			makeSnapshot();
 		
 		if (bVerbose) {
 			cout << "time step: " << iTimeStep << "\t Nelec: " << fNElectrons[iTimeStep] << "\t" << "NelecLastBin: " << fNelecAnode;
@@ -798,6 +822,7 @@ bool TAvalanche1D::avalanche() {
 void TAvalanche1D::computeSCEffect() {
 	double SCEField[iNstep];
 	double tmp;
+	vector<double> transportParams;
 	
 	for(int z=0; z<iNstep; z++){
 		tmp = 0;
@@ -813,11 +838,11 @@ void TAvalanche1D::computeSCEffect() {
 		SCEField[z] = tmp;
 	}
 	
-	cout << iTimeStep << "\t" << *std::max_element(SCEField,SCEField+iNstep) << endl;
+	//cout << iTimeStep << "\t" << *std::max_element(SCEField,SCEField+iNstep) << endl;
 
 	for(int z=0; z<iNstep; z++){
 		fE.at(z) = fEini + SCEField[z];
-		vector<double> transportParams = fDet->getTransportParameters(fE[z],0.,0.);
+		transportParams = fDet->getTransportParameters(fE[z],0.,0.);
 		fAlpha.at(z) = transportParams.at(0);
 		fEta.at(z) = transportParams.at(1);
 		fVx.at(z) = -1. * transportParams.at(2);

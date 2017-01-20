@@ -160,6 +160,7 @@ class TAvalanche1D : public TAvalanche {
 	vector<double> fSignal;
 	vector<double> fCharges;
 	vector<double> fTotalCharges;
+	vector<double> fTotalSignal;
 	
 	double fDiffL;
 	double fDiffT;
@@ -186,6 +187,9 @@ class TAvalanche1D : public TAvalanche {
 	bool bComputeSpaceChargeEffet;
 	bool bHasReachSpaceChargeLimit;
 	
+	bool bStreamer;
+	double fStreamerThr;
+	
 	int iVerbosityLevel;
 	
 	EAvalancheStatus eAvalStatus;
@@ -208,4 +212,6 @@ class TAvalanche1D : public TAvalanche {
 	
 	TTimer fLongiDiffTimer;
 	double fLongiDiffTimeLimit;
+	
+	ofstream fDebug;
 };

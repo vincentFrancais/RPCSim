@@ -294,7 +294,7 @@ uint getUUID() {
 	f.open("/dev/random", std::ios::binary | std::ios::in);
 	
 	if (!f.good()) {
-		cerr << "Error reading /dev/urandom" << endl;
+		cerr << "Error reading /dev/random" << endl;
 		exit(0);
 	}
 	

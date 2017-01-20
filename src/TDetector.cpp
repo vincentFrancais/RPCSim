@@ -281,7 +281,7 @@ void TDetector::initialiseDetector(){
 	//plotSC();
 	//cout << (1 or 0) << endl;
 	if( !(fConfig.noAvalanche or fConfig.onlyMult) )
-		makeEbarTable(false);
+		makeEbarTable(true);
 }
 
 vector<double> TDetector::getTransportParameters(double Ex, double Ey, double Ez){
@@ -666,21 +666,29 @@ void TDetector::makeEbarTable( bool const& binary ){
 		return;
 	}
 
-	cout << "Computing Ebar Table" << endl;
+	cout << "Computing Ebar Table ... " << endl;
 
 	ofstream data("out/Ebar.dat", ios::out | ios::trunc);
 
 	int i,j,k;
-	//#pragma omp parallel for private(j,k) collapse(3)
+	double m=0;
+	double div = 100./size;
+	#pragma omp parallel for private(j,k) collapse(3)
 	for(i=0; i<n; i++){	//z
 		for(j=0; j<n; j++){	//zp
 			for(k=0; k<n; k++){	//l
+				//cout << m*div << endl;
+				cout << "\r" << std::fixed << std::setprecision(2) << m*div << " %" << flush;
 				double Ebar = computeEbar( fEbarZarray[i], fEbarLarray[k], fEbarZparray[j] );
 				//cout << fEbarZarray[i] << "\t" << fEbarZparray[j] << "\t" << fEbarLarray[k] << "\t" << Ebar << endl;
 				fEbarVecTable[ (long)i*(long)n*(long)n + (long)j*(long)n + (long)k ] = Ebar;
+				m++;
 			}
 		}
 	}
+	
+	cout << endl;
+	cout.clear();
 	
 	ofstream o;
 	if (binary) {
