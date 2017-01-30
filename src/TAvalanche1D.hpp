@@ -196,11 +196,11 @@ class TAvalanche1D : public TAvalanche {
 	
 	//TRandomEngine* fRandRng;
 	//TRandomEngine* fRandRngCLT;
-	RngStream* fRandRngLongiDiff;
+	//RngStream* fRandRngLongiDiff;
 	TRandomEngine* fRngCLT; 
 	TRandomEngine* fRngMult;
 	TRandomEngine* fRngLongiDiff;
-	TRandomEngine* fRNG;
+	//TRandomEngine* fRNG;
 	
 	long double fRandomNumberGenerated;
 	
@@ -213,5 +213,5 @@ class TAvalanche1D : public TAvalanche {
 	TTimer fLongiDiffTimer;
 	double fLongiDiffTimeLimit;
 	
-	ofstream fDebug;
+	//ofstream fDebug;
 };

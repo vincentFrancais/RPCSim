@@ -23,17 +23,10 @@ using namespace std;
 TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, sfmt_t sfmt, const int& id) : TAvalanche() {
 	fDet = det;
 	fConfig = config;
-	
-	/* 
-	 * Initialise RNGs
-	 * The generator used for longitudinal diffusion is defined in the config file.
-	 * For avalanche procedure we use RNGStreams has it is very handy to handle in multithreaded env. 
-	 */
 	 
 	/* TODO: Change that so one can choose the generator and its initialisation for each component of the sim! */
 	//fRandRng = new TRandomEngineMT(getUUID());
 	//fRandRngCLT = new TRandomEngineMT(getUUID());
-	
 	
 	fRngMult = new TRandomEngineMTDC(id,1234,43216);
 	fRngCLT = new TRandomEngineMTDC(id+1,1234,43216);
@@ -41,7 +34,7 @@ TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, sfmt_t sfmt, const i
 	
 	//fRandRng = new TRandomEngineMRG();
 	//fRandRngCLT = new TRandomEngineMRG();
-		
+	/*	
 	if (fConfig.generator == "SFMT") 
 		fRNG = new TRandomEngineSFMT(sfmt);
 	else if (fConfig.generator == "MT") {
@@ -62,39 +55,18 @@ TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, sfmt_t sfmt, const i
 		fRNG = new TRandomEngineMRG();
 	else 
 		fRNG = new TRandomEngineMRG();
-	
+	*/
 	
 	//cout << "Avalanche multiplication generator: " << fRandRng->Generator() << endl;
 	//cout << "Avalanche multiplication CLT generator: " << fRandRngCLT->Generator() << endl;
-	cout << "Longitudinal diffusion generator: " << fRNG->Generator() << endl;
-	cout << endl;
+	//cout << "Longitudinal diffusion generator: " << fRNG->Generator() << endl;
+	//cout << endl;
 	
 	/* Call to initialisation function */
 	init();
 }
 
-/*
-TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, int id) : TAvalanche() {
-	fDet = det;
-	fConfig = config;
-		
-	cout << id << " " << filename << endl;
-	
-	fRNG = new TRandomEngineMT(filename);
-	fRandRng = new TRandomEngineMRG();
-	fRandRngCLT = new TRandomEngineMRG();
-	
-	//========================
-	
-	init();
-}
-*/
-
 TAvalanche1D::~TAvalanche1D() {
-	//delete fRandRng;
-	//delete fRandRngCLT;
-	//delete fRandRngLongiDiff;
-	delete fRNG;
 	delete fRngLongiDiff;
 	delete fRngMult;
 	delete fRngCLT;
@@ -109,15 +81,12 @@ void TAvalanche1D::init() {
 	iNstep = fConfig.nSteps;
 	 
 	fGapWidth = fConfig.gapWidth;
-	//fResistiveLayersWidth = fDet->getResistiveLayersWidth();
 	fAnodeWidth = fConfig.anodeWidth;
 	fAnodePermittivity = fConfig.anodePermittivity;
 	fCathodePermittivity = fConfig.cathodePermittivity;
 	fCathodeWidth = fConfig.cathodeWidth;
 	fDt = fDet->getTimeStep();
 	fDx = fDet->getSpaceStep();
-	
-	//fGeometry = fDet->getGeometry();
 	
 	fDiffL = fDet->getDiffL();
 	fDiffT = fDet->getDiffT();
@@ -167,7 +136,7 @@ void TAvalanche1D::init() {
 	
 	fLongiDiffTimeLimit = 1400;
 	
-	if ( bEbarComputed ){
+	if ( bEbarComputed ) {
 		iEbarTableSize = fDet->getEbarTableSize();
 		int n = iEbarTableSize+1;
 		fEbarTable = vector<double>(n*n*n,0);
@@ -187,7 +156,7 @@ void TAvalanche1D::init() {
 	
 	eAvalStatus = AVAL_NO_ERROR; //Avalanche status to NO_ERROR at begining
 	
-	fDebug.open("out/debug.dat", ios::out | ios::trunc);
+	//fDebug.open("out/debug.dat", ios::out | ios::trunc);
 	
 	//testInterpolation();
 	//exit(0);
@@ -371,6 +340,7 @@ void TAvalanche1D::simulateEvent(){
 		sigData.close();
 		chargesData.close();
 		chargesTotData.close();
+		sigTotData.close();
 		/* ========= */
 		makeResultFile();
 		//cout << "Random number generated: " << fRandomNumberGenerated << endl;
@@ -440,12 +410,12 @@ void TAvalanche1D::computeInducedSignal2(){
 	if (fTotalCharges.size() == 0)	{
 		fTotalCharges.push_back(charges);
 		fTotalSignal.push_back(sig);
-		fDebug << charges << endl;
+		//fDebug << charges << endl;
 	}
 	else {
 		fTotalCharges.push_back(fTotalCharges.back() + charges);
 		fTotalSignal.push_back(fTotalSignal.back() + sig);
-		fDebug << fTotalCharges.back() << endl;
+		//fDebug << fTotalCharges.back() << endl;
 	}
 	
 	if (fTotalCharges.back() >= fChargeThres and !bThrCrossTime ){
@@ -723,7 +693,7 @@ bool TAvalanche1D::checkForExplosiveBehavior() {
 
 bool TAvalanche1D::propagate() {
 	double n, nProduced;
-	vector<double> copy (fElecDetectorGrid);
+	vector<double> copy (fElecDetectorGrid);	
 	
 	for(iCurrentDetectorStep=0; iCurrentDetectorStep<iNstep-1; iCurrentDetectorStep++){
 		n = copy.at(iCurrentDetectorStep);
@@ -769,6 +739,7 @@ bool TAvalanche1D::avalanche() {
 		if (iTimeStep == 1)
 			fElecDetectorGrid.at(0) = 0;
 		
+		
 		/* Check for explosive avalanche */
 		/*if (iTimeStep > 400) {
 			if( checkForExplosiveBehavior() ){
@@ -785,6 +756,7 @@ bool TAvalanche1D::avalanche() {
 		
 		if (!bStreamer and fNElectrons[iTimeStep] >= fStreamerThr)
 			bStreamer = true;
+			
 		computeInducedSignal2();
 		
 		/*	Elecs in last bin has reached the anode, so we empty it */
@@ -805,6 +777,10 @@ bool TAvalanche1D::avalanche() {
 		if ( iTimeStep > iNElectronsSize ) {
 				eAvalStatus = AVAL_ERROR_TIMESTEP_EXCEEDING_LIMIT;
 				return false;
+		}
+		
+		if (iTimeStep == 1100) {
+			break;
 		}
 		
 		if (bDummyRun and iTimeStep == 100)

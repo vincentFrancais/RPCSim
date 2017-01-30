@@ -69,18 +69,17 @@ void * wrapperFunction(void * Arg){
 	
 	pthread_mutex_lock(&gTrackLock);
 	avalanche.initialiseTrackHeed();
-	//avalanche.initialiseSingleCluster(0);
 	pthread_mutex_unlock(&gTrackLock);
 	
 	//avalanche.disableSpaceChargeEffect();
 	avalanche.simulateEvent();
 
 	result = avalanche.getResultFile();
-
+	cout << "1" << endl;
 	pthread_mutex_lock(&gPipeLock);
     write(gPipe[1], &result, sizeof(result));
     pthread_mutex_unlock(&gPipeLock);
-
+cout << "2" << endl;
 	return 0;
 }
 
@@ -118,30 +117,6 @@ void * WriteResults(void * Arg)
 }
 
 int main(int argc, char** argv) {	
-	/*
-	mt_struct *mts0, *mts1, *mts3;
-	
-	TRandomEngineMTDC* mtdc =  new TRandomEngineMTDC(1,4172,3241);
-	
-    /* This trys to find a small Mersenne Twister with period 2^521-1. 
-    mts0 = get_mt_parameter_id_st(32,521,0,4172);
-    mts1 = get_mt_parameter_id_st(32,521,1,4172);
-    mts3 = get_mt_parameter_id_st(32,521,0,4172);
-    
-    sgenrand_mt(3241, mts0);
-    sgenrand_mt(3241, mts1);
-    sgenrand_mt(324, mts3);
-    //for (int i=0; i<100; i++)
-		cout << genrand_mt(mts0)*(1.0/4294967296.0) << endl;
-		cout << genrand_mt(mts1)*(1.0/4294967296.0) << endl;
-		cout << genrand_mt(mts1)*(1.0/4294967296.0) << endl;
-		cout << genrand_mt(mts3)*(1.0/4294967296.0) << endl;
-		cout << mtdc->RandU01() << endl;
-		cout << mtdc->RandU01() << endl;
-	delete mtdc;
-	exit(0);
-	*/
-	
 	/* Read config file */
 	TConfig config;
 	if (argc > 1)
@@ -244,6 +219,7 @@ int main(int argc, char** argv) {
 		data->sfmt = SFMT;
 		data->id = i+2;
 		TThreadsFactory::GetInstance()->CreateThread(wrapperFunction, data);
+		cout << "3" << endl;
 		SFMT_jump(&SFMT, jump10_20);
     }
 
