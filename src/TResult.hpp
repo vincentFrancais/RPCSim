@@ -33,9 +33,11 @@ struct TResult
 	int thrCrossTimeStep;
 	int avalStatus;
 	double computeTime;
-	uint charges_size;
+	int streamer;
+	/*uint charges_size;
 	uint chargesTot_size;
-	uint signal_size;
+	uint signal_size;*/
+	uint size;
 	double charges[2000];
 	double chargesTot[2000];
 	double signal[2000];

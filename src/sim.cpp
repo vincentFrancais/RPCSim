@@ -75,11 +75,11 @@ void * wrapperFunction(void * Arg){
 	avalanche.simulateEvent();
 
 	result = avalanche.getResultFile();
-	cout << "1" << endl;
+
 	pthread_mutex_lock(&gPipeLock);
     write(gPipe[1], &result, sizeof(result));
     pthread_mutex_unlock(&gPipeLock);
-cout << "2" << endl;
+
 	return 0;
 }
 
@@ -219,7 +219,6 @@ int main(int argc, char** argv) {
 		data->sfmt = SFMT;
 		data->id = i+2;
 		TThreadsFactory::GetInstance()->CreateThread(wrapperFunction, data);
-		cout << "3" << endl;
 		SFMT_jump(&SFMT, jump10_20);
     }
 

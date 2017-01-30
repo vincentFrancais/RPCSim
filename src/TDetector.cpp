@@ -329,7 +329,7 @@ void TDetector::setGarfieldSeed( const int& s ) {
 	Garfield::randomEngine.Seed(s);
 	cout.clear();
 	
-	if (fConfig.verbose)
+	if (fConfig.verbosityLevel >= 2)
 		cout << "Garfield TRandom3 seed: " << s << endl;
 }
 

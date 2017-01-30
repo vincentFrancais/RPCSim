@@ -126,7 +126,9 @@ void TAvalanche1D::init() {
 	
 	bVerbose = fConfig.verbose;
 	bSnapshots = fConfig.snaps;
-	iVerbosityLevel = fConfig.verbosityLevel;
+	iVerbosityLevel = fConfig.verbosityLevel;	
+	//if (fConfig.nThreads > 1)
+	//	iVerbosityLevel = 1;
 	
 	bStreamer = false;
 	fStreamerThr = 4.85e8;
@@ -225,7 +227,7 @@ void TAvalanche1D::initialiseTrackHeed(){
 		return;
 	}
 	
-	if (iVerbosityLevel > 0)
+	if (iVerbosityLevel >= 1)
 		cout << "Initialising avalanche with Heed track (thread " << Id << ") for " << fConfig.particleName << " with momentum " << toString(fConfig.particleMomentum) << " at position " << toString(fConfig.x0) << " with angle " << toString(fConfig.theta) << endl;
 	
 	if (fConfig.garfieldSeed != -1)
@@ -266,7 +268,7 @@ void TAvalanche1D::initialiseTrackHeed(){
 	fClusterDensity = track->GetClusterDensity();
 	delete track;
 	
-	if (iVerbosityLevel > 1)
+	if (iVerbosityLevel >= 2)
 		cout << "TAvalanche1D::initialiseTrackHeed -- " << toString( fNElectrons[0] ) << " electrons produced by heed track." << endl;
 	
 	bAvalancheInitialised = true;
@@ -278,6 +280,7 @@ void TAvalanche1D::initialiseSingleCluster(){
 		return;
 	}
 	
+	if (iVerbosityLevel >= 2)
 	cout << "Initialising avalanche with " << fConfig.n0 << " electron(s) at position " << fConfig.x0 << endl;
 	
 	fNElectrons = vector<double> (iNElectronsSize,0);
@@ -295,9 +298,11 @@ void TAvalanche1D::makeResultFile() {
 	fResult.thrCrossTimeStep = iThrCrossTimeStep;
 	fResult.avalStatus = eAvalStatus;
 	fResult.computeTime = fElapsed;
-	fResult.charges_size = fCharges.size();
+	/*fResult.charges_size = fCharges.size();
 	fResult.chargesTot_size = fTotalCharges.size();
-	fResult.signal_size = fSignal.size();
+	fResult.signal_size = fSignal.size();*/
+	fResult.size = fCharges.size();
+	fResult.streamer = bStreamer;
 	for (uint i=0; i<fCharges.size(); i++ )
 		fResult.charges[i] = fCharges[i];
 	for (uint i=0; i<fTotalCharges.size(); i++ )
@@ -344,7 +349,7 @@ void TAvalanche1D::simulateEvent(){
 		/* ========= */
 		makeResultFile();
 		//cout << "Random number generated: " << fRandomNumberGenerated << endl;
-		if (fConfig.verbose)
+		if (iVerbosityLevel >= 1)
 			cout << currentDateTime() << " - Avalanche simulation id " << Id << " (" << countSim << "nth simulation) terminated with success (" << duration_cast<seconds>(elapsed).count() << " seconds)." << endl<< endl;
 	}
 	else{
@@ -355,7 +360,7 @@ void TAvalanche1D::simulateEvent(){
 		fSignal.push_back(-1);
 		fCharges.push_back(-1);
 		makeResultFile();
-		if (fConfig.verbose)
+		if (iVerbosityLevel >= 1)
 			cout << currentDateTime() << " - Avalanche simulation id " << Id << " (" << countSim << "nth simulation) terminated with error: " << eAvalStatus << " (" << duration_cast<seconds>(elapsed).count() << " seconds)." << endl<< endl;
 	}
 	countSim++;
@@ -515,7 +520,7 @@ double TAvalanche1D::electronMultiplication(const double& n){
 	}
 	
 	for(int i=0; i<n; i++){
-		double s = fRngMult->RandU01();
+		s = fRngMult->RandU01();
 		if (s==1)	s = fRngMult->RandU01();
 		nProduced += multiplicationRiegler(fDx,s);
 	}
@@ -537,7 +542,7 @@ double TAvalanche1D::multiplicationCLT(const double& x, const double& n){
 	double c = Gaus(m, sigma, fRngCLT);
 	
 	if (c > 1e10){
-		if ( bVerbose ){
+		/*if ( iVerbosityLevel >= 2){
 			cout << "k: " << k << endl;
 			cout << "eta: " << fEta.at(iCurrentDetectorStep) << endl;
 			cout << "alpha: " << fAlpha.at(iCurrentDetectorStep) << endl;
@@ -546,14 +551,14 @@ double TAvalanche1D::multiplicationCLT(const double& x, const double& n){
 			cout << "m: " << m << endl;
 			cout << "sigma: " << sigma << endl;
 			cout << "c: " << c << endl;
-		}
-		cerr << "Explosive behavior detected -- stopping avalanche" <<endl;
+		}*/
+		//cerr << "Explosive behavior detected -- stopping avalanche" <<endl;
 		eAvalStatus = AVAL_EXPLOSIVE_BEHAVIOR_CLT;
 		return 0;
 		//cin.ignore();
 	}
 	
-	if( ( (abs(c > 1) and !trunc(c)>0) or (abs(c < 1) and !round(c)>=0) ) and bVerbose ) {
+/*	if( ( (abs(c > 1) and !trunc(c)>0) or (abs(c < 1) and !round(c)>=0) ) and iVerbosityLevel >= 2 ) {
 		cout << "k: " << k << endl;
 		cout << "eta: " << fEta.at(iCurrentDetectorStep) << endl;
 		cout << "alpha: " << fAlpha.at(iCurrentDetectorStep) << endl;
@@ -562,7 +567,7 @@ double TAvalanche1D::multiplicationCLT(const double& x, const double& n){
 		cout << "m: " << m << endl;
 		cout << "sigma: " << sigma << endl;
 		cout << "c: " << c << endl;
-	}
+	}*/
 	
 	if (abs(c>1)){
 		DEBUGASSERT(trunc(c)>0);
@@ -769,7 +774,7 @@ bool TAvalanche1D::avalanche() {
 		if (fNElectrons.at(iTimeStep) == 0)
 			break;
 		
-		if (bVerbose) {
+		if (iVerbosityLevel >= 2) {
 			cout << "time step: " << iTimeStep << "\t Nelec: " << fNElectrons[iTimeStep] << "\t" << "NelecLastBin: " << fNelecAnode;
 			cout << " " << -sumVec(fPosIonDetectorGrid)+sumVec(fElecDetectorGrid)+sumVec(fNegIonDetectorGrid) << endl;
 		}
@@ -777,10 +782,6 @@ bool TAvalanche1D::avalanche() {
 		if ( iTimeStep > iNElectronsSize ) {
 				eAvalStatus = AVAL_ERROR_TIMESTEP_EXCEEDING_LIMIT;
 				return false;
-		}
-		
-		if (iTimeStep == 1100) {
-			break;
 		}
 		
 		if (bDummyRun and iTimeStep == 100)
@@ -826,7 +827,9 @@ void TAvalanche1D::computeSCEffect() {
 }
 
 void TAvalanche1D::makeSnapshot() {
-	cout << "Snapshot at: " << iTimeStep*fDt << endl;
+	if (iVerbosityLevel >= 2)
+		cout << "Snapshot at: " << iTimeStep*fDt << endl;
+	
 	string fileName;
 	if (iTimeStep<10)
 		fileName = "out/snaps/snap-000"+toString(iTimeStep)+".dat";
