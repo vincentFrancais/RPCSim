@@ -20,6 +20,7 @@ TConfig::TConfig (string file) {
 	computeEfficiency = false;
 	useUUIDSeed = false;
 	onlyMult = false;
+	debugOutput = false;
 	
 	XMLDocument doc;
 	if ( doc.LoadFile( file.c_str() ) != XML_SUCCESS ){
@@ -29,34 +30,54 @@ TConfig::TConfig (string file) {
 	
 	XMLHandle docHandle( &doc );
 	
-	XMLElement* detectorElement = docHandle.FirstChildElement("Detector").ToElement();
-	if( detectorElement == NULL){
-		cerr << "TConfig -- Error reading config file" << endl;
+	/*  Detector configuration */
+	//XMLElement* detectorElement = docHandle.FirstChildElement("Detector").ToElement();
+	if(  docHandle.FirstChildElement("Detector").ToElement() == NULL){
+		cerr << "TConfig -- Error reading config file\t";
+		cerr << "Detector field missing in config file." << endl;
 		cerr << XML_ERROR_PARSING_ELEMENT << endl;
 		exit(0);
 	}
 	
-	detectorElement->FirstChildElement( "GapWidth" )->QueryDoubleText( &gapWidth );
-	detectorElement->FirstChildElement( "Steps" )->QueryIntText( &nSteps );
-	detectorElement->FirstChildElement( "ElectricField" )->QueryDoubleText( &ElectricField );
+	XMLElement* gapw = docHandle.FirstChildElement("Detector").FirstChildElement("GapWidth").ToElement();
+	XMLElement* steps = docHandle.FirstChildElement("Detector").FirstChildElement("Steps").ToElement();
+	XMLElement* efield = docHandle.FirstChildElement("Detector").FirstChildElement("ElectricField").ToElement();
+	if ( gapw==NULL or steps==NULL or efield==NULL ){
+		cerr << "TConfig -- Error reading config file\t";
+		cerr << "GapWidth  or  Steps  or  ElectricField   field(s) missing in config file." << endl;
+		exit(0);
+	}
+	gapw->QueryDoubleText( &gapWidth );
+	steps->QueryIntText( &nSteps );
+	efield->QueryDoubleText( &ElectricField );
 	
-	XMLElement* anodeElem = docHandle.FirstChildElement( "Detector" ).FirstChildElement( "Anode" ).ToElement();
-	XMLElement* cathodeElem = docHandle.FirstChildElement( "Detector" ).FirstChildElement( "Cathode" ).ToElement();
 	
-	if ( anodeElem and cathodeElem ) {
-		anodeElem->FirstChildElement( "width" )->QueryDoubleText( &anodeWidth );
-		anodeElem->FirstChildElement( "permittivity" )->QueryDoubleText( &anodePermittivity );
+	XMLElement* anodeWidthElem = docHandle.FirstChildElement( "Detector" ).FirstChildElement( "Anode" ).FirstChildElement( "width" ).ToElement();
+	XMLElement* cathodeWidthElem = docHandle.FirstChildElement( "Detector" ).FirstChildElement( "Cathode" ).FirstChildElement( "width" ).ToElement();
+	XMLElement* anodePermElem = docHandle.FirstChildElement( "Detector" ).FirstChildElement( "Anode" ).FirstChildElement( "permittivity" ).ToElement();
+	XMLElement* cathodePermElem = docHandle.FirstChildElement( "Detector" ).FirstChildElement( "Cathode" ).FirstChildElement( "permittivity" ).ToElement();
+	if ( anodeWidthElem and cathodeWidthElem and anodePermElem and cathodePermElem ) {
+		anodeWidthElem->QueryDoubleText( &anodeWidth );
+		anodePermElem->QueryDoubleText( &anodePermittivity );
 		
-		cathodeElem->FirstChildElement( "width" )->QueryDoubleText( &cathodeWidth );
-		cathodeElem->FirstChildElement( "permittivity" )->QueryDoubleText( &cathodePermittivity );
+		cathodeWidthElem->QueryDoubleText( &cathodeWidth );
+		cathodePermElem->QueryDoubleText( &cathodePermittivity );
 	} 
 	else {
 		cerr << "TConfig -- Error, anode and/or cathode informations missing." << endl;
 		exit(0);
 	}
 	
+	/*
 	for (XMLElement* child = docHandle.FirstChildElement("Detector").FirstChildElement("ResistiveLayers").FirstChildElement("layer").ToElement(); child != NULL; child = child->NextSiblingElement("layer")){
 		double width, epsilon;
+		XMLElement* elWidth = child->FirstChildElement("width");
+		XMLElement* elEps = child->FirstChildElement("resistivity");
+		if (elWidth==NULL or elEps==NULL) {
+			cerr << "TConfig -- Error reading config file\t";
+			cerr << "Missing   width   or   epsilon   information in config file." << endl;
+		exit(0);
+		}
 		child->FirstChildElement( "width" )->QueryDoubleText( &width );
 		child->FirstChildElement( "resistivity" )->QueryDoubleText( &epsilon );
 		
@@ -64,29 +85,83 @@ TConfig::TConfig (string file) {
 		resisLayersWidth.push_back(width);
 		resisLayersEpsilon.push_back(epsilon);
 	}
+	if (nResisLayers < 2){
+		cerr << "TConfig -- Error reading config file\t";
+		cerr << "Missing layer(s) information in config file." << endl;
+		exit(0);
+	}
+	*/
 	
-	docHandle.FirstChildElement("Gas").FirstChildElement("temperature").ToElement()->QueryDoubleText( &gasTemperature );
-	docHandle.FirstChildElement("Gas").FirstChildElement("pressure").ToElement()->QueryDoubleText( &gasPressure );
+	XMLElement* EbarElem = docHandle.FirstChildElement( "Detector" ).FirstChildElement( "EbarTableCalculationSteps" ).ToElement();
+	if ( EbarElem )
+		EbarElem->QueryIntText( &EbarTableCalculationSteps );
+	else
+		EbarTableCalculationSteps = 0;
 	
-	for (XMLElement* child = docHandle.FirstChildElement("Gas").FirstChildElement("gas").ToElement(); child != NULL; child = child->NextSiblingElement("gas")){
+	
+	/* Gas configuration */
+	if(  docHandle.FirstChildElement("Gas").ToElement() == NULL){
+		cerr << "TConfig -- Error reading config file\t";
+		cerr << "Gas field missing in config file." << endl;
+		cerr << XML_ERROR_PARSING_ELEMENT << endl;
+		exit(0);
+	}
+	XMLElement* temp = docHandle.FirstChildElement("Gas").FirstChildElement("temperature").ToElement();
+	XMLElement* pres = docHandle.FirstChildElement("Gas").FirstChildElement("pressure").ToElement();
+	if (temp==NULL or pres==NULL){
+		cerr << "TConfig -- Error reading config file\t";
+		cerr << "Gas pressure  or  gas temperature   field(s) missing in config file." << endl;
+		exit(0);
+	}
+	temp->QueryDoubleText( &gasTemperature );
+	pres->QueryDoubleText( &gasPressure );
+	
+	for (XMLElement* child = docHandle.FirstChildElement("Gas").FirstChildElement("gas").ToElement(); child != NULL; child = child->NextSiblingElement("gas")) {
 		string name;
 		double percentage;
-		 
-		name = child->FirstChildElement("name")->GetText();
-		child->FirstChildElement( "percentage" )->QueryDoubleText( &percentage );
+		
+		XMLElement* elName =  child->FirstChildElement("name");
+		XMLElement* elPercentage =  child->FirstChildElement("percentage");
+		if (elName==NULL or elPercentage==NULL) {
+			cerr << "TConfig -- Error reading config file\t";
+			cerr << "Missing   gas name   or   gas percentage   information(s) in config file." << endl;
+		exit(0);
+		}
+		name = elName->GetText();
+		elPercentage->QueryDoubleText( &percentage );
 		
 		nGases++;
 		gasNames.push_back(name);
 		gasPercentage.push_back(percentage);
 	}
+	if (nGases < 1){
+		cerr << "TConfig -- Error reading config file\t";
+		cerr << "Missing gas information in config file." << endl;
+		exit(0);
+	}
 	
+	/* Simulation configuration */
 	XMLElement* simElement = docHandle.FirstChildElement("Simulation").ToElement();
 	if ( simElement == NULL){
-		cerr << "TConfig -- Error reading config file" << endl;
+		cerr << "TConfig -- Error reading config file\t";
+		cerr << "Simulation field missing in config file." << endl;
 		cerr << XML_ERROR_PARSING_ELEMENT << endl;
 		exit(0);
 	}
 	
+	if ( simElement->FirstChildElement( "Particle" )->FirstChildElement( "name" ) == NULL
+		 or simElement->FirstChildElement( "Particle" )->FirstChildElement( "momentum" ) == NULL
+		 or simElement->FirstChildElement( "Particle" )->FirstChildElement( "x0" ) == NULL
+		 or simElement->FirstChildElement( "Particle" )->FirstChildElement( "theta" ) == NULL
+		 or simElement->FirstChildElement( "Events" ) == NULL
+		 or simElement->FirstChildElement( "Threads" ) == NULL
+		 or simElement->FirstChildElement( "Generator" ) == NULL ) {
+			
+		cerr << "TConfig -- Error reading config file\t";
+		cerr << "particle infos  or  events  or  threads  or  generator   missing in config file." << endl;
+		cerr << XML_ERROR_PARSING_ELEMENT << endl;
+		exit(0);
+		}
 	particleName = simElement->FirstChildElement( "Particle" )->FirstChildElement( "name" )->GetText();
 	simElement->FirstChildElement( "Particle" )->FirstChildElement( "momentum" )->QueryDoubleText( &particleMomentum );
 	simElement->FirstChildElement( "Particle" )->FirstChildElement( "x0" )->QueryDoubleText( &x0 );
@@ -115,13 +190,13 @@ TConfig::TConfig (string file) {
 		GarSeed->QueryIntText( &garfieldSeed );
 	}
 	
-	if ( simElement->FirstChildElement( "Verbose" )->ToElement() )
+	if ( simElement->FirstChildElement( "Verbose" ) )
 		simElement->FirstChildElement( "Verbose" )->QueryBoolText( &verbose );
 		
-	if ( simElement->FirstChildElement( "Snapshots" )->ToElement() )
+	if ( simElement->FirstChildElement( "Snapshots" ) )
 		simElement->FirstChildElement( "Snapshots" )->QueryBoolText( &snaps );
 		
-	if ( simElement->FirstChildElement( "VerbosityLevel" )->ToElement() )
+	if ( simElement->FirstChildElement( "VerbosityLevel" ) )
 		simElement->FirstChildElement( "VerbosityLevel" )->QueryIntText( &verbosityLevel );
 	
 	XMLElement* SCElement = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "SingleCluster" ).ToElement();
@@ -140,29 +215,31 @@ TConfig::TConfig (string file) {
 	}
 	else
 		singleCluster = false;
+		
+		
+	if ( simElement->FirstChildElement( "NoAvalanche" ) )
+		simElement->FirstChildElement( "NoAvalanche" )->QueryBoolText( &noAvalanche );
 	
-	XMLElement* EbarElem = docHandle.FirstChildElement( "Detector" ).FirstChildElement( "EbarTableCalculationSteps" ).ToElement();
-	if ( EbarElem )
-		EbarElem->QueryIntText( &EbarTableCalculationSteps );
-	else
-		EbarTableCalculationSteps = 0;
+	if ( simElement->FirstChildElement( "Efficiency" ) )
+		simElement->FirstChildElement( "Efficiency" )->QueryBoolText( &computeEfficiency );
 		
-	XMLElement* noAvalElem = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "NoAvalanche" ).ToElement();
-	if ( noAvalElem )
-		noAvalElem->QueryBoolText( &noAvalanche );
-	
-	XMLElement* effElem = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "Efficiency" ).ToElement();
-	if ( effElem )
-		effElem->QueryBoolText( &computeEfficiency );
+	if ( simElement->FirstChildElement( "UUIDSeed" ) )
+		simElement->FirstChildElement( "UUIDSeed" )->QueryBoolText( &useUUIDSeed );
 		
-	XMLElement* UUIDElement = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "UUIDSeed" ).ToElement();
-	if ( UUIDElement )
-		UUIDElement->QueryBoolText( &useUUIDSeed );
+	if ( simElement->FirstChildElement( "OnlyMultiplication" ) )
+		simElement->FirstChildElement( "OnlyMultiplication" )->QueryBoolText( &onlyMult );
 		
-	XMLElement* OnlyMultElement = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "OnlyMultiplication" ).ToElement();
-	if ( OnlyMultElement )
-		OnlyMultElement->QueryBoolText( &onlyMult );
+	if ( simElement->FirstChildElement( "DebugOutput" ) )
+		simElement->FirstChildElement( "DebugOutput" )->QueryBoolText( &debugOutput );
+			
 }
+
+
+
+
+
+
+
 
 void TConfig::print () {
 	cout << "Configuration:" << endl;
@@ -170,6 +247,7 @@ void TConfig::print () {
 	cout << "\t gap width: " << gapWidth << endl;
 	cout << "\t steps: " << nSteps << endl;
 	cout << "\t electric field: " << ElectricField << endl;
+	cout << "\t ebar calculation steps: " << EbarTableCalculationSteps << endl;
 	/*
 	cout << "\t resistive layers: " << nResisLayers << endl;
 	for(int i=0; i<nResisLayers; i++)
@@ -215,6 +293,7 @@ void TConfig::print () {
 	if (computeEfficiency) {
 		cout << "\t Efficiency runs" << endl; 
 	}
+	cout << "\t Debug outputs: " << debugOutput  << endl; 
 	cout << "\t verbose: " << verbose << endl;
 	cout << "\t verbosity level: " << verbosityLevel << endl;
 	cout << "\t snapshots: " << snaps << endl;

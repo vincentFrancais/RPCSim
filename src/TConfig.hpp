@@ -63,6 +63,7 @@ struct TConfig {
 	bool computeEfficiency;
 	bool useUUIDSeed;
 	bool onlyMult;
+	bool debugOutput;
 
 	//TConfig() : nResisLayers(0), nGases(0), outFile("out/"), generator("SFMT"), garfieldSeed(-1) { }
 };

@@ -136,6 +136,8 @@ void TAvalanche1D::init() {
 	bDummyRun = false;
 	bOnlyMultiplicationAvalanche = fConfig.onlyMult;
 	
+	fDebugOutputs = fConfig.debugOutput;
+	
 	fLongiDiffTimeLimit = 1400;
 	
 	if ( bEbarComputed ) {
@@ -331,21 +333,23 @@ void TAvalanche1D::simulateEvent(){
 		fElapsed = static_cast<double>( duration_cast<seconds>(elapsed).count() );
 		checkDetectorGrid();
 		/* debug outputs */
-		ofstream data("out/electrons.dat", ios::out | ios::trunc);
-		ofstream sigData("out/signal.dat", ios::out | ios::trunc);
-		ofstream chargesData("out/charges.dat", ios::out | ios::trunc);
-		ofstream chargesTotData("out/chargesTot.dat", ios::out | ios::trunc);
-		ofstream sigTotData("out/signalTot.dat", ios::out | ios::trunc);
-		for(int i=0; i<iNElectronsSize; i++) data << fNElectrons[i] << endl;
-		for(uint i=0; i<fSignal.size(); i++)	sigData << fSignal[i] << endl;
-		for(uint i=0; i<fCharges.size(); i++)	chargesData << fCharges[i] << endl;
-		for(uint i=0; i<fTotalCharges.size(); i++)	chargesTotData << fTotalCharges[i] << endl;
-		for(uint i=0; i<fTotalSignal.size(); i++)	sigTotData << fTotalSignal[i] << endl;
-		data.close();
-		sigData.close();
-		chargesData.close();
-		chargesTotData.close();
-		sigTotData.close();
+		if (fDebugOutputs) {
+			ofstream data("out/electrons.dat", ios::out | ios::trunc);
+			ofstream sigData("out/signal.dat", ios::out | ios::trunc);
+			ofstream chargesData("out/charges.dat", ios::out | ios::trunc);
+			ofstream chargesTotData("out/chargesTot.dat", ios::out | ios::trunc);
+			ofstream sigTotData("out/signalTot.dat", ios::out | ios::trunc);
+			for(int i=0; i<iNElectronsSize; i++) data << fNElectrons[i] << endl;
+			for(uint i=0; i<fSignal.size(); i++)	sigData << fSignal[i] << endl;
+			for(uint i=0; i<fCharges.size(); i++)	chargesData << fCharges[i] << endl;
+			for(uint i=0; i<fTotalCharges.size(); i++)	chargesTotData << fTotalCharges[i] << endl;
+			for(uint i=0; i<fTotalSignal.size(); i++)	sigTotData << fTotalSignal[i] << endl;
+			data.close();
+			sigData.close();
+			chargesData.close();
+			chargesTotData.close();
+			sigTotData.close();
+		}
 		/* ========= */
 		makeResultFile();
 		//cout << "Random number generated: " << fRandomNumberGenerated << endl;
@@ -771,17 +775,17 @@ bool TAvalanche1D::avalanche() {
 			fElecDetectorGrid.at(iNstep-1) = 0;
 		}
 		
+		if ( iTimeStep > iNElectronsSize ) {
+			eAvalStatus = AVAL_ERROR_TIMESTEP_EXCEEDING_LIMIT;
+			return false;
+		}
+		
 		if (fNElectrons.at(iTimeStep) == 0)
 			break;
 		
 		if (iVerbosityLevel >= 2) {
 			cout << "time step: " << iTimeStep << "\t Nelec: " << fNElectrons[iTimeStep] << "\t" << "NelecLastBin: " << fNelecAnode;
 			cout << " " << -sumVec(fPosIonDetectorGrid)+sumVec(fElecDetectorGrid)+sumVec(fNegIonDetectorGrid) << endl;
-		}
-
-		if ( iTimeStep > iNElectronsSize ) {
-				eAvalStatus = AVAL_ERROR_TIMESTEP_EXCEEDING_LIMIT;
-				return false;
 		}
 		
 		if (bDummyRun and iTimeStep == 100)

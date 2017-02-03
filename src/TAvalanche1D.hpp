@@ -186,6 +186,7 @@ class TAvalanche1D : public TAvalanche {
 	bool bThrCrossTime;
 	bool bComputeSpaceChargeEffet;
 	bool bHasReachSpaceChargeLimit;
+	bool fDebugOutputs;
 	
 	bool bStreamer;
 	double fStreamerThr;

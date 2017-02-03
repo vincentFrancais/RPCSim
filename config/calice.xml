@@ -52,8 +52,8 @@
 		<theta>0</theta>
 	</Particle>
 	
-	<Events>1</Events>
-	<Threads>1</Threads>
+	<Events>20</Events>
+	<Threads>2</Threads>
 	
 	<OutFile>run-calice-test.dat</OutFile>
 	
@@ -64,7 +64,7 @@
 		<seed>3</seed>
 	</Seeds>
 	<UUIDSeed>0</UUIDSeed>
-	<GarfieldSeed>-394188927</GarfieldSeed>
+	<GarfieldSeed>-1</GarfieldSeed>
 	
 	
 <!--	<SingleCluster>
@@ -73,6 +73,7 @@
 	</SingleCluster> -->
 	
 	<Verbose>1</Verbose>
-	<VerbosityLevel>3</VerbosityLevel>
-	<Snapshots>1</Snapshots>
+	<VerbosityLevel>1</VerbosityLevel>
+	<Snapshots>0</Snapshots>
+	<DebugOutput>1</DebugOutput>
 </Simulation>

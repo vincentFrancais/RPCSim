@@ -83,8 +83,7 @@ void * wrapperFunction(void * Arg){
 	return 0;
 }
 
-void * WriteResults(void * Arg)
-{	
+void * WriteResults(void * Arg) {	
     TResult result;
     char * outputFile = reinterpret_cast<char *>(Arg);
 
@@ -167,7 +166,6 @@ int main(int argc, char** argv) {
     
     
     /* Init our detector */
-	
 	TDetector* detector = new TDetector(config);
 	if (config.computeEfficiency and argc > 2){
 		detector->setElectricField( atof(argv[2])*1e3, 0, 0 );
@@ -220,6 +218,7 @@ int main(int argc, char** argv) {
 		data->id = i+2;
 		TThreadsFactory::GetInstance()->CreateThread(wrapperFunction, data);
 		SFMT_jump(&SFMT, jump10_20);
+		cout << "here" << endl;
     }
 
 
