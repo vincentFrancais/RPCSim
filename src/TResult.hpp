@@ -41,6 +41,8 @@ struct TResult
 	double charges[2000];
 	double chargesTot[2000];
 	double signal[2000];
+	double pions[2000];
+	double nions[2000];
 };
 
 #endif

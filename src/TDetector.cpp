@@ -172,8 +172,6 @@ void TDetector::setGasMixture() {
 	fTemperature = mGas->GetTemperature();
 	fPressure = mGas->GetPressure();
 	
-	writeGasTransportParameters();
-	
 	bGasLoaded = true;
 }
 
@@ -213,14 +211,14 @@ Garfield::MediumMagboltz* TDetector::getGas(){
 void TDetector::makeGasTable(){
 	cout << "Generating gas table -- could take some time" << endl;
 	Garfield::MediumMagboltz* gas = mGas;
-	gas->SetFieldGrid(100., 120000., 50, false, 0., 0., 1, 0., 0., 1);
+	gas->SetFieldGrid(5000., 90000., 50, false, 0., 0., 1, 0., 0., 1);
 	gas->EnableDebugging();
 	gas->Initialise();
 	gas->DisableDebugging();
 	//const double lP = 0.0;
 	//const double rP = 0.0;
 	//gas->EnablePenningTransfer(rP, lP, "c2h2f4");
-	gas->GenerateGasTable(4, true);
+	gas->GenerateGasTable(3, true);
 
 	gas->WriteGasFile("gastables/"+mGasTableName);
 }
@@ -607,7 +605,8 @@ void TDetector::makeEbarTable( bool const& binary ){
 	// WARNING writing and loading has to be done in the same format (binary or plain text)
 	
 	if( !bDetectorInitialised ){
-		cerr << "Error -- TDetector::makeEbarTable -- Detector needs to be initialised first." << endl;
+		printError(__FILE__, toString(__LINE__), __func__, "Detector needs to be initialised first. Aborting");
+		//cerr << "Error -- TDetector::makeEbarTable -- Detector needs to be initialised first." << endl;
 		exit(0);
 	}
 	
@@ -656,7 +655,8 @@ void TDetector::makeEbarTable( bool const& binary ){
 		//inf.read(reinterpret_cast<char*>(&fEbarVecTable[0]), fEbarVecTable.size() * sizeof(fEbarVecTable[0]));
 		
 		if ( std::accumulate(fEbarVecTable.begin(),fEbarVecTable.end(),0.) == 0 ) {
-			cerr << "Error while loading Ebar table." << endl;
+			printError(__FILE__, toString(__LINE__), __func__, "Error while loading Ebar table. Table is empty. Aborting");
+			//cerr << "Error while loading Ebar table." << endl;
 			exit(0);
 		}
 		

@@ -103,6 +103,8 @@ class TAvalanche1D : public TAvalanche {
 	
 	void makeSnapshot();
 	
+	void writeRPCParameters();
+	
 	void disableSpaceChargeEffect() {bComputeSpaceChargeEffet = false;}
 	void enableSpaceChargeEffect() {bComputeSpaceChargeEffet = true;}
 	

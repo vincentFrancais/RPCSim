@@ -75,7 +75,7 @@ void * wrapperFunction(void * Arg){
 	pthread_mutex_lock(&gTrackLock);
 	avalanche.initialiseTrackHeed();
 	pthread_mutex_unlock(&gTrackLock);
-	
+
 	//avalanche.disableSpaceChargeEffect();
 	avalanche.simulateEvent();
 

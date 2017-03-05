@@ -137,3 +137,5 @@ std::vector<double> linspace(double start, double end, int num);
 }*/
 
 double bessel_J0 (double X);
+
+void printError(std::string file, std::string line, std::string func, std::string what);

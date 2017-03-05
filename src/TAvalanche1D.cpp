@@ -30,7 +30,11 @@ TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, sfmt_t sfmt, const i
 	
 	fRngMult = new TRandomEngineMTDC(id,1234,43216);
 	fRngCLT = new TRandomEngineMTDC(id+1,1234,43216);
-	fRngLongiDiff = new TRandomEngineMTDC(id+2,1234,43216);
+	
+	if (fConfig.generator == "SFMT")
+		fRngLongiDiff = new TRandomEngineSFMT(sfmt);
+	else
+		fRngLongiDiff = new TRandomEngineMTDC(id+2,1234,43216);
 	
 	//fRandRng = new TRandomEngineMRG();
 	//fRandRngCLT = new TRandomEngineMRG();
@@ -158,12 +162,24 @@ void TAvalanche1D::init() {
 	fSignal.clear();
 	fCharges.clear();
 	
+	writeRPCParameters();
+	
 	eAvalStatus = AVAL_NO_ERROR; //Avalanche status to NO_ERROR at begining
 	
 	//fDebug.open("out/debug.dat", ios::out | ios::trunc);
 	
 	//testInterpolation();
 	//exit(0);
+}
+
+void TAvalanche1D::writeRPCParameters() {
+	string outFileName = "out/analytic_parameters_"+toString(fE.at(0))+"_"+toString(fConfig.particleMomentum)+".dat";
+	ofstream data(outFileName, ios::out | ios::trunc);
+	
+	data << "#alpha\teta\tg\tEw\tQthr" << endl;
+	data << fAlpha.at(0) << "\t" <<  fEta.at(0) << "\t" << fGapWidth << "\t" << fAnodePermittivity/(fCathodeWidth+fAnodeWidth + fGapWidth*fAnodePermittivity) << "\t" << fChargeThres;
+	
+	data.close();
 }
 
 void TAvalanche1D::computeClusterDensity(const string& particleName, const double& Pmin, const double& Pmax, const int& steps){
@@ -240,7 +256,7 @@ void TAvalanche1D::initialiseTrackHeed(){
 	fDet->setGarfieldSeed(fSeed);
 
 	Garfield::TrackHeed* track = new Garfield::TrackHeed();
-	track->EnablePhotoAbsorptionCrossSectionOutput();
+	//track->EnablePhotoAbsorptionCrossSectionOutput();
 	track->SetSensor(fDet->getSensor());
 	track->SetParticle(fConfig.particleName);
 	track->SetMomentum(fConfig.particleMomentum);
@@ -256,7 +272,9 @@ void TAvalanche1D::initialiseTrackHeed(){
 	double ec = 0.; 							// Energy loss in a collision
 	double dummy = 0.; 							// Dummy variable (not used at present)
 	fNElectrons = vector<double> (iNElectronsSize,0);
-
+	
+	cout << "Cluster density for " << fConfig.particleName << "with momentum " << fConfig.particleMomentum << " : " << track->GetClusterDensity() << endl;
+	
 	while (track->GetCluster(xc, yc, zc, tc, nc, ec, dummy)){
 		fClustersX[xc] = nc;
 		fClustersY[yc] = nc;
@@ -311,18 +329,25 @@ void TAvalanche1D::makeResultFile() {
 		fResult.chargesTot[i] = fTotalCharges[i];
 	for (uint i=0; i<fSignal.size(); i++ )
 		fResult.signal[i] = fSignal[i];
+	for (uint i=0; i<fNegIonDetectorGrid.size(); i++)
+		fResult.nions[i] = fNegIonDetectorGrid[i];
+	for (uint i=0; i<fPosIonDetectorGrid.size(); i++)
+		fResult.pions[i] = fPosIonDetectorGrid[i];
 }
 
 void TAvalanche1D::simulateEvent(){
 	/* check if avalanche has been initialised */
 	if ( !bAvalancheInitialised ){
-		cerr << "Error -- TAvalanche1D::simulateEvent -- Avalanche has not been initialised. Aborting" << endl<< endl;
+		printError(__FILE__, toString(__LINE__), __func__, "Avalanche has not been initialised. Aborting");
+		//cerr << "Error -- TAvalanche1D::simulateEvent -- Avalanche has not been initialised. Aborting" << endl<< endl;
 		exit(0);
 	}
 	
 	/* if Space Charge Effect is enabled check if Ebar table has been computed */
 	if ( bComputeSpaceChargeEffet && !bEbarComputed && !bOnlyMultiplicationAvalanche ){
-		cerr << "Error -- TAvalanche1D::simulateEvent -- No Ebar table found. Aborting simulation." << endl<< endl;
+		//cerr << __LINE__ << __FILE__ << __func__ << endl;
+		printError(__FILE__, toString(__LINE__), __func__, "No Ebar table found. Aborting simulation");
+		//cerr << "Error -- TAvalanche1D::simulateEvent -- No Ebar table found. Aborting simulation." << endl<< endl;
 		exit(0); 
 	}
 	
@@ -409,8 +434,8 @@ void TAvalanche1D::computeInducedSignal2(){
 	double charges = 0;
 
 	for(int z=0; z < iNstep; z++){
-		sig += weightingField * fVx.at(z)*1e9 * e0 * fElecDetectorGrid[z];
-		charges += weightingField * e0 * fElecDetectorGrid[z] * fDx;
+		sig += weightingField * fVx.at(z)*1e9 * e0*fElecDetectorGrid[z];
+		charges += weightingField * e0*fElecDetectorGrid[z] * fDx;
 	}
 	
 	fSignal.push_back(sig);
@@ -624,7 +649,8 @@ void TAvalanche1D::computeLongitudinalDiffusion() {
 				newDetectorGrid.at(newPosIndex)++;
 			}
 			catch (const std::out_of_range& oor) {
-				std::cerr << "Out of Range error: " << oor.what() << '\n';
+				//std::cerr << "Out of Range error: " << oor.what() << '\n';
+				printError(__FILE__, toString(__LINE__), __func__, oor.what());
 				cerr << newPosIndex << " " << pos << " " << newPos << endl;
 				exit(0);
 			}
@@ -748,7 +774,6 @@ bool TAvalanche1D::avalanche() {
 		if (iTimeStep == 1)
 			fElecDetectorGrid.at(0) = 0;
 		
-		
 		/* Check for explosive avalanche */
 		/*if (iTimeStep > 400) {
 			if( checkForExplosiveBehavior() ){
@@ -768,13 +793,6 @@ bool TAvalanche1D::avalanche() {
 			
 		computeInducedSignal2();
 		
-		/*	Elecs in last bin has reached the anode, so we empty it */
-		if (fElecDetectorGrid.at(iNstep-1) > 0){
-			fNelecAnode += fElecDetectorGrid.at(iNstep-1);
-			fElecOnAnode.push_back( make_pair(fElecDetectorGrid.at(iNstep-1),iTimeStep*fDx) );
-			fElecDetectorGrid.at(iNstep-1) = 0;
-		}
-		
 		if ( iTimeStep > iNElectronsSize ) {
 			eAvalStatus = AVAL_ERROR_TIMESTEP_EXCEEDING_LIMIT;
 			return false;
@@ -786,6 +804,13 @@ bool TAvalanche1D::avalanche() {
 		if (iVerbosityLevel >= 2) {
 			cout << "time step: " << iTimeStep << "\t Nelec: " << fNElectrons[iTimeStep] << "\t" << "NelecLastBin: " << fNelecAnode;
 			cout << " " << -sumVec(fPosIonDetectorGrid)+sumVec(fElecDetectorGrid)+sumVec(fNegIonDetectorGrid) << endl;
+		}
+		
+		/*	Electrons in the last last bin have reached the anode during the last propagation, so we empty it */
+		if (fElecDetectorGrid.at(iNstep-1) > 0){
+			fNelecAnode += fElecDetectorGrid.at(iNstep-1);
+			fElecOnAnode.push_back( make_pair(fElecDetectorGrid.at(iNstep-1),iTimeStep*fDx) );
+			fElecDetectorGrid.at(iNstep-1) = 0;
 		}
 		
 		if (bDummyRun and iTimeStep == 100)

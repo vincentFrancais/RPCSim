@@ -15,7 +15,7 @@ TAvalanche::~TAvalanche() {
 void TAvalanche::computeClusterDensity(const TDetector* det, const string& particleName, const double& Pmin, const double& Pmax, const int& steps){
 	cout << "TAvalanche::Computing cluster density." << endl;
 	double P = Pmin;
-	string outFileName = "out/cluster_density_"+particleName+"_"+det->getGasName()+".dat";
+	string outFileName = "out/cluster_density_"+particleName+"_"+det->getGasName()+"_"+toString(det->getConfig().gapWidth)+".dat";
 	ofstream data(outFileName.c_str(), ios::out | ios::trunc);
 	
 	Garfield::TrackHeed* track = new Garfield::TrackHeed();

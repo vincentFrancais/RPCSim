@@ -413,3 +413,8 @@ std::vector<double> linspace(double start, double end, int num){
 	linspaced.push_back(end);
 	return linspaced;
 }
+
+void printError(std::string file, std::string line, std::string func, std::string what) {
+	std::cerr << "Error -- file " << file << ", function " << func << " (l." << line << ") -- ";
+	std::cerr << what << endl; 
+}
