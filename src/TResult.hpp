@@ -43,6 +43,7 @@ struct TResult
 	double signal[2000];
 	double pions[2000];
 	double nions[2000];
+	double nelec[2000];
 };
 
 #endif

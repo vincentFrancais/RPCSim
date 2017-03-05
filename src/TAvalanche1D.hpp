@@ -189,6 +189,7 @@ class TAvalanche1D : public TAvalanche {
 	bool bComputeSpaceChargeEffet;
 	bool bHasReachSpaceChargeLimit;
 	bool fDebugOutputs;
+	bool bNotFullAval;
 	
 	bool bStreamer;
 	double fStreamerThr;

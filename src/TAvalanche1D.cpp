@@ -138,6 +138,7 @@ void TAvalanche1D::init() {
 	fStreamerThr = 4.85e8;
 	
 	bDummyRun = false;
+	bNotFullAval = true;
 	bOnlyMultiplicationAvalanche = fConfig.onlyMult;
 	
 	fDebugOutputs = fConfig.debugOutput;
@@ -333,6 +334,8 @@ void TAvalanche1D::makeResultFile() {
 		fResult.nions[i] = fNegIonDetectorGrid[i];
 	for (uint i=0; i<fPosIonDetectorGrid.size(); i++)
 		fResult.pions[i] = fPosIonDetectorGrid[i];
+	for (uint i=0; i<fCharges.size(); i++)
+		fResult.nelec[i] = fNElectrons[i];
 }
 
 void TAvalanche1D::simulateEvent(){
@@ -818,6 +821,9 @@ bool TAvalanche1D::avalanche() {
 			
 		//if (!bComputeSpaceChargeEffet and !bHasReachSpaceChargeLimit and fNElectrons[iTimeStep]>fSpaceChargeLimit)
 		//	bHasReachSpaceChargeLimit = true;
+		
+		if (bThrCrossTime and bNotFullAval)
+			break;
 		
 		iTimeStep++;
 	}
