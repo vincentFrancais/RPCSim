@@ -36,7 +36,7 @@ TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, sfmt_t sfmt, const i
 	else
 		fRngLongiDiff = new TRandomEngineMTDC(id+2,1234,43216);
 		
-	fRngMisc = new TRandomEngineMRG();
+	fRngMisc = new TRandomEngineMT(getUUID());
 	
 	//fRandRng = new TRandomEngineMRG();
 	//fRandRngCLT = new TRandomEngineMRG();
@@ -140,7 +140,7 @@ void TAvalanche1D::init() {
 	fStreamerThr = 4.85e8;
 	
 	bDummyRun = false;
-	bSimUntilThr = false;
+	bSimUntilThr = true;
 	bOnlyMultiplicationAvalanche = fConfig.onlyMult;
 	
 	fDebugOutputs = fConfig.debugOutput;
@@ -303,25 +303,25 @@ void TAvalanche1D::initialiseSingleCluster(){
 		return;
 	}
 	
-	double step = 0.;
+	double step = fConfig.x0;
+	int n0 = fConfig.n0;
 	
-	if (iVerbosityLevel >= 1) {
-		if (fConfig.x0 >= 0)
-			cout << "Initialising avalanche with " << fConfig.n0 << " electron(s) at step " << fConfig.x0 << endl;
-		else {
-			cout << "Initialising avalanche with " << fConfig.n0 << " electron(s) at random step ";// << fConfig.x0 << endl;
-			step = fRngCLT->RandU01() * iNstep;
-			cout << int(trunc(step)) << endl;
-		}
-	}
+	if (fConfig.x0 < 0)
+		step = int(trunc(fRngMisc->RandU01() * iNstep));
+	
+	if (fConfig.n0 < 0)
+		n0 = int( 80 * fRngMisc->RandU01() + 1 );
+	
+	if (iVerbosityLevel >= 1)
+		cout << "Initialising avalanche with " << n0 << " electron(s) at step " << step << endl;
 	
 	fNElectrons = vector<double> (iNElectronsSize,0);
 	
-	fNElectrons[0] = fConfig.n0;
-	if (fConfig.x0 >= 0)
-		fElecDetectorGrid[ int(trunc(fConfig.x0)) ] = fConfig.n0;
-	else
-		fElecDetectorGrid[ int(trunc(step)) ] = fConfig.n0;
+	fNElectrons[0] = n0;
+	fElecDetectorGrid[ int(trunc(step)) ] = n0;
+	
+	fClustersX[step] = n0;
+
 	
 	bAvalancheInitialised = true;
 }
@@ -333,6 +333,7 @@ void TAvalanche1D::makeResultFile() {
 	fResult.thrCrossTimeStep = iThrCrossTimeStep;
 	fResult.avalStatus = eAvalStatus;
 	fResult.computeTime = fElapsed;
+	fResult.nCluster = fClustersX.size();
 	/*fResult.charges_size = fCharges.size();
 	fResult.chargesTot_size = fTotalCharges.size();
 	fResult.signal_size = fSignal.size();*/
@@ -350,6 +351,14 @@ void TAvalanche1D::makeResultFile() {
 		fResult.pions[i] = fPosIonDetectorGrid[i];
 	for (uint i=0; i<fCharges.size(); i++)
 		fResult.nelec[i] = fNElectrons[i];
+		
+	int index=0;
+	for (map<double, int>::iterator it=fClustersX.begin(); it!=fClustersX.end(); it++) {
+		fResult.clNe[index] = it->second;
+		fResult.clPos[index] = it->first;
+		index++;
+	}
+		
 }
 
 void TAvalanche1D::simulateEvent(){

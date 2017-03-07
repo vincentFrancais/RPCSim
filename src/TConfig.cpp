@@ -212,10 +212,10 @@ TConfig::TConfig (string file) {
 		singleCluster = true;
 		SCElement->FirstChildElement( "n0" )->QueryIntText( &n0 );
 		SCElement->FirstChildElement( "x0" )->QueryDoubleText( &x0 );
-		if (n0 <= 0) {
+		/*if (n0 <= 0) {
 			cerr << "TConfig -- n0 must be greater than 0. Aborting" << endl;
 			exit(0);
-		}
+		}*/
 		/*else if (x0 < 0) {
 			
 			//cerr << "TConfig -- n0 must be equal to or greater than 0. Aborting" << endl;
@@ -292,10 +292,17 @@ void TConfig::print () {
 	if (useUUIDSeed)
 		cout << "\t Random seed" << endl;
 	if (singleCluster) {
+		cout << "\t single cluster at step ";
 		if (x0 >= 0)
-			cout << "\t single cluster at step " << x0 << " containing " << n0 << " electrons" << endl;
+			cout << x0;
 		else
-			cout << "\t single cluster at random step containing " << n0 << " electrons" << endl; 
+			cout << "random";
+		cout << " containing ";
+		if (n0 >=0)
+			cout << n0; 
+		 else
+			cout << "random";
+		cout << " electrons" << endl; 
 	}
 	if (noAvalanche) {
 		cout << "\t No avalanche simulation" << endl; 

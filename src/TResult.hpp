@@ -34,6 +34,7 @@ struct TResult
 	int avalStatus;
 	double computeTime;
 	int streamer;
+	int nCluster;
 	/*uint charges_size;
 	uint chargesTot_size;
 	uint signal_size;*/
@@ -44,6 +45,8 @@ struct TResult
 	double pions[2000];
 	double nions[2000];
 	double nelec[2000];
+	double clPos[2000];
+	double clNe[2000];
 };
 
 #endif
