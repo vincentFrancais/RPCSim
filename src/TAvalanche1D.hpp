@@ -189,7 +189,7 @@ class TAvalanche1D : public TAvalanche {
 	bool bComputeSpaceChargeEffet;
 	bool bHasReachSpaceChargeLimit;
 	bool fDebugOutputs;
-	bool bNotFullAval;
+	bool bSimUntilThr;
 	
 	bool bStreamer;
 	double fStreamerThr;
@@ -204,6 +204,7 @@ class TAvalanche1D : public TAvalanche {
 	TRandomEngine* fRngCLT; 
 	TRandomEngine* fRngMult;
 	TRandomEngine* fRngLongiDiff;
+	TRandomEngine* fRngMisc;
 	//TRandomEngine* fRNG;
 	
 	long double fRandomNumberGenerated;

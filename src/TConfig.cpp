@@ -11,6 +11,7 @@ TConfig::TConfig (string file) {
 	outFile = "out/";
 	generator = "SFMT";
 	garfieldSeed = -1;
+	//threshold = 0.; //pC
 	verbose = false;
 	verbosityLevel = 0;
 	snaps = false;
@@ -98,6 +99,13 @@ TConfig::TConfig (string file) {
 	else
 		EbarTableCalculationSteps = 0;
 	
+	XMLElement* thrElem = docHandle.FirstChildElement( "Detector" ).FirstChildElement( "Threshold" ).ToElement();
+	if( thrElem )
+		thrElem->QueryDoubleText (&threshold);
+	else {
+		cerr << "TConfig -- Error, detection threshold information missing." << endl;
+		exit(0);
+	}
 	
 	/* Gas configuration */
 	if(  docHandle.FirstChildElement("Gas").ToElement() == NULL){
@@ -208,10 +216,11 @@ TConfig::TConfig (string file) {
 			cerr << "TConfig -- n0 must be greater than 0. Aborting" << endl;
 			exit(0);
 		}
-		else if (x0 < 0) {
-			cerr << "TConfig -- n0 must be equal to or greater than 0. Aborting" << endl;
-			exit(0);
-		}
+		/*else if (x0 < 0) {
+			
+			//cerr << "TConfig -- n0 must be equal to or greater than 0. Aborting" << endl;
+			//exit(0);
+		}*/
 	}
 	else
 		singleCluster = false;
@@ -254,7 +263,8 @@ void TConfig::print () {
 		cout << "\t layer " << i << " -- width: " << resisLayersWidth[i] << " - epsilon: " << resisLayersEpsilon[i] << endl;
 	*/
 	cout << "\t anode: " << anodeWidth << " cm, epsilon=" << anodePermittivity << endl;
-	cout << "\t cathode: " << cathodeWidth << " cm, epsilon=" << cathodePermittivity << endl;\
+	cout << "\t cathode: " << cathodeWidth << " cm, epsilon=" << cathodePermittivity << endl;
+	cout << "\t threshold: " << threshold << " pC" << endl;
 	cout << "   Gas composition:" << endl;
 	cout << "\t temperature: " << gasTemperature << endl;
 	cout << "\t pressure: " << gasPressure << endl;
@@ -282,7 +292,10 @@ void TConfig::print () {
 	if (useUUIDSeed)
 		cout << "\t Random seed" << endl;
 	if (singleCluster) {
-		cout << "\t single cluster at " << x0 << " containing " << n0 << " electrons" << endl; 
+		if (x0 >= 0)
+			cout << "\t single cluster at step " << x0 << " containing " << n0 << " electrons" << endl;
+		else
+			cout << "\t single cluster at random step containing " << n0 << " electrons" << endl; 
 	}
 	if (noAvalanche) {
 		cout << "\t No avalanche simulation" << endl; 

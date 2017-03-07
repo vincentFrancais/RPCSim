@@ -35,6 +35,8 @@ TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, sfmt_t sfmt, const i
 		fRngLongiDiff = new TRandomEngineSFMT(sfmt);
 	else
 		fRngLongiDiff = new TRandomEngineMTDC(id+2,1234,43216);
+		
+	fRngMisc = new TRandomEngineMRG();
 	
 	//fRandRng = new TRandomEngineMRG();
 	//fRandRngCLT = new TRandomEngineMRG();
@@ -138,7 +140,7 @@ void TAvalanche1D::init() {
 	fStreamerThr = 4.85e8;
 	
 	bDummyRun = false;
-	bNotFullAval = true;
+	bSimUntilThr = false;
 	bOnlyMultiplicationAvalanche = fConfig.onlyMult;
 	
 	fDebugOutputs = fConfig.debugOutput;
@@ -301,13 +303,25 @@ void TAvalanche1D::initialiseSingleCluster(){
 		return;
 	}
 	
-	if (iVerbosityLevel >= 2)
-	cout << "Initialising avalanche with " << fConfig.n0 << " electron(s) at position " << fConfig.x0 << endl;
+	double step = 0.;
+	
+	if (iVerbosityLevel >= 1) {
+		if (fConfig.x0 >= 0)
+			cout << "Initialising avalanche with " << fConfig.n0 << " electron(s) at step " << fConfig.x0 << endl;
+		else {
+			cout << "Initialising avalanche with " << fConfig.n0 << " electron(s) at random step ";// << fConfig.x0 << endl;
+			step = fRngCLT->RandU01() * iNstep;
+			cout << int(trunc(step)) << endl;
+		}
+	}
 	
 	fNElectrons = vector<double> (iNElectronsSize,0);
 	
 	fNElectrons[0] = fConfig.n0;
-	fElecDetectorGrid[ int(trunc(fConfig.x0)) ] = fConfig.n0;
+	if (fConfig.x0 >= 0)
+		fElecDetectorGrid[ int(trunc(fConfig.x0)) ] = fConfig.n0;
+	else
+		fElecDetectorGrid[ int(trunc(step)) ] = fConfig.n0;
 	
 	bAvalancheInitialised = true;
 }
@@ -765,8 +779,8 @@ bool TAvalanche1D::avalanche() {
 			makeSnapshot();
 		
 		/* First we compute the space charge electric field and update parameters */
-		if ( bComputeSpaceChargeEffet and !bOnlyMultiplicationAvalanche )
-			computeSCEffect();
+		/*if ( bComputeSpaceChargeEffet and !bOnlyMultiplicationAvalanche )
+			computeSCEffect();*/
 			
 		if ( !propagate() )
 			return false;
@@ -816,13 +830,13 @@ bool TAvalanche1D::avalanche() {
 			fElecDetectorGrid.at(iNstep-1) = 0;
 		}
 		
-		if (bDummyRun and iTimeStep == 100)
+		if (bDummyRun and iTimeStep == 500)
 			break;
 			
 		//if (!bComputeSpaceChargeEffet and !bHasReachSpaceChargeLimit and fNElectrons[iTimeStep]>fSpaceChargeLimit)
 		//	bHasReachSpaceChargeLimit = true;
 		
-		if (bThrCrossTime and bNotFullAval)
+		if (bThrCrossTime and bSimUntilThr)
 			break;
 		
 		iTimeStep++;

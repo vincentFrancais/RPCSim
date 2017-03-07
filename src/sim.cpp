@@ -260,7 +260,7 @@ int main(int argc, const char** argv) {
 		data->id = i+2;
 		TThreadsFactory::GetInstance()->CreateThread(wrapperFunction, data);
 		SFMT_jump(&SFMT, jump10_20);
-		cout << "here" << endl;
+		//cout << "here" << endl;
     }
 
 

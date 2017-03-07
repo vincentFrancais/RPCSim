@@ -38,6 +38,8 @@ struct TConfig {
 	double gasTemperature;
 	double gasPressure;
 	
+	double threshold;
+	
 	string particleName;
 	double particleMomentum;
 	double x0;
@@ -56,6 +58,7 @@ struct TConfig {
 	
 	bool singleCluster;
 	int n0;
+	//bool randomSingleCluster;
 	
 	bool clusterDensity;
 	bool electronProduction;
