@@ -808,13 +808,13 @@ void TDetector::plotSC(){
 	ofstream data("out/ebarTot.dat", ios::out | ios::trunc);
 	vector<double> l = linspace(0,0.14,200);
 	
-	
+	/*
 	for(double& val : l) {
 		//cout << i << endl;
 		//l = i * 0.2/20;
 		data << val << "\t" << computeEbar(z, val, zp) << endl;
 	}
-	
+	*/
 	data.close();
 	
 	exit(0);

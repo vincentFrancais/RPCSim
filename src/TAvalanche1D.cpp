@@ -917,12 +917,12 @@ void TAvalanche1D::testInterpolation() {
 	vector<double> l = linspace(0,0.14,200);
 	
 	
-	for(double& val : l) {
+/*	for(double& val : l) {
 		//cout << i << endl;
 		//l = i * 0.2/20;
 		data << val << "\t" << interpolateEbar(z, zp, val) << endl;
 	}
-	
+	*/
 	data.close();
 }
 
