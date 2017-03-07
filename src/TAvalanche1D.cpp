@@ -114,7 +114,7 @@ void TAvalanche1D::init() {
 	
 	iNElectronsSize = 5*iNstep;
 	
-	fChargeThres = 100.e-15; //Coulombs
+	fChargeThres = fConfig.threshold;//100.e-15; //Coulombs
 	iThrCrossTimeStep = -1;
 	
 	fElecDetectorGrid = vector<double> (iNstep,0);
@@ -140,7 +140,7 @@ void TAvalanche1D::init() {
 	fStreamerThr = 4.85e8;
 	
 	bDummyRun = false;
-	bSimUntilThr = true;
+	bSimUntilThr = false;
 	bOnlyMultiplicationAvalanche = fConfig.onlyMult;
 	
 	fDebugOutputs = fConfig.debugOutput;
@@ -788,8 +788,8 @@ bool TAvalanche1D::avalanche() {
 			makeSnapshot();
 		
 		/* First we compute the space charge electric field and update parameters */
-		/*if ( bComputeSpaceChargeEffet and !bOnlyMultiplicationAvalanche )
-			computeSCEffect();*/
+		if ( bComputeSpaceChargeEffet and !bOnlyMultiplicationAvalanche )
+			computeSCEffect();
 			
 		if ( !propagate() )
 			return false;
