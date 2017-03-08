@@ -50,7 +50,7 @@ struct TConfig {
 	string outFile;
 	
 	string generator;
-	vector<int> seeds;
+	int globalSeed;
 	int garfieldSeed;
 	int verbosityLevel;
 	bool verbose;
@@ -64,7 +64,6 @@ struct TConfig {
 	bool electronProduction;
 	bool noAvalanche;
 	bool computeEfficiency;
-	bool useUUIDSeed;
 	bool onlyMult;
 	bool debugOutput;
 

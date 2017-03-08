@@ -19,7 +19,6 @@ TConfig::TConfig (string file) {
 	electronProduction = false;
 	noAvalanche = false;
 	computeEfficiency = false;
-	useUUIDSeed = false;
 	onlyMult = false;
 	debugOutput = false;
 	
@@ -185,13 +184,11 @@ TConfig::TConfig (string file) {
 		outFile += "out.dat";
 	//outFile = simElement->FirstChildElement( "outFile" )->GetText();
 	
-	XMLElement* seedsElemnt = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "Seeds" ).FirstChildElement("seed").ToElement();
-	while (seedsElemnt) {
-		int s;
-		seedsElemnt->QueryIntText( &s );
-		seeds.push_back(s);
-		seedsElemnt = seedsElemnt->NextSiblingElement();
-	}
+	XMLElement* seedElemnt = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "GlobalSeed" ).ToElement();
+	if (seedElemnt)
+		seedElemnt->QueryIntText( &globalSeed );
+	else
+		globalSeed = -1;
 	
 	XMLElement* GarSeed = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "GarfieldSeed" ).ToElement();
 	if (GarSeed) {
@@ -231,9 +228,6 @@ TConfig::TConfig (string file) {
 	
 	if ( simElement->FirstChildElement( "Efficiency" ) )
 		simElement->FirstChildElement( "Efficiency" )->QueryBoolText( &computeEfficiency );
-		
-	if ( simElement->FirstChildElement( "UUIDSeed" ) )
-		simElement->FirstChildElement( "UUIDSeed" )->QueryBoolText( &useUUIDSeed );
 		
 	if ( simElement->FirstChildElement( "OnlyMultiplication" ) )
 		simElement->FirstChildElement( "OnlyMultiplication" )->QueryBoolText( &onlyMult );
@@ -283,14 +277,10 @@ void TConfig::print () {
 	cout << "\t generator: " << generator << endl;
 	if (garfieldSeed != -1)
 		cout << "\t garfield Seed: " << garfieldSeed << endl;
-	if (seeds.size() > 0) {
-		cout << "\t seeds: ";
-		for (uint i=0; i<seeds.size(); i++)
-			cout << seeds.at(i) << "  ";
-		cout << endl;  
-	}
-	if (useUUIDSeed)
-		cout << "\t Random seed" << endl;
+	if (globalSeed == -1)
+		cout << "\t random global seed" << endl;
+	else
+		cout << "\t global seed: " << globalSeed << endl;
 	if (singleCluster) {
 		cout << "\t single cluster at step ";
 		if (x0 >= 0)

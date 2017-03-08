@@ -27,14 +27,14 @@ TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, sfmt_t sfmt, const i
 	/* TODO: Change that so one can choose the generator and its initialisation for each component of the sim! */
 	//fRandRng = new TRandomEngineMT(getUUID());
 	//fRandRngCLT = new TRandomEngineMT(getUUID());
-	
-	fRngMult = new TRandomEngineMTDC(id,1234,43216);
-	fRngCLT = new TRandomEngineMTDC(id+1,1234,43216);
+	//cout << "global seed:" << fConfig.globalSeed << endl;
+	fRngMult = new TRandomEngineMTDC(id,1234,fConfig.globalSeed);
+	fRngCLT = new TRandomEngineMTDC(id+1,1234,fConfig.globalSeed);
 	
 	if (fConfig.generator == "SFMT")
 		fRngLongiDiff = new TRandomEngineSFMT(sfmt);
 	else
-		fRngLongiDiff = new TRandomEngineMTDC(id+2,1234,43216);
+		fRngLongiDiff = new TRandomEngineMTDC(id+2,1234,fConfig.globalSeed);
 		
 	fRngMisc = new TRandomEngineMT(getUUID());
 	
@@ -114,7 +114,7 @@ void TAvalanche1D::init() {
 	
 	iNElectronsSize = 5*iNstep;
 	
-	fChargeThres = fConfig.threshold;//100.e-15; //Coulombs
+	fChargeThres = fConfig.threshold * 1.e-12;//100.e-15; //pC to Coulombs
 	iThrCrossTimeStep = -1;
 	
 	fElecDetectorGrid = vector<double> (iNstep,0);
@@ -302,7 +302,7 @@ void TAvalanche1D::initialiseSingleCluster(){
 		cerr << "TAvalanche1D::initialiseSingleCluster -- Avalanche already initialised." << endl;
 		return;
 	}
-	
+
 	double step = fConfig.x0;
 	int n0 = fConfig.n0;
 	

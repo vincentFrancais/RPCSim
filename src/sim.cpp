@@ -180,14 +180,15 @@ int main(int argc, const char** argv) {
 	
 	/* Init the SFMT status */
 	sfmt_t SFMT;
-	if (config.seeds.size() > 0 and !config.useUUIDSeed) {		
-		cout << "Init SFMT generator with seed: " << config.seeds.at(0) << endl;
-		sfmt_init_gen_rand(&SFMT, config.seeds.at(0));
+	if ( config.globalSeed != -1 ) {		
+		cout << "Init SFMT generator with seed: " << config.globalSeed << endl;
+		sfmt_init_gen_rand(&SFMT, config.globalSeed);
 	}
 	else {
 		uint seed = getUUID();
 		cout << "Init SFMT generator with random seed: " << seed << endl;
 		sfmt_init_gen_rand(&SFMT, seed);
+		config.globalSeed = seed;
 	}
     
     /* Initialize our pipe lock */
