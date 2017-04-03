@@ -61,7 +61,7 @@ INCDIRGAR = $(GARFIELD_HOME)/Include
 HEEDDIR = $(GARFIELD_HOME)/Heed
 GSLDIR = $(GSL_HOME)/lib
 LIBDIR = $(GARFIELD_HOME)/Library
-DCLIB = /home/vincent/work/DCMT/lib
+DCLIB = $(DCMT_HOME)/lib
 #PYTHON = yes
 #PYCFLAGS = -I/usr/include/python2.7 -I/usr/include/x86_64-linux-gnu/python2.7  -fno-strict-aliasing -D_FORTIFY_SOURCE=2 -fstack-protector-strong -Wformat -Werror=format-security  -DNDEBUG -fwrapv
 #PYLFLAGS = -L/usr/lib/python2.7/config-x86_64-linux-gnu -L/usr/lib -lpython2.7 -lpthread -ldl  -lutil -lm  -Xlinker -export-dynamic -Wl,-O1 -Wl,-Bsymbolic-functions
@@ -103,8 +103,8 @@ HDREXTS = .h .H .hh .hpp .HPP .h++ .hxx .hp
 
 # The pre-processor and compiler options.
 # Users can override those variables from the command line.
-CFLAGS  = -g -O2
-CXXFLAGS= -g -O2
+CFLAGS  = -pg -g -O2 #-fp-model precise -fp-model source
+CXXFLAGS= -pg -g -O2 #-fp-model precise -fp-model source
 
 # The C program compiler.
 CC     = gcc
