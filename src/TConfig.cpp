@@ -18,7 +18,7 @@ TConfig::TConfig (string file) {
 	clusterDensity = false;
 	electronProduction = false;
 	noAvalanche = false;
-	computeEfficiency = false;
+	//computeEfficiency = false;
 	onlyMult = false;
 	debugOutput = false;
 	
@@ -31,7 +31,6 @@ TConfig::TConfig (string file) {
 	XMLHandle docHandle( &doc );
 	
 	/*  Detector configuration */
-	//XMLElement* detectorElement = docHandle.FirstChildElement("Detector").ToElement();
 	if(  docHandle.FirstChildElement("Detector").ToElement() == NULL){
 		cerr << "TConfig -- Error reading config file\t";
 		cerr << "Detector field missing in config file." << endl;
@@ -67,30 +66,6 @@ TConfig::TConfig (string file) {
 		cerr << "TConfig -- Error, anode and/or cathode informations missing." << endl;
 		exit(0);
 	}
-	
-	/*
-	for (XMLElement* child = docHandle.FirstChildElement("Detector").FirstChildElement("ResistiveLayers").FirstChildElement("layer").ToElement(); child != NULL; child = child->NextSiblingElement("layer")){
-		double width, epsilon;
-		XMLElement* elWidth = child->FirstChildElement("width");
-		XMLElement* elEps = child->FirstChildElement("resistivity");
-		if (elWidth==NULL or elEps==NULL) {
-			cerr << "TConfig -- Error reading config file\t";
-			cerr << "Missing   width   or   epsilon   information in config file." << endl;
-		exit(0);
-		}
-		child->FirstChildElement( "width" )->QueryDoubleText( &width );
-		child->FirstChildElement( "resistivity" )->QueryDoubleText( &epsilon );
-		
-		nResisLayers++;
-		resisLayersWidth.push_back(width);
-		resisLayersEpsilon.push_back(epsilon);
-	}
-	if (nResisLayers < 2){
-		cerr << "TConfig -- Error reading config file\t";
-		cerr << "Missing layer(s) information in config file." << endl;
-		exit(0);
-	}
-	*/
 	
 	XMLElement* EbarElem = docHandle.FirstChildElement( "Detector" ).FirstChildElement( "EbarTableCalculationSteps" ).ToElement();
 	if ( EbarElem )
@@ -182,7 +157,6 @@ TConfig::TConfig (string file) {
 		outFile += outFileChild->GetText();
 	else
 		outFile += "out.dat";
-	//outFile = simElement->FirstChildElement( "outFile" )->GetText();
 	
 	XMLElement* seedElemnt = docHandle.FirstChildElement( "Simulation" ).FirstChildElement( "GlobalSeed" ).ToElement();
 	if (seedElemnt)
@@ -209,15 +183,6 @@ TConfig::TConfig (string file) {
 		singleCluster = true;
 		SCElement->FirstChildElement( "n0" )->QueryIntText( &n0 );
 		SCElement->FirstChildElement( "x0" )->QueryDoubleText( &x0 );
-		/*if (n0 <= 0) {
-			cerr << "TConfig -- n0 must be greater than 0. Aborting" << endl;
-			exit(0);
-		}*/
-		/*else if (x0 < 0) {
-			
-			//cerr << "TConfig -- n0 must be equal to or greater than 0. Aborting" << endl;
-			//exit(0);
-		}*/
 	}
 	else
 		singleCluster = false;
@@ -226,8 +191,8 @@ TConfig::TConfig (string file) {
 	if ( simElement->FirstChildElement( "NoAvalanche" ) )
 		simElement->FirstChildElement( "NoAvalanche" )->QueryBoolText( &noAvalanche );
 	
-	if ( simElement->FirstChildElement( "Efficiency" ) )
-		simElement->FirstChildElement( "Efficiency" )->QueryBoolText( &computeEfficiency );
+	/*if ( simElement->FirstChildElement( "Efficiency" ) )
+		simElement->FirstChildElement( "Efficiency" )->QueryBoolText( &computeEfficiency );*/
 		
 	if ( simElement->FirstChildElement( "OnlyMultiplication" ) )
 		simElement->FirstChildElement( "OnlyMultiplication" )->QueryBoolText( &onlyMult );
@@ -238,12 +203,6 @@ TConfig::TConfig (string file) {
 }
 
 
-
-
-
-
-
-
 void TConfig::print () {
 	cout << "Configuration:" << endl;
 	cout << "   Detector:" << endl;
@@ -251,11 +210,7 @@ void TConfig::print () {
 	cout << "\t steps: " << nSteps << endl;
 	cout << "\t electric field: " << ElectricField << endl;
 	cout << "\t ebar calculation steps: " << EbarTableCalculationSteps << endl;
-	/*
-	cout << "\t resistive layers: " << nResisLayers << endl;
-	for(int i=0; i<nResisLayers; i++)
-		cout << "\t layer " << i << " -- width: " << resisLayersWidth[i] << " - epsilon: " << resisLayersEpsilon[i] << endl;
-	*/
+
 	cout << "\t anode: " << anodeWidth << " cm, epsilon=" << anodePermittivity << endl;
 	cout << "\t cathode: " << cathodeWidth << " cm, epsilon=" << cathodePermittivity << endl;
 	cout << "\t threshold: " << threshold << " pC" << endl;
@@ -300,9 +255,9 @@ void TConfig::print () {
 	if (onlyMult) {
 		cout << "\t Only multiplication is simulated. Every other processes are deactivated." << endl; 
 	}
-	if (computeEfficiency) {
+	/*if (computeEfficiency) {
 		cout << "\t Efficiency runs" << endl; 
-	}
+	}*/
 	cout << "\t Debug outputs: " << debugOutput  << endl; 
 	cout << "\t verbose: " << verbose << endl;
 	cout << "\t verbosity level: " << verbosityLevel << endl;

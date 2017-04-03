@@ -87,16 +87,10 @@ class TDetector{
 	
 	inline double RadialChargeDistribution(const double& r, const double& l);
 	double computeEbar(const double& z, const double& l, const double& zp);
-//	#if defined(PYTHON)
-//		double computeEbar_Python(const double& z, const double& l, const double& zp);
-//	#endif
 	void makeEbarTable( bool const& binary=true );
 	void printEbarTable();
 	
 	TConfig getConfig(void) const {return fConfig;}
-	//double getGapWidth(void) const	{return fGeometry.gapWidth;}
-	//const double* getResistiveLayersWidth(void) const {return fGeometry.resistiveLayersWidth;}
-	//DetectorGeometry getGeometry(void) const {return fGeometry;}
 	string getGasName() const;
 	double getTimeStep(void) const	{return fDt;}
 	double getSpaceStep(void) const	{return fDx;}

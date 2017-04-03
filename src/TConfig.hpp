@@ -58,17 +58,14 @@ struct TConfig {
 	
 	bool singleCluster;
 	int n0;
-	//bool randomSingleCluster;
 	
 	bool clusterDensity;
 	bool electronProduction;
 	bool noAvalanche;
-	bool computeEfficiency;
+	//bool computeEfficiency;
 	bool onlyMult;
 	bool debugOutput;
 
-	//TConfig() : nResisLayers(0), nGases(0), outFile("out/"), generator("SFMT"), garfieldSeed(-1) { }
 };
 
-//TConfig readConfigFile(string fileName);
-//void printConfig(TConfig config);
+

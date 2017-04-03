@@ -47,17 +47,6 @@
 #include "TRandomEngineSFMT.hpp"
 #include "TTimer.hpp"
 
-
-#if defined( _PYTHON ) || defined( PYTHON ) || defined (__PYTHON__)
-#   ifndef PYTHON
-#       define PYTHON
-#   endif
-#endif
-
-#if defined(PYTHON)
-#	include <Python.h>
-#endif
-
 template<typename T>
 std::string toString(const T & value)
 {
@@ -71,10 +60,6 @@ std::string currentDateTime();
 uint64_t gettid();
 
 uint getUUID();
-
-//#if defined(PYTHON)
-//	int call_python_fun(std::string funName, std::vector<double> args, double& result);
-//#endif
 
 std::string GetHexRepresentation(const unsigned char * Bytes, size_t Length);
 
@@ -97,8 +82,6 @@ S sumArray(S array[], int size){
 
 double generateGaussianNumber(double mu, double sigma, TRandomEngine* stream);
 
-//double Gaus(double mean, double sigma, RngStream* stream);
-//double Gaus(double mean, double sigma, TRandomEngineSFMT* stream);
 double Gaus(double mean, double sigma, TRandomEngine* stream);
 
 template <typename Iterator, typename T>
@@ -119,22 +102,7 @@ void testRNG(std::string const& rng);
 
 bool almostEquals(double a, double b, double epsilon=0.001);
 
-// from http://stackoverflow.com/questions/27028226/python-linspace-in-c
 std::vector<double> linspace(double start, double end, int num);
-/*{
-  double start = static_cast<double>(start_in);
-  double end = static_cast<double>(end_in);
-  double num = static_cast<double>(num_in);
-  double delta = (end - start) / (num - 1);
-
-  std::vector<double> linspaced(num - 1);
-  for(int i=0; i < num; ++i)
-    {
-      linspaced[i] = start + delta * i;
-    }
-  linspaced.push_back(end);
-  return linspaced;
-}*/
 
 double bessel_J0 (double X);
 

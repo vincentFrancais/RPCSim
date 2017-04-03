@@ -21,6 +21,11 @@
  * 
  */
 
+/*
+ * Parent class for TAvalanche1D and 2D. 
+ * Instantiate and initialise timer.
+ */
+
 #pragma once
 
 #include <iostream>
@@ -49,14 +54,6 @@ class TAvalanche {
 	protected:
 	static int count;
 	static int countSim;
-	//TDetector* fDet;
-	//DetectorGeometry fGeometry;
-	
-	//RngStream* fRandRng;
-	//RngStream* fRandRngCLT;
-	//RngStream* fRandRngLongiDiff;
-	
-	//TResult fResult;
 	
 	TTimer fTimer;
 };

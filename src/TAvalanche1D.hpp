@@ -21,6 +21,10 @@
  * 
  */
  
+ /*
+  * Class for avalanche simulation in 1.5D.
+  */
+ 
  
 #pragma once
 
@@ -69,9 +73,8 @@ using namespace std;
 class TAvalanche1D : public TAvalanche {
 	
 	public:
-	//TAvalanche1D(TDetector* det, bool const& randomSeed=false);
+	/* The constructor needs a TDetector instance, with the config file, the SFMT status and an id for DCMT */
 	TAvalanche1D(TDetector* det, TConfig& config, const sfmt_t sfmt, const int& id);
-	//TAvalanche1D(TDetector* det, TConfig& config, int id);
 	
 	~TAvalanche1D();
 	
@@ -126,12 +129,10 @@ class TAvalanche1D : public TAvalanche {
 	uint fSeed;
 	
 	TDetector* fDet;
-	//DetectorGeometry fGeometry;
 	TConfig fConfig;
 	
 	int iNstep;
 	double fGapWidth;
-	//const double* fResistiveLayersWidth;
 	double fAnodeWidth, fCathodeWidth;
 	double fAnodePermittivity, fCathodePermittivity;
 	double fDt;
@@ -198,16 +199,10 @@ class TAvalanche1D : public TAvalanche {
 	
 	EAvalancheStatus eAvalStatus;
 	
-	//TRandomEngine* fRandRng;
-	//TRandomEngine* fRandRngCLT;
-	//RngStream* fRandRngLongiDiff;
 	TRandomEngine* fRngCLT; 
 	TRandomEngine* fRngMult;
 	TRandomEngine* fRngLongiDiff;
 	TRandomEngine* fRngMisc;
-	//TRandomEngine* fRNG;
-	
-	long double fRandomNumberGenerated;
 	
 	TResult fResult;
 	double fElapsed;
@@ -217,6 +212,5 @@ class TAvalanche1D : public TAvalanche {
 	
 	TTimer fLongiDiffTimer;
 	double fLongiDiffTimeLimit;
-	
-	//ofstream fDebug;
+
 };

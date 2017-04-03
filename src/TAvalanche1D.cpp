@@ -3,7 +3,6 @@
 #include <fstream>
 #include <cmath>
 #include <vector>
-//#include <assert.h> 
 #include <stdexcept>
 #include <utility>
 #include <limits>
@@ -15,19 +14,12 @@
 #include "helper_functions.hpp"
 #include "TConstants.hpp"
 
-//#include "gsl/gsl_const_mksa.h"
-//#include "gsl/gsl_math.h"
-
 using namespace std;
 
 TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, sfmt_t sfmt, const int& id) : TAvalanche() {
 	fDet = det;
 	fConfig = config;
-	 
-	/* TODO: Change that so one can choose the generator and its initialisation for each component of the sim! */
-	//fRandRng = new TRandomEngineMT(getUUID());
-	//fRandRngCLT = new TRandomEngineMT(getUUID());
-	//cout << "global seed:" << fConfig.globalSeed << endl;
+
 	fRngMult = new TRandomEngineMTDC(id,1234,fConfig.globalSeed);
 	fRngCLT = new TRandomEngineMTDC(id+1,1234,fConfig.globalSeed);
 	
@@ -38,35 +30,8 @@ TAvalanche1D::TAvalanche1D(TDetector* det, TConfig& config, sfmt_t sfmt, const i
 		
 	fRngMisc = new TRandomEngineMT(getUUID());
 	
-	//fRandRng = new TRandomEngineMRG();
-	//fRandRngCLT = new TRandomEngineMRG();
-	/*	
-	if (fConfig.generator == "SFMT") 
-		fRNG = new TRandomEngineSFMT(sfmt);
-	else if (fConfig.generator == "MT") {
-		int MTstatus = (id*100/config.nEvents)+1;
-		string filename;
-		if (MTstatus < 10)
-			filename = "MTStatus/mtS10p12i-000"+toString(MTstatus);
-		else if (MTstatus == 100)
-			filename = "MTStatus/mtS10p12i-0"+toString(MTstatus);
-		else
-			filename = "MTStatus/mtS10p12i-00"+toString(MTstatus);
-		
-		cout << id << " " << filename << endl;
-		
-		fRNG = new TRandomEngineMT(filename);
-	}
-	else if (fConfig.generator == "MRG") 
-		fRNG = new TRandomEngineMRG();
-	else 
-		fRNG = new TRandomEngineMRG();
-	*/
-	
-	//cout << "Avalanche multiplication generator: " << fRandRng->Generator() << endl;
-	//cout << "Avalanche multiplication CLT generator: " << fRandRngCLT->Generator() << endl;
-	//cout << "Longitudinal diffusion generator: " << fRNG->Generator() << endl;
-	//cout << endl;
+	cout << "Longitudinal diffusion generator: " << fRngLongiDiff->Generator() << endl;
+	cout << endl;
 	
 	/* Call to initialisation function */
 	init();
@@ -81,8 +46,6 @@ TAvalanche1D::~TAvalanche1D() {
 void TAvalanche1D::init() {
 	tId = gettid();
 	Id = count++;
-	
-	fRandomNumberGenerated = 0;
 	
 	iNstep = fConfig.nSteps;
 	 
@@ -133,8 +96,6 @@ void TAvalanche1D::init() {
 	bVerbose = fConfig.verbose;
 	bSnapshots = fConfig.snaps;
 	iVerbosityLevel = fConfig.verbosityLevel;	
-	//if (fConfig.nThreads > 1)
-	//	iVerbosityLevel = 1;
 	
 	bStreamer = false;
 	fStreamerThr = 4.85e8;
@@ -169,10 +130,6 @@ void TAvalanche1D::init() {
 	
 	eAvalStatus = AVAL_NO_ERROR; //Avalanche status to NO_ERROR at begining
 	
-	//fDebug.open("out/debug.dat", ios::out | ios::trunc);
-	
-	//testInterpolation();
-	//exit(0);
 }
 
 void TAvalanche1D::writeRPCParameters() {
@@ -249,7 +206,7 @@ void TAvalanche1D::initialiseTrackHeed(){
 	}
 	
 	if (iVerbosityLevel >= 1)
-		cout << "Initialising avalanche with Heed track (thread " << Id << ") for " << fConfig.particleName << " with momentum " << toString(fConfig.particleMomentum) << " at position " << toString(fConfig.x0) << " with angle " << toString(fConfig.theta) << endl;
+		cout << "Initialising avalanche (Id: " << Id <<") with Heed track (thread " << Id << ") for " << fConfig.particleName << " with momentum " << toString(fConfig.particleMomentum) << " at position " << toString(fConfig.x0) << " with angle " << toString(fConfig.theta) << endl;
 	
 	if (fConfig.garfieldSeed != -1)
 		fSeed = fConfig.garfieldSeed;
@@ -276,7 +233,7 @@ void TAvalanche1D::initialiseTrackHeed(){
 	double dummy = 0.; 							// Dummy variable (not used at present)
 	fNElectrons = vector<double> (iNElectronsSize,0);
 	
-	cout << "Cluster density for " << fConfig.particleName << "with momentum " << fConfig.particleMomentum << " : " << track->GetClusterDensity() << endl;
+	cout << "Cluster density for " << fConfig.particleName << " with momentum " << fConfig.particleMomentum << " : " << track->GetClusterDensity() << endl;
 	
 	while (track->GetCluster(xc, yc, zc, tc, nc, ec, dummy)){
 		fClustersX[xc] = nc;
@@ -313,7 +270,7 @@ void TAvalanche1D::initialiseSingleCluster(){
 		n0 = int( 80 * fRngMisc->RandU01() + 1 );
 	
 	if (iVerbosityLevel >= 1)
-		cout << "Initialising avalanche with " << n0 << " electron(s) at step " << step << endl;
+		cout << "Initialising avalanche (Id: " << Id <<") with " << n0 << " electron(s) at step " << step << endl;
 	
 	fNElectrons = vector<double> (iNElectronsSize,0);
 	
@@ -365,15 +322,12 @@ void TAvalanche1D::simulateEvent(){
 	/* check if avalanche has been initialised */
 	if ( !bAvalancheInitialised ){
 		printError(__FILE__, toString(__LINE__), __func__, "Avalanche has not been initialised. Aborting");
-		//cerr << "Error -- TAvalanche1D::simulateEvent -- Avalanche has not been initialised. Aborting" << endl<< endl;
 		exit(0);
 	}
 	
 	/* if Space Charge Effect is enabled check if Ebar table has been computed */
 	if ( bComputeSpaceChargeEffet && !bEbarComputed && !bOnlyMultiplicationAvalanche ){
-		//cerr << __LINE__ << __FILE__ << __func__ << endl;
 		printError(__FILE__, toString(__LINE__), __func__, "No Ebar table found. Aborting simulation");
-		//cerr << "Error -- TAvalanche1D::simulateEvent -- No Ebar table found. Aborting simulation." << endl<< endl;
 		exit(0); 
 	}
 	
@@ -403,7 +357,6 @@ void TAvalanche1D::simulateEvent(){
 		}
 		/* ========= */
 		makeResultFile();
-		//cout << "Random number generated: " << fRandomNumberGenerated << endl;
 		if (iVerbosityLevel >= 1)
 			cout << currentDateTime() << " - Avalanche simulation id " << Id << " (" << countSim << "nth simulation) terminated with success (" << duration_cast<seconds>(elapsed).count() << " seconds)." << endl<< endl;
 	}
@@ -429,27 +382,6 @@ void TAvalanche1D::checkDetectorGrid(){
 	}
 }
 
-/*
-void TAvalanche1D::computeInducedSignal(){
-	// OBSOLETE
-	// drift velocity in cm/ns
-	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;//1.60217657e-19; //Coulombs
-	double eps = 10.;
-	double glassThickness = fResistiveLayersWidth[0];//0.2; //cm
-	double weightingField = eps/(2*glassThickness + fGapWidth*eps);
-	
-	// Flushing signal vector
-	fSignal.clear();
-	
-	ofstream data("out/induced_signal.dat", ios::out | ios::trunc);
-	for(int i=0; i < iNElectronsSize; i++){
-		fSignal.push_back(weightingField * fVx.at(0)*1e9 * e0 * fNElectrons[i]);
-		data << fSignal.back() << endl;
-	}
-	data.close();
-}
-*/
-
 void TAvalanche1D::computeInducedSignal2(){
 	// drift velocity in cm/ns
 	double e0 = Constants::ElectronCharge; //1.60217657e-19; //Coulombs
@@ -470,12 +402,10 @@ void TAvalanche1D::computeInducedSignal2(){
 	if (fTotalCharges.size() == 0)	{
 		fTotalCharges.push_back(charges);
 		fTotalSignal.push_back(sig);
-		//fDebug << charges << endl;
 	}
 	else {
 		fTotalCharges.push_back(fTotalCharges.back() + charges);
 		fTotalSignal.push_back(fTotalSignal.back() + sig);
-		//fDebug << fTotalCharges.back() << endl;
 	}
 	
 	if (fTotalCharges.back() >= fChargeThres and !bThrCrossTime ){
@@ -596,43 +526,18 @@ double TAvalanche1D::multiplicationCLT(const double& x, const double& n){
 	
 	double c = Gaus(m, sigma, fRngCLT);
 	
-	if (c > 1e10){
-		/*if ( iVerbosityLevel >= 2){
-			cout << "k: " << k << endl;
-			cout << "eta: " << fEta.at(iCurrentDetectorStep) << endl;
-			cout << "alpha: " << fAlpha.at(iCurrentDetectorStep) << endl;
-			cout << "E: " << fE.at(iCurrentDetectorStep) << endl;
-			cout << "nm: " << nm << endl;
-			cout << "m: " << m << endl;
-			cout << "sigma: " << sigma << endl;
-			cout << "c: " << c << endl;
-		}*/
-		//cerr << "Explosive behavior detected -- stopping avalanche" <<endl;
+	if (c > 1e10) {
 		eAvalStatus = AVAL_EXPLOSIVE_BEHAVIOR_CLT;
 		return 0;
-		//cin.ignore();
 	}
 	
-/*	if( ( (abs(c > 1) and !trunc(c)>0) or (abs(c < 1) and !round(c)>=0) ) and iVerbosityLevel >= 2 ) {
-		cout << "k: " << k << endl;
-		cout << "eta: " << fEta.at(iCurrentDetectorStep) << endl;
-		cout << "alpha: " << fAlpha.at(iCurrentDetectorStep) << endl;
-		cout << "E: " << fE.at(iCurrentDetectorStep) << endl;
-		cout << "nm: " << nm << endl;
-		cout << "m: " << m << endl;
-		cout << "sigma: " << sigma << endl;
-		cout << "c: " << c << endl;
-	}*/
-	
-	if (abs(c>1)){
-		DEBUGASSERT(trunc(c)>0);
+	if (abs(c>1)) {
 		if( !(trunc(c)>0) )
 			eAvalStatus = AVAL_CLT_FAIL;
 		return trunc(c);
 	}
 	
-	else{
-		DEBUGASSERT(round(c) >= 0);
+	else {
 		if ( !(round(c) >= 0) ) 
 			eAvalStatus = AVAL_CLT_FAIL;
 		return round(c);
@@ -655,13 +560,12 @@ void TAvalanche1D::computeLongitudinalDiffusion() {
 		
 		pos = (iz) * fDx;
 		sigma = fDet->getDiffusionCoefficients(fE.at(iz), 0, 0)[0] * sqrtDx;
-		fRandomNumberGenerated += fElecDetectorGrid.at(iz);
 		
 		for(int n=0; n<fElecDetectorGrid.at(iz); n++){
-			if ( checkTimerExceededLimit(fLongiDiffTimer,fLongiDiffTimeLimit) ) {
+			/*if ( checkTimerExceededLimit(fLongiDiffTimer,fLongiDiffTimeLimit) ) {
 				eAvalStatus = AVAL_LONGI_DIFF_TIME_LIMIT_EXCEEDED;
 				break;
-			}
+			}*/
 			
 			newPos = Gaus(pos, sigma, fRngLongiDiff);
 			newPosIndex = (int)trunc(newPos/fDx);
@@ -675,7 +579,6 @@ void TAvalanche1D::computeLongitudinalDiffusion() {
 				newDetectorGrid.at(newPosIndex)++;
 			}
 			catch (const std::out_of_range& oor) {
-				//std::cerr << "Out of Range error: " << oor.what() << '\n';
 				printError(__FILE__, toString(__LINE__), __func__, oor.what());
 				cerr << newPosIndex << " " << pos << " " << newPos << endl;
 				exit(0);
@@ -864,7 +767,7 @@ void TAvalanche1D::computeSCEffect() {
 		for(int zp=0; zp<iNstep; zp++){
 			if (fElecDetectorGrid[zp]==0 and fNegIonDetectorGrid[zp]==0 and fPosIonDetectorGrid[zp]==0)
 				continue;
-			tmp += (fElecDetectorGrid[zp] +fNegIonDetectorGrid[zp] -fPosIonDetectorGrid[zp]) *  interpolateEbar((z)*fDx*Constants::cm, (zp)*fDx*Constants::cm, iTimeStep*fDx);  //fDet->computeEbar((z)*fDx*Constants::cm, iTimeStep*fDx, (zp)*fDx*Constants::cm);
+			tmp += (fElecDetectorGrid[zp] +fNegIonDetectorGrid[zp] -fPosIonDetectorGrid[zp]) *  interpolateEbar((z)*fDx*Constants::cm, (zp)*fDx*Constants::cm, iTimeStep*fDx); 
 		}
 		
 		for(uint i=0; i<fElecOnAnode.size(); i++)
@@ -872,8 +775,6 @@ void TAvalanche1D::computeSCEffect() {
 			
 		SCEField[z] = tmp;
 	}
-	
-	//cout << iTimeStep << "\t" << *std::max_element(SCEField,SCEField+iNstep) << endl;
 
 	for(int z=0; z<iNstep; z++){
 		fE.at(z) = fEini + SCEField[z];
@@ -972,21 +873,7 @@ double TAvalanche1D::interpolateEbar(const double& z, const double& zp, const do
 	c01 = fEbarTable.at(getIndex3D(iz0,izp0,il1))*(1-zd) + fEbarTable.at(getIndex3D(iz1,izp0,il1))*zd;
 	c11 = fEbarTable.at(getIndex3D(iz0,izp1,il1))*(1-zd) + fEbarTable.at(index)*zd;
 
-	/*
-	catch (const std::out_of_range& oor) {
-		std::cerr << "Out of Range error: " << oor.what() << '\n';
-		cerr << getIndex3D(iz0,izp0,il0) << endl;
-		cerr << getIndex3D(iz0,izp1,il0) << endl;
-		cerr << getIndex3D(iz0,izp0,il1) << endl;
-		cerr << getIndex3D(iz0,izp1,il1) << endl;
-		cerr << getIndex3D(iz1,izp0,il0) << endl;
-		cerr << getIndex3D(iz1,izp1,il0) << endl;
-		cerr << getIndex3D(iz1,izp0,il1) << endl;
-		cerr << getIndex3D(iz1,izp1,il1) << endl;
-		cerr << fEbarTable.size() << endl;
-		exit(0);
-	}
-	*/
+
 	//interpolate along zp
 	double c0 = c00*(1-zpd) + c10*zpd;
 	double c1 = c01*(1-zpd) + c11*zpd;

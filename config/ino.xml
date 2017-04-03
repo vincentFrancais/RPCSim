@@ -2,30 +2,39 @@
     <GapWidth>0.12</GapWidth>
     <Steps>500</Steps>
     <Anode>
-			<width>0.07</width>
-			<permittivity>7</permittivity>
+			<width>0.1</width>
+			<permittivity>11</permittivity>
     </Anode>
     <Cathode>
-			<width>0.11</width>
-			<permittivity>7</permittivity>
+			<width>0.1</width>
+			<permittivity>11</permittivity>
     </Cathode>
-    <ElectricField>56000</ElectricField>
-    <Threshold>0.1</Threshold>
+    <ResistiveLayers>
+		<layer>
+			<width>0.2</width>
+			<resistivity>10</resistivity>
+		</layer>
+		<layer>
+			<width>0.2</width>
+			<resistivity>10</resistivity>
+		</layer>
+    </ResistiveLayers>
+    <ElectricField>57500</ElectricField>
     <EbarTableCalculationSteps>140</EbarTableCalculationSteps>
 </Detector>
 
 <Gas>
 	<gas>
 		<name>c2h2f4</name>
-		<percentage>93</percentage>
+		<percentage>94.5</percentage>
 	</gas>
 	<gas>
 		<name>sf6</name>
-		<percentage>2.0</percentage>
+		<percentage>0.5</percentage>
 	</gas>
 	<gas>
-		<name>co2</name>
-		<percentage>5.0</percentage>
+		<name>ic4h10</name>
+		<percentage>5</percentage>
 	</gas>
 	<temperature>293.15</temperature>
 	<pressure>760.</pressure>
@@ -45,20 +54,25 @@
 	<Events>1</Events>
 	<Threads>1</Threads>
 	
-	<OutFile>corr-pos.dat</OutFile>
+	<OutFile>ino-rv2.dat</OutFile>
 	
 	<Generator>SFMT</Generator>
-	<GlobalSeed>-1</GlobalSeed>
-	<GarfieldSeed>58965475</GarfieldSeed>
+	<Seeds>
+		<seed>4321</seed>
+		<seed>2</seed>
+		<seed>3</seed>
+	</Seeds>
+	<UUIDSeed>0</UUIDSeed>
+	<GarfieldSeed>-1</GarfieldSeed>
 	
 	
 <!--	<SingleCluster>
 		<n0>1</n0>
-		<x0>-1</x0>
+		<x0>0</x0>
 	</SingleCluster> -->
 	
 	<Verbose>1</Verbose>
 	<VerbosityLevel>1</VerbosityLevel>
 	<Snapshots>0</Snapshots>
-	<DebugOutput>1</DebugOutput>
+	<DebugOutput>0</DebugOutput>
 </Simulation>

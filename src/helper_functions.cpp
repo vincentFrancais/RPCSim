@@ -3,96 +3,10 @@
 #define PI 3.14159265
 
 using namespace std;
-/* Python wrapper for SCE computation. Used for debugging purpose but very */
-//#if defined(PYTHON)
-//	int call_python_fun(std::string funName, std::vector<double> args, double& result){
-//	    //double result = 0.;
-//	    Py_Initialize();
-	
-//		// Set the path to include the current directory in case the module is located there.
-//		PyObject *sys = PyImport_ImportModule("sys");
-//		PyObject *path = PyObject_GetAttrString(sys, "path");
-//		PyList_Append(path, PyString_FromString("./python/"));
-	
-//		PyObject *pName, *pModule, *pFunc, *pResult = NULL;
-//		PyObject *pArgs, *pValue = NULL;
-	
-//	    // Build the name object
-//		pName = PyString_FromString((char*)"integration");
-	
-//		// Load the module object
-//	  	pModule = PyImport_Import(pName);
-//	    Py_DECREF(pName);
-	
-//	    if(pModule != NULL){
-//			// pDict is a borrowed reference
-//	  		//pDict = PyModule_GetDict(pModule);
-	
-//			// pFunc is also a borrowed reference
-//			//pFunc = PyDict_GetItemString(pDict, (char*)"compute_pot_correction_term");
-//	        pFunc = PyObject_GetAttrString(pModule, funName.c_str());
-	
-//			if (PyCallable_Check(pFunc)){
-//				pArgs = PyTuple_New( args.size() );
-//				for(uint i=0; i<args.size(); i++){
-//					// r	phi	z	rp	phip	zp	eps1	eps2	eps3	p	q	g
-//					pValue = PyFloat_FromDouble(args[i]);
-//					if (!pValue) {
-//						Py_DECREF(pArgs);
-//						Py_DECREF(pModule);
-//	                    Py_DECREF(pFunc);
-//	    				Py_DECREF(pModule);
-//	                    //Py_DECREF(pDict);
-//						cerr << "Cannot convert value" << endl;
-//	                    //Py_Finalize();
-//						return 1;
-//					}
-//					PyTuple_SetItem(pArgs, i, pValue);
-//				}
-	
-//	            // Call to the python function
-//				pResult = PyObject_CallObject(pFunc, pArgs);
-//	            Py_DECREF(pArgs);
-	
-//	            if (pResult != NULL) {
-//	                result = PyFloat_AsDouble( pResult );
-//					Py_DECREF(pResult);
-//				}
-//	            else {
-//	                Py_DECREF(pFunc);
-//					Py_DECREF(pModule);
-//	                //Py_DECREF(pDict);
-//					PyErr_Print();
-//					cerr << "Call to pyhon function failed" << endl;
-//	                //Py_Finalize();
-//	                return 1;
-//	            }
-	
-//	  		}
-//			else {
-//				if ( PyErr_Occurred() )
-//					PyErr_Print();
-//				cerr << "Cannot load function" << endl;
-//			}
-	
-//	        Py_XDECREF(pFunc);
-//	        //Py_XDECREF(pDict);
-//			Py_DECREF(pModule);
-//		}
-//		else{
-//			cerr << "error loading python module" << endl;
-//			PyErr_Print();
-//		}
-	
-//		//Py_Finalize();
-	
-//		return 0;
-//	}
-//#endif
 
-
-// Get current date/time, format is YYYY-MM-DD.HH:mm:ss
-// From http://stackoverflow.com/a/10467633
+/* Get current date/time, format is YYYY-MM-DD.HH:mm:ss
+*  From http://stackoverflow.com/a/10467633
+*/
 string currentDateTime() {
     time_t     now = time(0);
     struct tm  tstruct;
@@ -143,7 +57,6 @@ std::vector<double> arrayToVec(double* array, size_t size){
 
 double gauss(double x, double mean, double sigma){
 	return 1/(sigma*sqrt(2*PI)) * exp( -pow((x-mean),2)/(2*sigma*sigma)  );
-	//1/(sigma * np.sqrt(2 * np.pi)) * np.exp( - (x - mu)**2 / (2 * sigma**2) )
 }
 
 /* Doesn't work */
@@ -402,7 +315,8 @@ double bessel_J0 (double X) {
 }
 
 /* Return a lineary spaced vector from start to end with num items.
- * Similar to numpy's linspace. */
+ * Similar to numpy's linspace. 
+ * From http://stackoverflow.com/questions/27028226/python-linspace-in-c */
 std::vector<double> linspace(double start, double end, int num){
 	double delta = (end - start) / (num - 1);
 	

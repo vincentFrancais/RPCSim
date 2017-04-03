@@ -24,7 +24,7 @@ static TDetector* tgsl = 0;
 TDetector::TDetector(const TConfig& config){
 	fConfig = config;
 	iNstep = fConfig.nSteps;
-	//fGeometry = geometry;
+
 	if (fConfig.EbarTableCalculationSteps != 0)
 		iEbarTableSize = fConfig.EbarTableCalculationSteps;
 	else
@@ -36,9 +36,6 @@ TDetector::TDetector(const TConfig& config){
 	
 	setGasMixture();
 	setElectricField(fConfig.ElectricField,0.,0.);
-	//initialiseDetector();
-	
-	// if we do not simulate avalanche, no point in computing Ebar table.
 	
 }
 
@@ -128,12 +125,7 @@ string TDetector::getGasName() const {
 	return gasName;
 }
 
-void TDetector::setGasMixture() {
-//	if (bGasLoaded){
-//		cerr << "TDetector::setGasMixture -- Error, gas already set" << endl;
-//		return;
-//	}
-	
+void TDetector::setGasMixture() {	
 	mGas = new Garfield::MediumMagboltz();
 	
 	switch (fConfig.nGases){
@@ -176,10 +168,6 @@ void TDetector::setGasMixture() {
 }
 
 void TDetector::setGasMixture(Garfield::MediumMagboltz* gas){
-//	if (bGasLoaded){
-//		cerr << "TDetector::setGasMixture -- Error, gas already set" << endl;
-//		return;
-//	}
 	
 	mGas = gas;
 	mGasTableName = getGasName();
@@ -265,25 +253,19 @@ void TDetector::initialiseDetector(){
 	cout << "\talpha: " << fAlpha << " cm-1" << endl;
 	cout << "\teta: " << fEta << " cm-1" << endl;
 	cout << "\tE: " << fElectricField[0] << " kV/cm" << endl;
-	cout << "\tDrift velocity: (" << fVx << "," << fVy << "," << fVz << ")" << endl;
-	cout << "\tIon Drift velocity: (" << fiVx << "," << fiVy << "," << fiVz << ")" << endl;
-	cout << "\tDiffusion coefficient: (" << fDiffL << ", " << fDiffT << ")" << endl;
-	cout << "\tDt: " << fDt << endl;
+	cout << "\tDrift velocity: (" << fVx << "," << fVy << "," << fVz << ") cm/ns" << endl;
+	cout << "\tIon Drift velocity: (" << fiVx << "," << fiVy << "," << fiVz << ") cm/ns" << endl;
+	cout << "\tDiffusion coefficient: (" << fDiffL << ", " << fDiffT << ") cm-1/2" << endl;
+	cout << "\tDt: " << fDt << " ns" << endl;
 	cout << endl;
 	
-	/*delete box;
-	delete geo;
-	delete comp;*/
-	
 	bDetectorInitialised = true;
-	//plotSC();
-	//cout << (1 or 0) << endl;
+
 	if( !(fConfig.noAvalanche or fConfig.onlyMult) )
 		makeEbarTable(true);
 }
 
 vector<double> TDetector::getTransportParameters(double Ex, double Ey, double Ez){
-	//double alpha, eta, vx, vy, vz;
 	vector<double> parameters (5,-1);
 	mGas->ElectronTownsend(Ex,Ey,Ez,0.,0.,0., parameters.at(0));
 	mGas->ElectronAttachment(Ex,Ey,Ez,0.,0.,0., parameters.at(1));
@@ -327,14 +309,14 @@ void TDetector::setGarfieldSeed( const int& s ) {
 	Garfield::randomEngine.Seed(s);
 	cout.clear();
 	
-	if (fConfig.verbosityLevel >= 2)
+	if (fConfig.verbosityLevel >= 1)
 		cout << "Garfield TRandom3 seed: " << s << endl;
 }
 
 double TDetector::R(const double& k, const double& z, const double& zp){
 	/*	q,g and p have to be in mm in order to have correct values (From C. Lippmann, PhD Thesis, 2003, figure 2.11)
 	*	everything is defined in cm in the config */
-	//double q = fGeometry.resistiveLayersWidth[0] * Constants::cm; //cathode
+
 	double q = fConfig.cathodeWidth *10; //cathode
 	double g = fConfig.gapWidth *10;
 	double p = g + fConfig.anodeWidth *10; //anode
@@ -357,6 +339,7 @@ double TDetector::R(const double& k, const double& z, const double& zp){
 double TDetector::D(const double& k){
 	/*	q,g and p have to be in mm in order to have correct values (From C. Lippmann, PhD Thesis, 2003, figure 2.11) 
 	*	everything is defined in cm in the config */
+	
 	double q = fConfig.cathodeWidth	*10; //cathode
 	double g = fConfig.gapWidth *10;
 	double p = g + fConfig.anodeWidth *10; //anode
@@ -375,17 +358,15 @@ double integrand(double x, void * params){
 	//x == kappa
 	/* Everything here has to be in mm ! */ /* So it seems ... */
 	double* param = reinterpret_cast<double*> (params); //[P,z,zp]
-	//cout << param[0] << " " << param[1] << " " << param[2] << endl;
-	//return gsl_sf_bessel_J0(x*param[0]) * tgsl->R(x,param[1],param[2])/tgsl->D(x);
+
 	return bessel_J0(x*param[0]) * tgsl->R(x,param[1],param[2])/tgsl->D(x);
 }
 
 double TDetector::SCFieldSimplified(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
 	/* Free charge + mirror at 2g-z' */
-	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
+	double e0 = Constants::ElectronCharge;
 	double g = fConfig.gapWidth * Constants::cm;
-	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
-	//double eps1 = fConfig.cathodePermittivity * eps0; //cathode
+	double eps0 = Constants::VacuumPermittivity;
 	double eps3 = fConfig.anodePermittivity * eps0;
 	double eps2 = eps0;
 
@@ -397,9 +378,9 @@ double TDetector::SCFieldSimplified(const double& r, const double& phi, const do
 
 double TDetector::SCFieldSimplified2(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
 	/* Free charge and mirrors at -z' and 2g-z' */
-	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
+	double e0 = Constants::ElectronCharge; 
 	double g = fConfig.gapWidth * Constants::cm;
-	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
+	double eps0 = Constants::VacuumPermittivity;
 	double eps1 = fConfig.cathodePermittivity * eps0; //cathode
 	double eps3 = fConfig.anodePermittivity * eps0;
 	double eps2 = eps0;
@@ -412,11 +393,9 @@ double TDetector::SCFieldSimplified2(const double& r, const double& phi, const d
 
 double TDetector::SCFieldSimplified3(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
 	/* Free charge + mirror at -z' */
-	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
-	//double g = fConfig.gapWidth * Constants::cm;
-	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
+	double e0 = Constants::ElectronCharge; 
+	double eps0 = Constants::VacuumPermittivity;
 	double eps1 = fConfig.cathodePermittivity * eps0; //cathode
-	//double eps3 = fConfig.anodePermittivity * eps0;
 	double eps2 = eps0;
 
 	double P2 = r*r - 2*r*rp*cos(phi-phip) + rp*rp;
@@ -427,11 +406,8 @@ double TDetector::SCFieldSimplified3(const double& r, const double& phi, const d
 
 double TDetector::SCFieldSimplified4(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
 	/* Free charge */
-	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
-	//double g = fConfig.gapWidth * Constants::cm;
-	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
-	//double eps1 = fConfig.cathodePermittivity * eps0; //cathode
-	//double eps3 = fConfig.anodePermittivity * eps0;
+	double e0 = Constants::ElectronCharge; 
+	double eps0 = Constants::VacuumPermittivity;
 	double eps2 = eps0;
 
 	double P2 = r*r - 2*r*rp*cos(phi-phip) + rp*rp;
@@ -442,10 +418,9 @@ double TDetector::SCFieldSimplified4(const double& r, const double& phi, const d
 
 double TDetector::SCFieldSimplified5(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
 	/* Mirror at 2g-z' */
-	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
+	double e0 = Constants::ElectronCharge; 
 	double g = fConfig.gapWidth * Constants::cm;
-	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
-	//double eps1 = fConfig.cathodePermittivity * eps0; //cathode
+	double eps0 = Constants::VacuumPermittivity;
 	double eps3 = fConfig.anodePermittivity * eps0;
 	double eps2 = eps0;
 
@@ -457,11 +432,9 @@ double TDetector::SCFieldSimplified5(const double& r, const double& phi, const d
 
 double TDetector::SCFieldSimplified6(const double& r, const double& phi, const double& z, const double& rp, const double& phip, const double& zp) {
 	/* Mirror at -z' */
-	double e0 = Constants::ElectronCharge; //GSL_CONST_MKSA_ELECTRON_CHARGE;
-	//double g = fConfig.gapWidth * Constants::cm;
-	double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
+	double e0 = Constants::ElectronCharge;
+	double eps0 = Constants::VacuumPermittivity;
 	double eps1 = fConfig.cathodePermittivity * eps0; //cathode
-	//double eps3 = fConfig.anodePermittivity * eps0;
 	double eps2 = eps0;
 
 	double P2 = r*r - 2*r*rp*cos(phi-phip) + rp*rp;
@@ -494,22 +467,13 @@ double TDetector::SCPotential(const double& r, const double& phi, const double& 
 
     double P = sqrt(r*r - 2*r*rp*cos(phi-phip) + rp*rp);
 
-  //  gsl_integration_workspace * w = gsl_integration_workspace_alloc (4000);
-   // double result, error;
    
    /*	Parameters have to be converted in mm	*/
     double funParams[3] = {P*1000,z*1000,zp*1000};
-   /* gsl_function F;
-	F.function = &integrand;
-	F.params = &funParams;
-	gsl_integration_qagiu (&F, 0., 1.e-2, 1e-7, 4000, w, &result, &error);
-	gsl_integration_workspace_free (w);*/
-	
+
 	Rosetta::GaussLegendreQuadrature<15> gl;
 	double corr = gl.integrate_iu(0, integrand, funParams);
 	double corrTerm = 0.;
-	
-	//ofstream data("out/corrTerm.dat", ios::out | std::ios::app);
 
     double Q = Constants::ElectronCharge;
 	double eps0 = Constants::VacuumPermittivity;
@@ -523,8 +487,6 @@ double TDetector::SCPotential(const double& r, const double& phi, const double& 
 	pot1 = ( Q/(4*Constants::Pi*eps2) ) * (1./(sqrt(P*P+(z-zp)*(z-zp))));	/* Free charge term */
 	pot2 = ( Q/(4*Constants::Pi*eps2) ) * ((eps1-eps2)/((eps1+eps2)*sqrt(P*P+(z+zp)*(z+zp))));	/* Mirror charge (-z') term */
 	pot3 = ( Q/(4*Constants::Pi*eps2) ) * ((eps3-eps2)/((eps3+eps2)*sqrt(P*P+(2*g-z-zp)*(2*g-z-zp))));	/* Mirror charge (g-z') term */
-    //double pot = ( Q/(4*Constants::Pi*eps2) ) * ( (1./(sqrt(P*P+(z-zp)*(z-zp)))) - ((eps1-eps2)/((eps1+eps2)*sqrt(P*P+(z+zp)*(z+zp)))) - ((eps3-eps2)/((eps3+eps2)*sqrt(P*P+(2*g-z-zp)*(2*g-z-zp)))) +
-                                //  (1./((eps1+eps2)*(eps2+eps3))) * 0. );
 	
 	
 	/*	The correction term needs to be multplied by 1e3 to output correct value ... Why ? that's a mystery ...	*/
@@ -579,34 +541,12 @@ double TDetector::computeEbar(const double& z, const double& l, const double& zp
 	}
 }
 
-/*
-#if defined(PYTHON)
-	double TDetector::computeEbar_Python(const double& z, const double& l, const double& zp){
-		// Very slow !!!!
-		//double mm = 1.e-3;
-		
-		double eps0 = Constants::VacuumPermittivity; //GSL_CONST_MKSA_VACUUM_PERMITTIVITY;
-	    double eps1 = fConfig.cathodePermittivity * eps0; //cathode
-		double eps3 = fConfig.anodePermittivity * eps0;
-		double eps2 = eps0;
-		
-		double values[10] = {z, l, zp, fDiffT, eps1,eps2,eps3,4.*Constants::mm,2.*Constants::mm,2.*Constants::mm};
-		vector<double> args (values, values + sizeof(values) / sizeof(values[0]) );
-		double Ebar;
-		call_python_fun("compute_Ebar", args, Ebar);
-		
-		return Ebar;
-	}
-#endif
-*/
-
 void TDetector::makeEbarTable( bool const& binary ){
 	// WARNING if table was written in plain text, the loading from binary format will be incorrect!!!!
 	// WARNING writing and loading has to be done in the same format (binary or plain text)
 	
 	if( !bDetectorInitialised ){
 		printError(__FILE__, toString(__LINE__), __func__, "Detector needs to be initialised first. Aborting");
-		//cerr << "Error -- TDetector::makeEbarTable -- Detector needs to be initialised first." << endl;
 		exit(0);
 	}
 	
@@ -616,7 +556,7 @@ void TDetector::makeEbarTable( bool const& binary ){
 	int size = (n)*(n)*(n);
 	
 	string fileName = getUniqueTableName();
-	cout << "FileName: " << fileName << endl;
+	cout << "EbarTable filename: " << fileName << endl;
 
 	hash<string> hash;
 	string hexFileName = toString( hash(fileName) );
@@ -656,7 +596,6 @@ void TDetector::makeEbarTable( bool const& binary ){
 		
 		if ( std::accumulate(fEbarVecTable.begin(),fEbarVecTable.end(),0.) == 0 ) {
 			printError(__FILE__, toString(__LINE__), __func__, "Error while loading Ebar table. Table is empty. Aborting");
-			//cerr << "Error while loading Ebar table." << endl;
 			exit(0);
 		}
 		
@@ -736,6 +675,9 @@ void TDetector::printEbarTable() {
 }
 
 void TDetector::plotSC(){
+	/* This function is used to plot the different term of the space charge field and potential.
+	 */
+	
 	if( tgsl != this )
 		tgsl = this;
 		

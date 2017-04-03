@@ -121,31 +121,15 @@ void * WriteResults(void * Arg) {
 }
 
 int main(int argc, const char** argv) {
-	/*//TTimer timer;
-	//timer.start();
-	TRandomEngineMTDC rand(0,1234,43216);
-	sfmt_t sfmt;
-	sfmt_init_gen_rand(&sfmt, 123456);
-	TRandomEngineSFMT rand(sfmt);
-	//TRandomEngineMRG rand;
-	for (int i=0; i<1e9; i++)
-		rand.RandU01();
-	//cout << duration_cast<seconds>(fTimer.time_elapsed()).count() << endl;
-	exit(0);*/
-	
+	/* Parsing argument ... Not very useful anymore. Could be removed. */
 	ArgumentParser parser;
 	parser.addArgument("-c", "--config", 1, false);
 	parser.addArgument("-g", "--gap",1);
 	parser.addArgument("-e", "--eff", 1);
-	//parser.addArgument("-t", "--tension",1);
 	parser.parse(argc, argv);
 
 	/* Read config file */
 	TConfig config;
-	/*if (argc > 1)
-		config = TConfig( argv[1] );
-	else
-		config = TConfig("config/gas.xml");*/
 	config = TConfig ( parser.retrieve<string>("config") );
 	
 	if (parser.count("g"))
@@ -160,19 +144,7 @@ int main(int argc, const char** argv) {
     pthread_t writingThread;
     void * ret;
 	
-	/*if ( parser.count("e") )
-		strncpy(outputFile, ("out/eff-"+parser.retrieve<string>("e")).c_str(), PATH_MAX - 1);
-	else
-		strncpy(outputFile, config.outFile.c_str(), PATH_MAX - 1);*/
-		
-	/*if (config.computeEfficiency and argc > 2) {
-		string hv = argv[2];
-		strncpy(outputFile, ("out/eff-"+hv).c_str(), PATH_MAX - 1);
-	}
-	else
-		strncpy(outputFile, config.outFile.c_str(), PATH_MAX - 1);*/
 	strncpy(outputFile, config.outFile.c_str(), PATH_MAX - 1);
-	
 	outputFile[PATH_MAX - 1] = '\0';
 	
     unsigned int nThreads = config.nThreads;
@@ -210,14 +182,10 @@ int main(int argc, const char** argv) {
 		detector->setElectricField( stod(parser.retrieve<string>("e"))*1e3, 0, 0 );
 		cout << "====== Efficiency simulation run, HV at " << parser.retrieve<string>("e") << " ======" << endl;
 	}
-	/*if (config.computeEfficiency and argc > 2){
-		detector->setElectricField( atof(argv[2])*1e3, 0, 0 );
-		cout << "====== Efficiency simulation run, HV at " << argv[2] << " ======" << endl;
-	}*/
 	detector->initialiseDetector();
 	detector->writeGasTransportParameters();
 	
-	// Functions to produce data on primary inisation
+	/* Functions to produce data on primary inisation */
 	//TAvalanche::computeClusterDensity(detector,"muon",6e7,1.5e10,600);
 	//TAvalanche::computeElectronsProduction(detector,"muon",5.e9,60000);
 	
@@ -258,10 +226,9 @@ int main(int argc, const char** argv) {
     for (unsigned long i = 0; i < nEvents; i++){
 		/* the SFMT status is given to the thread and then jump-ahead by 10^20 numbers (ensure independant and large enough streams) */
 		data->sfmt = SFMT;
-		data->id = i+2;
+		data->id = i+2; // Increment the indice by 2 because we use 2 instance of DCMT in TAvalanche
 		TThreadsFactory::GetInstance()->CreateThread(wrapperFunction, data);
 		SFMT_jump(&SFMT, jump10_20);
-		//cout << "here" << endl;
     }
 
 

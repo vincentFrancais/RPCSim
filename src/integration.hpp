@@ -78,6 +78,7 @@ class simpson{
 	}
 };
 
+
 /*	From http://rosettacode.org/wiki/Numerical_integration/Gauss-Legendre_Quadrature#C.2B.2B 
  *	Modified for semi-improper integration [0,+infty] */
 namespace Rosetta {

@@ -35,9 +35,6 @@ struct TResult
 	double computeTime;
 	int streamer;
 	int nCluster;
-	/*uint charges_size;
-	uint chargesTot_size;
-	uint signal_size;*/
 	uint size;
 	double charges[2000];
 	double chargesTot[2000];
