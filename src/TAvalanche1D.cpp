@@ -463,6 +463,7 @@ double TAvalanche1D::multiplicationRiegler(const double& x, const double& s){
 		else
 		{
 			if (nm > 1.e5){
+				/* Taylor expansion */
 				double val = 1 + trunc( log((nm-k)*(1-s)  / (nm * (1-k))) / (-( (1-k)/(nm-k) + 0.5*pow((1-k)/(nm-k),2) + 0.5*pow((1-k)/(nm-k),3)) ) );
 				return val;
 			}
@@ -644,7 +645,7 @@ bool TAvalanche1D::checkForExplosiveBehavior() {
 	/* 
 	 * Check if a large number of elec has been created between two steps (typically meaning
 	 * that the avalanche shows explosive behavior). If there is a production superior than 
-	 * 30% between two steps, the avalanche simulation is aborted 
+	 * 30% between two steps, the avalanche simulation is aborted.
 	 */
 	 
 	double n0 = fNElectrons.at(iTimeStep-1);
